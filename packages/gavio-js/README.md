@@ -83,7 +83,7 @@ import { GavioTestKit }     from 'gavio/testing'
 - **Providers** — OpenAI, Anthropic (native `fetch`), Mock.
 - **Testing** — `GavioTestKit`, `mockProvider`.
 
-See [CHANGELOG.md](../../CHANGELOG.md) and [SDK_JAVASCRIPT.md](../../SDK_JAVASCRIPT.md).
+See the [JavaScript guide](../../docs/packages/javascript.md) and [CHANGELOG.md](../../CHANGELOG.md).
 
 ## Scripts
 

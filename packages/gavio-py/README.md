@@ -82,7 +82,7 @@ resp = await gw.complete(messages=[{"role": "user", "content": "Hi"}])
 - **Dev mode (F-DX-01)** and **dry-run mode (F-DX-02)**.
 - **Providers** — OpenAI, Anthropic, Mock.
 
-See [CHANGELOG.md](../../CHANGELOG.md) and [SDK_PYTHON.md](../../SDK_PYTHON.md).
+See the [Python guide](../../docs/packages/python.md) and [CHANGELOG.md](../../CHANGELOG.md).
 
 ## Tests
 

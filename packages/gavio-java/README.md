@@ -154,7 +154,7 @@ public class IngAccountScanner implements PiiScanner {
 Planned for v0.2.0+: semantic cache, guardrails, governance, Spring Boot
 starter, `RemoteNerScanner`, and the Gemini / Azure / Ollama providers.
 
-See [SDK_JAVA.md](../../SDK_JAVA.md) for the full API reference.
+See the [Java guide](../../docs/packages/java.md) for the full API reference.
 
 ## Build & test
 

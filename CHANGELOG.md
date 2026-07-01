@@ -5,7 +5,7 @@ All notable changes to Gavio are documented in this file.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Feature IDs reference the [Feature Registry](./MASTER_PLAN.md#4-feature-registry) in MASTER_PLAN.md.
+Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ---
 

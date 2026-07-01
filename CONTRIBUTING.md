@@ -20,8 +20,8 @@ three.
 | `packages/gavio-py/` | Python SDK (reference implementation) |
 | `packages/gavio-js/` | JavaScript / TypeScript SDK |
 | `packages/gavio-java/` | Java SDK (Maven multi-module) |
-| [`MASTER_PLAN.md`](./MASTER_PLAN.md) | Roadmap + Feature Registry (`F-*` IDs) |
-| [`CHANGELOG.md`](./CHANGELOG.md) | Keep a Changelog format |
+| [`docs/`](./docs/) | Architecture, guides, per-package docs |
+| [`CHANGELOG.md`](./CHANGELOG.md) | Keep a Changelog format + feature IDs (`F-*`) |
 
 ## Development
 
@@ -41,8 +41,8 @@ cd packages/gavio-java && mvn test
 
 Every PR must:
 
-1. **Reference a feature ID** from the [Feature Registry](./MASTER_PLAN.md#4-feature-registry),
-   e.g. `Implements F-SEC-01`.
+1. **Reference a feature ID** (e.g. `Implements F-SEC-01`) — the `F-*` IDs used
+   throughout [`CHANGELOG.md`](./CHANGELOG.md).
 2. **Update [`CHANGELOG.md`](./CHANGELOG.md)** under `[Unreleased]`, referencing
    the feature ID.
 3. **Pass CI across all three SDK test suites**, including the shared test
