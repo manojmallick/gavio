@@ -1,0 +1,141 @@
+name: Release (PyPI + Maven Central + npm)
+
+# Push a version tag (e.g. v0.1.0) to publish all three SDKs in lockstep.
+# Each job gates on its own tests and verifies the manifest version matches
+# the tag before publishing. A single GitHub Release is created at the end.
+#
+# Required repository secrets:
+#   PYPI_TOKEN               PyPI API token (starts with "pypi-")
+#   MAVEN_CENTRAL_USERNAME   Sonatype Central Portal token username
+#   MAVEN_CENTRAL_PASSWORD   Sonatype Central Portal token password
+#   GPG_PRIVATE_KEY          ASCII-armored GPG private key (for signing jars)
+#   GPG_PASSPHRASE           passphrase for that GPG key
+#   NPM_TOKEN                npm automation token (already added)
+# See RELEASING.md for how to obtain each.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*'
+
+permissions:
+  contents: write   # create the GitHub Release
+  id-token: write   # PyPI + npm provenance (OIDC)
+
+jobs:
+  # ── Python → PyPI ─────────────────────────────────────────────────────────
+  publish-python:
+    name: Publish → PyPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install, lint, test
+        working-directory: packages/gavio-py
+        run: |
+          pip install -e ".[dev]"
+          ruff check gavio tests
+          pytest tests/unit -q
+
+      - name: Verify version matches tag
+        working-directory: packages/gavio-py
+        run: |
+          PKG="v$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')"
+          if [ "$PKG" != "$GITHUB_REF_NAME" ]; then
+            echo "ERROR: pyproject version ($PKG) != tag ($GITHUB_REF_NAME)"; exit 1
+          fi
+          echo "✓ $PKG"
+
+      - name: Build sdist + wheel
+        working-directory: packages/gavio-py
+        run: |
+          pip install build
+          python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/gavio-py/dist
+          password: ${{ secrets.PYPI_TOKEN }}
+
+  # ── Java → Maven Central ──────────────────────────────────────────────────
+  publish-java:
+    name: Publish → Maven Central
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          server-id: central                       # matches publishingServerId in pom
+          server-username: MAVEN_USERNAME           # env var read from settings.xml
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE      # env var maven-gpg-plugin reads
+
+      - name: Verify version matches tag
+        working-directory: packages/gavio-java
+        run: |
+          PKG="v$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)"
+          if [ "$PKG" != "$GITHUB_REF_NAME" ]; then
+            echo "ERROR: pom version ($PKG) != tag ($GITHUB_REF_NAME)"; exit 1
+          fi
+          echo "✓ $PKG"
+
+      - name: Deploy (test + sign + publish)
+        working-directory: packages/gavio-java
+        run: mvn -B -Prelease deploy
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+  # ── JavaScript → npm ──────────────────────────────────────────────────────
+  publish-npm:
+    name: Publish → npmjs.com
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install, typecheck, test
+        working-directory: packages/gavio-js
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+
+      - name: Verify version matches tag
+        working-directory: packages/gavio-js
+        run: |
+          PKG="v$(node -p "require('./package.json').version")"
+          if [ "$PKG" != "$GITHUB_REF_NAME" ]; then
+            echo "ERROR: package.json version ($PKG) != tag ($GITHUB_REF_NAME)"; exit 1
+          fi
+          echo "✓ $PKG"
+
+      - name: Publish to npm
+        working-directory: packages/gavio-js
+        run: npm publish --provenance --access public   # prepublishOnly builds dist/
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ── GitHub Release (once, after all three publish) ────────────────────────
+  github-release:
+    name: Create GitHub Release
+    needs: [publish-python, publish-java, publish-npm]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          make_latest: true
