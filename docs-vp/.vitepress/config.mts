@@ -1,10 +1,13 @@
 import { defineConfig } from 'vitepress'
 
-// Canonical docs domain — change this to your deployed docs URL.
-const HOSTNAME = 'https://gavio.io'
+// Base path + canonical host are env-driven so the same config works locally
+// (base '/') and on GitHub Pages project site (base '/gavio/'). The Pages
+// workflow sets DOCS_BASE and DOCS_HOSTNAME.
+const base = process.env.DOCS_BASE ?? '/'
+const HOSTNAME = process.env.DOCS_HOSTNAME ?? 'https://gavio.io'
 
 export default defineConfig({
-  base: '/',
+  base,
   lang: 'en-US',
   title: 'Gavio',
   titleTemplate: ':title · Gavio — AI gateway',
@@ -15,8 +18,13 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
 
-  // Generates /sitemap.xml for search engines.
-  sitemap: { hostname: HOSTNAME },
+  // Generates /sitemap.xml for search engines. Use a trailing-slash hostname
+  // and relative item urls so the base path (e.g. /gavio/) is preserved.
+  sitemap: {
+    hostname: HOSTNAME.endsWith('/') ? HOSTNAME : HOSTNAME + '/',
+    transformItems: (items) =>
+      items.map((item) => ({ ...item, url: item.url.replace(/^\//, '') })),
+  },
 
   head: [
     ['meta', { name: 'author', content: 'Manoj Mallick' }],
