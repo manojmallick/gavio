@@ -33,6 +33,14 @@ Working toward **v0.2.0 — Production core**.
 - **Circuit breaker (Python, `F-REL-03`)** — `CircuitBreaker` `ExecutorPolicy`
   with closed/open/half-open states; fast-fails with `CircuitOpenError` while
   open, probes on recovery.
+- **Governance (Python)** — `CostControl` budget caps (`F-GOV-02`, soft/hard per
+  scope+window), `RateLimiter` (`F-GOV-03`, requests + tokens per minute),
+  `ModelPolicy` RBAC allowlists (`F-GOV-04`). New errors: `RateLimitExceededError`,
+  `ModelNotAllowedError`.
+- **Guardrails (Python)** — `GuardrailsInterceptor` (`ExecutorPolicy`, on_failure
+  error/retry/warn) with `JsonSchemaValidator` (`F-QUA-01`, zero-dep JSON Schema
+  subset) and `RegexDenylistValidator` / `RegexAllowlistValidator` (`F-QUA-02`);
+  records `guardrail_outcome` for the audit trail.
 
 ### Changed
 - `ExecutorPolicy` moved to `gavio.interceptors.executor` (re-exported from

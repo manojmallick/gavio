@@ -53,5 +53,18 @@ class BudgetExceededError(GavioError):
     """A hard budget cap was exceeded. Never swallow this — surface to user."""
 
 
+class RateLimitExceededError(GavioError):
+    """A local rate limit (requests/tokens per minute) was exceeded."""
+
+
+class ModelNotAllowedError(GavioError):
+    """The caller's role is not permitted to use the requested model (RBAC)."""
+
+    def __init__(self, role: str, model: str) -> None:
+        self.role = role
+        self.model = model
+        super().__init__(f"role {role!r} may not use model {model!r}")
+
+
 class GuardrailViolationError(GavioError):
     """Output failed a guardrail validator with on_failure='error'."""
