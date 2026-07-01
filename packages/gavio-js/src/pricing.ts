@@ -20,7 +20,11 @@ const DEFAULT_PRICES: Record<string, [number, number]> = {
   'claude-sonnet-4-20250514': [0.003, 0.015],
   'claude-haiku-4-5': [0.0008, 0.004],
   'claude-opus-4-1': [0.015, 0.075],
-  // Local / mock are free.
+  // Gemini (approximate public pricing; override via config)
+  'gemini-2.0-flash': [0.0001, 0.0004],
+  'gemini-1.5-flash': [0.000075, 0.0003],
+  'gemini-1.5-pro': [0.00125, 0.005],
+  // Local (Ollama) / mock are free.
   mock: [0.0, 0.0],
 }
 

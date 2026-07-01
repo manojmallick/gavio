@@ -65,6 +65,26 @@
       "import": "./dist/esm/interceptors/reliability/index.js",
       "require": "./dist/cjs/interceptors/reliability/index.js"
     },
+    "./interceptors/governance": {
+      "types": "./dist/esm/interceptors/governance/index.d.ts",
+      "import": "./dist/esm/interceptors/governance/index.js",
+      "require": "./dist/cjs/interceptors/governance/index.js"
+    },
+    "./interceptors/guardrails": {
+      "types": "./dist/esm/interceptors/guardrails/index.d.ts",
+      "import": "./dist/esm/interceptors/guardrails/index.js",
+      "require": "./dist/cjs/interceptors/guardrails/index.js"
+    },
+    "./interceptors/injection": {
+      "types": "./dist/esm/interceptors/injection.d.ts",
+      "import": "./dist/esm/interceptors/injection.js",
+      "require": "./dist/cjs/interceptors/injection.js"
+    },
+    "./shim/openai": {
+      "types": "./dist/esm/shim/openai.d.ts",
+      "import": "./dist/esm/shim/openai.js",
+      "require": "./dist/cjs/shim/openai.js"
+    },
     "./providers": {
       "types": "./dist/esm/providers/index.d.ts",
       "import": "./dist/esm/providers/index.js",

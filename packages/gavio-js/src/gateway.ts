@@ -66,6 +66,16 @@ export class Gateway {
     this.pricing = options.pricing ?? new PricingProvider()
   }
 
+  /**
+   * Build a Gateway from a config object or a JSON file path (F-DX-05).
+   * Async so the config module loads lazily (avoids a circular import).
+   */
+  static async fromConfig(config: string | Record<string, unknown>): Promise<Gateway> {
+    const mod = await import('./config.js')
+    const data = typeof config === 'string' ? mod.loadConfig(config) : config
+    return mod.buildFromConfig(data)
+  }
+
   /** Register an interceptor or executor policy. First-registered = outermost. */
   use(interceptor: Interceptor): this {
     this.interceptors.push(interceptor)
