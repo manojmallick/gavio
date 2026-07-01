@@ -80,6 +80,11 @@
       "import": "./dist/esm/interceptors/injection.js",
       "require": "./dist/cjs/interceptors/injection.js"
     },
+    "./interceptors/metrics": {
+      "types": "./dist/esm/interceptors/metrics/index.d.ts",
+      "import": "./dist/esm/interceptors/metrics/index.js",
+      "require": "./dist/cjs/interceptors/metrics/index.js"
+    },
     "./interceptors/quality": {
       "types": "./dist/esm/interceptors/quality/index.d.ts",
       "import": "./dist/esm/interceptors/quality/index.js",
