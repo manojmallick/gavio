@@ -1,6 +1,7 @@
 package io.gavio;
 
 import io.gavio.types.Message;
+import io.gavio.types.PromptLineage;
 import io.gavio.types.Provider;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,7 +25,8 @@ public record GavioRequest(
         String parentTraceId,
         String sessionId,
         Map<String, Object> options,
-        Map<String, Object> metadata) {
+        Map<String, Object> metadata,
+        PromptLineage lineage) {
 
     public GavioRequest {
         messages = List.copyOf(messages);
@@ -64,14 +66,14 @@ public record GavioRequest(
     public GavioRequest withMessages(List<Message> newMessages) {
         return new GavioRequest(
                 newMessages, model, provider, traceId, agentId,
-                parentTraceId, sessionId, options, metadata);
+                parentTraceId, sessionId, options, metadata, lineage);
     }
 
     /** Return a copy with a different provider (used by fallback rerouting). */
     public GavioRequest withProvider(Provider newProvider) {
         return new GavioRequest(
                 messages, model, newProvider, traceId, agentId,
-                parentTraceId, sessionId, options, metadata);
+                parentTraceId, sessionId, options, metadata, lineage);
     }
 
     public static Builder builder() {
@@ -89,6 +91,7 @@ public record GavioRequest(
         private String sessionId;
         private final Map<String, Object> options = new LinkedHashMap<>();
         private final Map<String, Object> metadata = new LinkedHashMap<>();
+        private PromptLineage lineage;
 
         public Builder messages(List<Message> messages) {
             this.messages.clear();
@@ -146,11 +149,16 @@ public record GavioRequest(
             return this;
         }
 
+        public Builder lineage(PromptLineage lineage) {
+            this.lineage = lineage;
+            return this;
+        }
+
         public GavioRequest build() {
             return new GavioRequest(
                     new ArrayList<>(messages), model, provider, traceId,
                     agentId, parentTraceId, sessionId,
-                    new HashMap<>(options), new HashMap<>(metadata));
+                    new HashMap<>(options), new HashMap<>(metadata), lineage);
         }
     }
 }

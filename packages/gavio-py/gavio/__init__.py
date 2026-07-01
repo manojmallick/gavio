@@ -29,7 +29,9 @@ from .types import (
     GuardrailOutcome,
     Message,
     PiiMode,
+    PromptLineage,
     Provider,
+    RagChunk,
     Sensitivity,
     TokenUsage,
 )
@@ -46,6 +48,8 @@ __all__ = [
     "Provider",
     "Message",
     "TokenUsage",
+    "PromptLineage",
+    "RagChunk",
     "CacheType",
     "PiiMode",
     "Sensitivity",

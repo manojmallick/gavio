@@ -17,7 +17,7 @@ from .providers import ProviderAdapter, build_adapter
 from .providers.mock import MockProvider
 from .request import GavioRequest
 from .response import GavioResponse
-from .types import Message, Provider
+from .types import Message, PromptLineage, Provider
 
 logger = logging.getLogger("gavio.gateway")
 
@@ -77,6 +77,7 @@ class Gateway:
         parent_trace_id: str | None = None,
         session_id: str | None = None,
         metadata: dict[str, Any] | None = None,
+        lineage: PromptLineage | None = None,
         **options: Any,
     ) -> GavioResponse:
         request = GavioRequest(
@@ -88,6 +89,7 @@ class Gateway:
             session_id=session_id,
             options=options,
             metadata=metadata or {},
+            lineage=lineage,
         )
         ctx = InterceptorContext(
             trace_id=request.trace_id,

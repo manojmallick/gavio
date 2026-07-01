@@ -1,6 +1,7 @@
 package io.gavio.interceptors.audit;
 
 import io.gavio.json.Json;
+import io.gavio.types.PromptLineage;
 import io.gavio.types.TokenUsage;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -40,6 +41,7 @@ public record AuditRecord(
         String cacheType,
         String guardrailOutcome,
         Double riskScore,
+        PromptLineage lineage,
         String previousHash,
         String schemaVersion) {
 
@@ -114,6 +116,7 @@ public record AuditRecord(
         data.put("cache_type", cacheType);
         data.put("guardrail_outcome", guardrailOutcome);
         data.put("risk_score", riskScore);
+        data.put("lineage", lineage == null ? null : lineage.toMap());
         data.put("previous_hash", previousHash);
         data.put("schema_version", schemaVersion);
         return data;
@@ -154,6 +157,7 @@ public record AuditRecord(
         private String cacheType;
         private String guardrailOutcome;
         private Double riskScore;
+        private PromptLineage lineage;
         private String previousHash = "";
 
         public Builder traceId(String v) {
@@ -256,6 +260,11 @@ public record AuditRecord(
             return this;
         }
 
+        public Builder lineage(PromptLineage v) {
+            this.lineage = v;
+            return this;
+        }
+
         public Builder previousHash(String v) {
             this.previousHash = v;
             return this;
@@ -265,7 +274,8 @@ public record AuditRecord(
             return new AuditRecord(traceId, provider, model, timestampUtc, parentTraceId,
                     agentId, sessionId, modelVersion, promptHash, responseHash, tokenUsage,
                     costUsd, latencyMs, piiEntityTypes, piiEntityCounts, interceptorsFired,
-                    cacheHit, cacheType, guardrailOutcome, riskScore, previousHash, SCHEMA_VERSION);
+                    cacheHit, cacheType, guardrailOutcome, riskScore, lineage, previousHash,
+                    SCHEMA_VERSION);
         }
     }
 }

@@ -6,6 +6,7 @@ import io.gavio.interceptors.Interceptor;
 import io.gavio.interceptors.InterceptorContext;
 import io.gavio.interceptors.audit.sinks.StdoutSink;
 import io.gavio.types.CacheType;
+import io.gavio.types.PromptLineage;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
@@ -24,6 +25,7 @@ public final class AuditInterceptor implements Interceptor {
 
     private static final Logger LOG = Logger.getLogger("gavio.audit");
     private static final String PROMPT_HASH_KEY = "audit_prompt_hash";
+    private static final String LINEAGE_KEY = "audit_lineage";
 
     private final AuditSink sink;
     private final boolean hashChain;
@@ -55,12 +57,16 @@ public final class AuditInterceptor implements Interceptor {
     @Override
     public CompletableFuture<GavioRequest> before(GavioRequest request, InterceptorContext ctx) {
         ctx.state().put(PROMPT_HASH_KEY, AuditRecord.hashText(request.promptText()));
+        if (request.lineage() != null) {
+            ctx.state().put(LINEAGE_KEY, request.lineage());
+        }
         return CompletableFuture.completedFuture(request);
     }
 
     @Override
     public CompletableFuture<GavioResponse> after(GavioResponse response, InterceptorContext ctx) {
         Object promptHash = ctx.state().get(PROMPT_HASH_KEY);
+        Object lineage = ctx.state().get(LINEAGE_KEY);
         CacheType ct = response.cacheType();
         String prev;
         synchronized (this) {
@@ -88,6 +94,7 @@ public final class AuditInterceptor implements Interceptor {
                 .cacheType(ct != null ? ct.value() : null)
                 .guardrailOutcome(ctx.guardrailOutcome())
                 .riskScore(ctx.riskScore())
+                .lineage(lineage instanceof PromptLineage pl ? pl : null)
                 .build();
 
         if (hashChain) {
