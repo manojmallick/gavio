@@ -1,0 +1,50 @@
+name: Publish to GitHub Packages (npm)
+
+# Publishes gavio-js to GitHub Packages as the scoped package
+# @manojmallick/gavio, so it appears in the repo's "Packages" sidebar.
+# (The canonical public package stays unscoped `gavio` on npmjs.com.)
+
+on:
+  workflow_dispatch:
+  # also runs automatically on a version tag, alongside the public release
+  push:
+    tags:
+      - 'v[0-9]*'
+
+permissions:
+  contents: read
+  packages: write   # GitHub Packages
+
+jobs:
+  ghp-npm:
+    name: Publish → GitHub Packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@manojmallick'
+
+      - name: Build + publish scoped package to GitHub Packages
+        working-directory: packages/gavio-js
+        run: |
+          npm ci
+          npm run build
+          # GitHub Packages requires a scope matching the owner.
+          node -e "
+            const fs = require('fs');
+            const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            p.name = '@manojmallick/gavio';
+            p.publishConfig = { registry: 'https://npm.pkg.github.com' };
+            fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+          "
+          VER=$(node -p "require('./package.json').version")
+          if npm view "@manojmallick/gavio@$VER" version --registry https://npm.pkg.github.com >/dev/null 2>&1; then
+            echo "@manojmallick/gavio@$VER already on GitHub Packages — skipping"
+          else
+            npm publish --access public
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
