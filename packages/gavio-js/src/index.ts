@@ -30,9 +30,11 @@ export {
   Sensitivity,
   GuardrailOutcome,
   TokenUsage,
+  PromptLineage,
+  RagChunk,
   coerceProvider,
 } from './types.js'
-export type { Message } from './types.js'
+export type { Message, PromptLineageInit, RagChunkInit } from './types.js'
 
 export type { Interceptor, Executor, ExecutorPolicy } from './interceptors/base.js'
 export { InterceptorChain } from './interceptors/chain.js'

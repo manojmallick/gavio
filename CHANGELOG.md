@@ -12,6 +12,16 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 ## [Unreleased]
 
 ### Added
+- **Prompt lineage (all SDKs, `F-OBS-04`)** — new `PromptLineage` value type
+  (`template_id`, `template_version`, `variables`, `rag_chunks`) plus a `RagChunk`
+  source reference (`source`, `chunk_id`, `score`). Attach it to a
+  `GavioRequest` (`lineage=`) and the `AuditInterceptor` copies it into the
+  `AuditRecord` so any prompt can be reconstructed from its template, variable
+  bindings, and RAG sources. RAG chunk **text is never stored** — only source
+  references — keeping the audit record metadata-only. Lineage participates in
+  the hash-chain `contentHash()`. Exported from each SDK's public API; documented
+  in `spec/GavioRequest.schema.json` and `spec/AuditRecord.schema.json`. First
+  feature of **v0.3.0 (Observability depth)**.
 - **Streaming reliability (all SDKs, `F-REL-06`)** — `Gateway.stream(...)` runs a
   completion through the provider's streaming API but buffers the response in
   full via a new `StreamBuffer` before the post-interceptor pipeline (guardrails,
@@ -22,6 +32,11 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   (retry, circuit breaker, cache) are not applied to the streaming path in this
   release. First v0.2.0-planned reliability gap now closed. `StreamBuffer` lives
   in `io.gavio.providers` in Java (core cannot depend on the reliability module).
+
+### Fixed
+- **JS audit hash chain** — `AuditRecord.toCanonicalJson()` now sorts keys
+  recursively so nested fields (`tokenUsage`, `lineage`) actually contribute to
+  the chain hash; the previous array-replacer dropped all nested content.
 
 ---
 
