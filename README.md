@@ -13,6 +13,9 @@ interceptors. **Same API in Python, Java, and JavaScript.**
 [![Maven Central](https://img.shields.io/maven-central/v/io.github.manojmallick/gavio-core?color=f89820&label=maven%20central&logo=apachemaven&logoColor=white)](https://central.sonatype.com/artifact/io.github.manojmallick/gavio-core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22c55e.svg)](LICENSE)
 [![Zero deps](https://img.shields.io/badge/core%20dependencies-zero-22c55e)](#design-principles)
+[![Docs](https://img.shields.io/badge/docs-live-7c6af7)](https://manojmallick.github.io/gavio/)
+
+📖 **Docs:** [manojmallick.github.io/gavio](https://manojmallick.github.io/gavio/)
 
 </div>
 
