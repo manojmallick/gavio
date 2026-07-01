@@ -1,0 +1,14 @@
+{
+  "description": "Full-pipeline detection: run the DEFAULT PiiGuard scanner set over `text`, collect the unique entity types recorded, sort ascending, and compare to `expectedTypes`. Exercises the whole scanner set plus overlap resolution. Values verified against the Python reference implementation. Synthetic data only.",
+  "schemaVersion": "1.0",
+  "cases": [
+    { "id": "email-and-iban", "text": "Email jan@example.com and IBAN NL91ABNA0417164300", "expectedTypes": ["EMAIL", "IBAN"] },
+    { "id": "credit-card",    "text": "charge card 4111111111111111 now",                   "expectedTypes": ["CREDIT_CARD"] },
+    { "id": "ip-address",     "text": "host at 192.168.1.42 responded",                     "expectedTypes": ["IP_ADDRESS"] },
+    { "id": "secret",         "text": "leaked key sk-ant-abcdef0123456789ABCDEF0123",       "expectedTypes": ["SECRET"] },
+    { "id": "ssn",            "text": "ssn 123-45-6789 verified",                           "expectedTypes": ["SSN"] },
+    { "id": "phone",          "text": "call +31 6 12345678 tomorrow",                       "expectedTypes": ["PHONE"] },
+    { "id": "none",           "text": "just a normal sentence with nothing sensitive",      "expectedTypes": [] },
+    { "id": "multi",          "text": "Email jan@example.com card 4111111111111111 host 192.168.1.42", "expectedTypes": ["CREDIT_CARD", "EMAIL", "IP_ADDRESS"] }
+  ]
+}

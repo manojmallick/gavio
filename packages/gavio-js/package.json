@@ -1,0 +1,51 @@
+{
+  "name": "gavio",
+  "version": "0.1.0",
+  "description": "The open standard AI gateway for production systems — PII guarding, audit, reliability, and cost tracking.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./interceptors/pii": "./src/interceptors/pii/index.ts",
+    "./interceptors/pii/scanners": "./src/interceptors/pii/scanners/index.ts",
+    "./interceptors/audit": "./src/interceptors/audit/index.ts",
+    "./interceptors/audit/sinks": "./src/interceptors/audit/sinks/index.ts",
+    "./interceptors/cache": "./src/interceptors/cache/index.ts",
+    "./interceptors/cache/backends": "./src/interceptors/cache/backends/index.ts",
+    "./interceptors/reliability": "./src/interceptors/reliability/index.ts",
+    "./providers": "./src/providers/index.ts",
+    "./providers/openai": "./src/providers/openai.ts",
+    "./providers/anthropic": "./src/providers/anthropic.ts",
+    "./testing": "./src/testing/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "smoke": "tsc -p tsconfig.build.json && node scripts/smoke.mjs"
+  },
+  "keywords": [
+    "ai",
+    "gateway",
+    "llm",
+    "pii",
+    "audit",
+    "reliability",
+    "openai",
+    "anthropic"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0",
+    "vitest": "^2.1.0"
+  }
+}

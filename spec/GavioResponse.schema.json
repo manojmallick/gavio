@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/GavioResponse.v1.json",
+  "title": "GavioResponse",
+  "description": "The canonical response returned to the caller, enriched by the post-interceptor pipeline.",
+  "type": "object",
+  "required": ["traceId", "content", "model", "provider", "usage"],
+  "properties": {
+    "traceId": { "type": "string", "description": "Same UUID v7 as the request." },
+    "content": { "type": "string", "description": "Final response text (PII restored)." },
+    "model": { "type": "string" },
+    "provider": { "type": "string" },
+    "modelVersion": { "type": "string" },
+    "usage": { "$ref": "#/$defs/tokenUsage" },
+    "costUsd": { "type": "number", "minimum": 0 },
+    "latencyMs": { "type": "integer", "minimum": 0 },
+    "cacheHit": { "type": "boolean" },
+    "cacheType": { "type": ["string", "null"], "enum": ["exact", "semantic", null] },
+    "interceptorsFired": { "type": "array", "items": { "type": "string" } },
+    "audit": {
+      "description": "AuditRecord, if the audit interceptor ran.",
+      "oneOf": [{ "$ref": "https://gavio.io/schema/AuditRecord.v1.json" }, { "type": "null" }]
+    }
+  },
+  "$defs": {
+    "tokenUsage": {
+      "type": "object",
+      "required": ["promptTokens", "completionTokens", "totalTokens"],
+      "properties": {
+        "promptTokens": { "type": "integer", "minimum": 0 },
+        "completionTokens": { "type": "integer", "minimum": 0 },
+        "totalTokens": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

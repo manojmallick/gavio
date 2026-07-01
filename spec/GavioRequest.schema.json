@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/GavioRequest.v1.json",
+  "title": "GavioRequest",
+  "description": "The canonical, provider-agnostic request model. Field names are camelCase on the wire; Python binds them to snake_case (agent_id, parent_trace_id, ...).",
+  "type": "object",
+  "required": ["messages", "model", "provider"],
+  "properties": {
+    "traceId": {
+      "type": "string",
+      "description": "UUID v7 (time-sortable). Assigned automatically if omitted."
+    },
+    "messages": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/message" }
+    },
+    "model": { "type": "string", "minLength": 1 },
+    "provider": { "$ref": "#/$defs/provider" },
+    "agentId": { "type": ["string", "null"] },
+    "parentTraceId": {
+      "type": ["string", "null"],
+      "description": "Links calls into a multi-agent DAG."
+    },
+    "sessionId": { "type": ["string", "null"] },
+    "options": {
+      "type": "object",
+      "properties": {
+        "temperature": { "type": "number" },
+        "maxTokens": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": true
+    },
+    "metadata": { "type": "object", "additionalProperties": true }
+  },
+  "$defs": {
+    "message": {
+      "type": "object",
+      "required": ["role", "content"],
+      "properties": {
+        "role": { "type": "string", "enum": ["system", "user", "assistant", "tool"] },
+        "content": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "provider": {
+      "type": "string",
+      "enum": ["openai", "anthropic", "gemini", "azure_openai", "ollama", "bedrock", "cohere", "mock"]
+    }
+  }
+}

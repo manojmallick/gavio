@@ -1,0 +1,31 @@
+{
+  "description": "Per-scanner cases run against a SINGLE named scanner. `shouldMatch` is whether that scanner produces >= 1 match. Exercises regex + checksum logic (IBAN mod-97, BSN 11-proef, Luhn, IP validation). Synthetic data only.",
+  "schemaVersion": "1.0",
+  "cases": [
+    { "id": "email-basic",        "scanner": "EMAIL",       "text": "ping jan.devries@example.com please", "shouldMatch": true },
+    { "id": "email-none",         "scanner": "EMAIL",       "text": "no address here at all",              "shouldMatch": false },
+
+    { "id": "iban-valid",         "scanner": "IBAN",        "text": "transfer to NL91ABNA0417164300 today", "shouldMatch": true },
+    { "id": "iban-bad-checksum",  "scanner": "IBAN",        "text": "transfer to NL00ABNA0417164300 today", "shouldMatch": false },
+
+    { "id": "bsn-valid",          "scanner": "BSN",         "text": "bsn 111222333 on file", "shouldMatch": true },
+    { "id": "bsn-bad-11proef",    "scanner": "BSN",         "text": "bsn 111222334 on file", "shouldMatch": false },
+
+    { "id": "cc-valid-luhn",      "scanner": "CREDIT_CARD", "text": "card 4111111111111111 expires soon", "shouldMatch": true },
+    { "id": "cc-bad-luhn",        "scanner": "CREDIT_CARD", "text": "card 4111111111111112 expires soon", "shouldMatch": false },
+
+    { "id": "ipv4-valid",         "scanner": "IP_ADDRESS",  "text": "host 192.168.1.42 online",  "shouldMatch": true },
+    { "id": "ipv6-valid",         "scanner": "IP_ADDRESS",  "text": "host 2001:db8::1 online",   "shouldMatch": true },
+    { "id": "ipv4-out-of-range",  "scanner": "IP_ADDRESS",  "text": "host 999.999.999.999 down", "shouldMatch": false },
+
+    { "id": "ssn-valid",          "scanner": "SSN",         "text": "ssn 123-45-6789 verified", "shouldMatch": true },
+
+    { "id": "secret-anthropic",   "scanner": "SECRET",      "text": "key sk-ant-abcdef0123456789ABCDEF0123 leaked", "shouldMatch": true },
+    { "id": "secret-aws",         "scanner": "SECRET",      "text": "key AKIAIOSFODNN7EXAMPLE leaked",              "shouldMatch": true },
+    { "id": "secret-jwt",         "scanner": "SECRET",      "text": "token eyJhbGc.eyJzdWIi.SflKxwRJ leaked",       "shouldMatch": true },
+    { "id": "secret-none",        "scanner": "SECRET",      "text": "just a plain sentence",                       "shouldMatch": false },
+
+    { "id": "phone-e164",         "scanner": "PHONE",       "text": "call +31 6 12345678 tomorrow", "shouldMatch": true },
+    { "id": "phone-too-short",    "scanner": "PHONE",       "text": "in the year 2026",              "shouldMatch": false }
+  ]
+}

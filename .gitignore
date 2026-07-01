@@ -1,0 +1,65 @@
+# ─── OS / editor ──────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
+*.iml
+
+# ─── Node / TypeScript (gavio-js) ─────────────────────────────
+node_modules/
+dist/
+build/
+out/
+coverage/
+*.tsbuildinfo
+.npm/
+.pnpm-store/
+.yarn/
+npm-debug.log*
+yarn-error.log*
+.vitest/
+
+# ─── Python (gavio-py) ────────────────────────────────────────
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+
+# ─── Java / Maven / Gradle (gavio-java) ───────────────────────
+target/
+.gradle/
+*.class
+*.jar
+*.war
+hs_err_pid*
+
+# ─── Secrets / local env ──────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ─── SigMap local artifacts ───────────────────────────────────
+# Generated context (copilot-instructions.md) is committed on purpose;
+# only the local metrics/cache are ignored.
+.context/
+.sigmap-cache/
+
+
+# ---docs--- #
+MASTER_*.md
+SDK_*.md
+*PLAN.md

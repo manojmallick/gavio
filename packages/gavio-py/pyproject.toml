@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gavio"
+version = "0.1.0"
+description = "The open standard AI gateway for production systems — PII protection, audit trails, reliability, and cost control as composable interceptors."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Gavio core team" }]
+keywords = ["llm", "ai", "gateway", "pii", "audit", "openai", "anthropic", "interceptor"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+]
+# Core has zero mandatory runtime dependencies.
+dependencies = []
+
+[project.optional-dependencies]
+presidio = ["presidio-analyzer", "spacy"]
+redis = ["redis"]
+otel = ["opentelemetry-sdk", "opentelemetry-exporter-otlp"]
+elasticsearch = ["elasticsearch"]
+pgvector = ["psycopg2", "pgvector"]
+dev = ["pytest>=7.0", "pytest-asyncio>=0.21", "ruff>=0.4", "mypy>=1.8"]
+all = [
+    "presidio-analyzer", "spacy", "redis",
+    "opentelemetry-sdk", "opentelemetry-exporter-otlp",
+    "elasticsearch", "psycopg2", "pgvector",
+]
+
+[project.urls]
+Homepage = "https://gavio.io"
+Repository = "https://github.com/gavio-ai/gavio"
+Changelog = "https://github.com/gavio-ai/gavio/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["gavio"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "W"]
+ignore = ["B008"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true

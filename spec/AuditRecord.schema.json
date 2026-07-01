@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/AuditRecord.v1.json",
+  "title": "AuditRecord",
+  "description": "Immutable, per-request audit entry. Carries metadata and content HASHES only — never raw prompt/response text.",
+  "type": "object",
+  "required": [
+    "traceId", "provider", "model", "timestampUtc",
+    "promptHash", "responseHash", "tokenUsage", "schemaVersion"
+  ],
+  "properties": {
+    "traceId": { "type": "string" },
+    "parentTraceId": { "type": ["string", "null"] },
+    "agentId": { "type": ["string", "null"] },
+    "sessionId": { "type": ["string", "null"] },
+    "timestampUtc": { "type": "string", "format": "date-time" },
+    "provider": { "type": "string" },
+    "model": { "type": "string" },
+    "modelVersion": { "type": "string" },
+    "promptHash": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "SHA-256 of the redacted prompt." },
+    "responseHash": { "type": "string", "pattern": "^[a-f0-9]{64}$", "description": "SHA-256 of the response." },
+    "tokenUsage": {
+      "type": "object",
+      "required": ["promptTokens", "completionTokens", "totalTokens"],
+      "properties": {
+        "promptTokens": { "type": "integer", "minimum": 0 },
+        "completionTokens": { "type": "integer", "minimum": 0 },
+        "totalTokens": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "costUsd": { "type": "number", "minimum": 0 },
+    "latencyMs": { "type": "integer", "minimum": 0 },
+    "piiEntityTypes": { "type": "array", "items": { "type": "string" } },
+    "piiEntityCounts": { "type": "object", "additionalProperties": { "type": "integer" } },
+    "interceptorsFired": { "type": "array", "items": { "type": "string" } },
+    "cacheHit": { "type": "boolean" },
+    "cacheType": { "type": ["string", "null"] },
+    "guardrailOutcome": { "type": ["string", "null"], "enum": ["PASS", "FAIL", "HITL", null] },
+    "riskScore": { "type": ["number", "null"] },
+    "previousHash": { "type": "string", "description": "SHA-256 of the previous record (hash-chain, F-OBS-02, v0.2.0). Empty in v0.1.0." },
+    "schemaVersion": { "type": "string", "const": "1.0" }
+  }
+}

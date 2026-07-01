@@ -1,0 +1,84 @@
+{
+  "_comment": "SigMap configuration — all keys are optional (defaults shown). Copy to gen-context.config.json.",
+
+  "output": ".github/copilot-instructions.md",
+
+  "outputs": ["copilot"],
+
+  "_srcDirs_comment": "Source directories to scan. OMIT this key to use auto-detection (recommended).",
+  "_srcDirs_comment2": "Auto-detection reads package.json/go.mod/Cargo.toml and scans top-level dirs automatically.",
+  "_srcDirs_comment3": "Only set this explicitly if auto-detection misses part of your project layout.",
+  "_srcDirs_example": ["src", "app", "lib", "packages", "services", "api"],
+
+  "_exclude_comment": "Bare directory/file BASENAMES only — matched against each entry's name, not its path. Paths like 'packages/x/.venv' never match and are silently ignored.",
+  "exclude": [
+    "node_modules", ".git", "dist", "build", "out",
+    "__pycache__", ".next", "coverage", "target", "vendor",
+    ".context",
+    ".venv", "venv", ".pytest_cache", ".mypy_cache", ".ruff_cache",
+    ".tox", "site-packages", ".egg-info",
+    "__init__.py", "index.ts", "index.js", "vitest.config.ts", "smoke.ts"
+  ],
+  "_exclude_plumbing_note": "Last line = re-export barrels & package markers — they carry no signatures, so excluding them lifts the coverage denominator without losing API surface.",
+
+  "maxDepth": 15,
+
+  "maxSigsPerFile": 25,
+
+  "_maxTokens_comment": "Used only when autoMaxTokens is false. Override to pin a fixed budget.",
+  "maxTokens": 40000,
+
+  "_autoMaxTokens_comment": "Auto-scale budget based on repo size. Default: true.",
+  "_autoMaxTokens_formula": "effective = clamp(totalSigTokens × coverageTarget, 4000, modelContextLimit × maxTokensHeadroom)",
+  "autoMaxTokens": false,
+
+  "_coverageTarget_comment": "Fraction of source files to target for inclusion (0.0–1.0). Default: 0.80 = 80%.",
+  "coverageTarget": 0.80,
+
+  "_modelContextLimit_comment": "Model context window size (tokens). Hard cap = modelContextLimit × maxTokensHeadroom.",
+  "_modelContextLimit_examples": "128000 = GPT-4o/Claude (default)  |  200000 = Claude max  |  1000000 = Gemini 1M",
+  "modelContextLimit": 128000,
+
+  "_maxTokensHeadroom_comment": "Fraction of model context reserved for SigMap output. 0.20 = 25,600 token hard cap.",
+  "maxTokensHeadroom": 0.20,
+
+  "secretScan": true,
+
+  "monorepo": false,
+
+  "diffPriority": true,
+
+  "mcp": {
+    "autoRegister": true
+  },
+
+  "_strategy_comment": "Context output strategy. Options: 'full' | 'per-module' | 'hot-cold'",
+  "_strategy_full":       "  full       — single file, all signatures, always injected (default)",
+  "_strategy_per_module": "  per-module — one .github/context-<module>.md per srcDir + thin overview",
+  "_strategy_hot_cold":   "  hot-cold   — recently changed files injected; rest in context-cold.md (MCP)",
+  "strategy": "full",
+
+  "_hotCommits_comment": "Only used by hot-cold strategy: how many recent commits count as 'hot'",
+  "hotCommits": 10,
+
+  "_depMap_comment": "Include a compact import dependency map at the top of the output (~50-100 extra tokens)",
+  "depMap": true,
+
+  "_todos_comment": "Include compact TODO/FIXME/HACK/XXX section (max 20 entries)",
+  "todos": true,
+
+  "_changes_comment": "Include compact recent git changes section",
+  "changes": true,
+
+  "_changesCommits_comment": "How many recent commits to analyze for the changes section",
+  "changesCommits": 5,
+
+  "_testCoverage_comment": "Append function-level coverage hints (✓/✗) by scanning tests",
+  "testCoverage": false,
+
+  "_testDirs_comment": "Directories used when testCoverage is enabled",
+  "testDirs": ["tests", "test", "__tests__", "spec"],
+
+  "_impactRadius_comment": "Append reverse dependency hints in file headers (used by: ...)",
+  "impactRadius": false
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/InterceptorResult.v1.json",
+  "title": "InterceptorResult",
+  "description": "The observable outcome of a single interceptor within one request, as surfaced in the InterceptorContext / audit trail.",
+  "type": "object",
+  "required": ["name", "phase"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique interceptor name, e.g. pii_guard, audit, retry, timeout, fallback."
+    },
+    "phase": {
+      "type": "string",
+      "enum": ["before", "after", "around", "error"],
+      "description": "Where the interceptor acted in the pipeline."
+    },
+    "fired": { "type": "boolean", "default": true },
+    "modifiedRequest": { "type": "boolean", "default": false },
+    "modifiedResponse": { "type": "boolean", "default": false },
+    "dryRun": { "type": "boolean", "default": false },
+    "detail": {
+      "type": "object",
+      "description": "Interceptor-specific signals (e.g. pii entity counts, retry attempts).",
+      "additionalProperties": true
+    }
+  }
+}

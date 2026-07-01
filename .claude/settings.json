@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sigmap --analyze)",
+      "Bash(git -C . rev-parse --is-inside-work-tree)",
+      "Bash(grep -n \"source files\\\\|totalSource\\\\|of \\\\${\\\\|coverage\\\\|Coverage\" gen-context.js)",
+      "Bash(sed -n '/SigMap v/,/Output/p')",
+      "Bash(npm --version)",
+      "Bash(java -version)",
+      "Bash(mvn -version)",
+      "Bash(mvn -q -o -pl gavio-core compile)",
+      "Bash(mkdir -p target/classes)",
+      "Bash(javac --release 17 -d target/classes @/tmp/core_srcs.txt)",
+      "Bash(node -e \"require\\('esbuild'\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(mvn -q clean test)",
+      "Bash(mvn test *)",
+      "Bash(echo \"TSC_EXIT=$?\")",
+      "Bash(node --experimental-strip-types -e ' *)",
+      "Bash(node -e \"console.log\\(JSON.stringify\\(require\\('./package.json'\\).scripts,null,2\\)\\)\")",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(mvn -q test -pl gavio-interceptor-pii -am)"
+    ]
+  }
+}

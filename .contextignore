@@ -1,0 +1,29 @@
+# SigMap ignore file — gitignore syntax
+# Files and directories listed here are excluded from signature extraction.
+# This file is union-merged with .repomixignore if present.
+
+node_modules/
+dist/
+build/
+out/
+.next/
+coverage/
+target/
+vendor/
+*.generated.*
+*.pb.*
+*_pb.*
+*.min.js
+*.min.css
+
+# Python virtualenvs & tool caches (third-party deps, not project source)
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+*.egg-info/
+site-packages/
