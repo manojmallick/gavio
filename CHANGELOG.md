@@ -11,10 +11,26 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Working toward **v0.2.0 — Production core**.
+Nothing yet.
+
+---
+
+## [0.2.0] — 2026-07-01
+
+### Summary
+**Production core.** Semantic + exact caching, hash-chain audit, multi-agent DAG
+trace, circuit breaker, load balancing, budget/rate-limit/RBAC governance,
+guardrails (JSON-schema + regex), prompt-injection defense, and Gemini / Azure
+OpenAI / Ollama providers — shipped across **Python, Java, and JavaScript**.
+
+Tests: Python 102 · JavaScript 115 · Java 108. Feature IDs `F-CACHE-01/02/03`,
+`F-OBS-02/03`, `F-REL-03/04`, `F-GOV-02/03/04`, `F-QUA-01/02`, `F-SEC-05`,
+`F-DX-04/05`. The entries below were implemented first in the Python reference
+and ported to JS and Java in lockstep (Java's standalone JSON config loader is
+deferred — the Spring starter / explicit builders are the idiomatic path).
 
 ### Added
-- **Caching (Python)** — `SemanticCache` interceptor:
+- **Caching** — `SemanticCache` interceptor:
   - `F-CACHE-01` exact SHA-256 cache (keyed on provider + model + messages +
     options); a hit returns the cached response and skips the provider.
   - `F-CACHE-02` semantic cache — cosine similarity over embeddings, with a
@@ -305,5 +321,6 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/gavio-ai/gavio/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/gavio-ai/gavio/releases/tag/v0.1.0
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/manojmallick/gavio/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/manojmallick/gavio/releases/tag/v0.1.0
