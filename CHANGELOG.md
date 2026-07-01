@@ -11,6 +11,21 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.3.0] — 2026-07-01
+
+### Summary
+**Observability depth.** Prompt lineage, Prometheus metrics, and composite risk
+scoring — plus buffered streaming reliability — across **Python, Java, and
+JavaScript**. Two new interceptor families ship: `metrics` (Prometheus) and
+`quality` (risk scoring). Semver stability continues.
+
+Tests: Python 122 · JavaScript 135 · Java (16 Maven modules). Feature IDs
+`F-OBS-04`, `F-OBS-08`, `F-QUA-06`, `F-REL-06`.
+
 ### Added
 - **Prompt lineage (all SDKs, `F-OBS-04`)** — new `PromptLineage` value type
   (`template_id`, `template_version`, `variables`, `rag_chunks`) plus a `RagChunk`
