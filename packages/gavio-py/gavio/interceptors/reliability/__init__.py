@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .circuit_breaker import CircuitBreaker, CircuitState
 from .fallback import FallbackChain
 from .policy import ExecutorPolicy
 from .retry import RetryInterceptor
@@ -12,4 +13,6 @@ __all__ = [
     "RetryInterceptor",
     "TimeoutPolicy",
     "FallbackChain",
+    "CircuitBreaker",
+    "CircuitState",
 ]

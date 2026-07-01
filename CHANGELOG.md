@@ -25,6 +25,14 @@ Working toward **v0.2.0 — Production core**.
   - Implemented as an `ExecutorPolicy` (register outermost); sets `cache_hit` /
     `cache_type` on the response. Composes with `PiiGuard` — a cache hit still
     restores PII in the response.
+- **Hash-chain audit (Python, `F-OBS-02`)** — `AuditInterceptor(hash_chain=True)`
+  links each record via `previous_hash` (SHA-256 of the prior record);
+  `verify_chain(records)` detects any edit, reorder, or deletion.
+- **Multi-agent DAG trace (Python, `F-OBS-03`)** — `build_call_graph(records)`
+  reconstructs the call graph from `parent_trace_id` + `agent_id`.
+- **Circuit breaker (Python, `F-REL-03`)** — `CircuitBreaker` `ExecutorPolicy`
+  with closed/open/half-open states; fast-fails with `CircuitOpenError` while
+  open, probes on recovery.
 
 ### Changed
 - `ExecutorPolicy` moved to `gavio.interceptors.executor` (re-exported from

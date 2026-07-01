@@ -27,6 +27,10 @@ class RateLimitError(ProviderError):
     """The provider returned a rate-limit (HTTP 429) signal."""
 
 
+class CircuitOpenError(ProviderUnavailableError):
+    """The circuit breaker is open; the call was rejected without hitting the provider."""
+
+
 class ServerError(ProviderError):
     """The provider returned a 5xx server error."""
 

@@ -6,6 +6,7 @@ from .interceptor import AuditInterceptor
 from .record import SCHEMA_VERSION, AuditRecord
 from .sink import AuditSink
 from .sinks import StdoutSink
+from .trace import TraceNode, build_call_graph, verify_chain
 
 __all__ = [
     "AuditInterceptor",
@@ -13,4 +14,7 @@ __all__ = [
     "AuditSink",
     "StdoutSink",
     "SCHEMA_VERSION",
+    "verify_chain",
+    "build_call_graph",
+    "TraceNode",
 ]

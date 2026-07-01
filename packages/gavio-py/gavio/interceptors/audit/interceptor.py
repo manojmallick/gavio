@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from ...context import InterceptorContext
@@ -24,10 +25,19 @@ class AuditInterceptor(Interceptor):
     sees the final, fully-processed response. It hashes the (already PII-
     redacted) prompt in ``before`` and the response in ``after`` — content is
     never stored, only digests and metadata.
+
+    With ``hash_chain=True`` (F-OBS-02) each record's ``previous_hash`` is set to
+    the SHA-256 of the previous record, forming a tamper-evident chain that
+    :func:`gavio.interceptors.audit.verify_chain` can validate.
     """
 
-    def __init__(self, sink: AuditSink | str | None = None) -> None:
+    def __init__(
+        self, sink: AuditSink | str | None = None, hash_chain: bool = False
+    ) -> None:
         self.sink = _resolve_sink(sink)
+        self.hash_chain = hash_chain
+        self._last_hash = ""
+        self._chain_lock = asyncio.Lock()
 
     @property
     def name(self) -> str:
@@ -69,6 +79,10 @@ class AuditInterceptor(Interceptor):
             guardrail_outcome=ctx.guardrail_outcome,
             risk_score=ctx.risk_score,
         )
+        if self.hash_chain:
+            async with self._chain_lock:
+                record.previous_hash = self._last_hash
+                self._last_hash = record.content_hash()
         response.audit = record
         try:
             await self.sink.write(record)
