@@ -46,6 +46,9 @@
     <module>gavio-interceptor-guardrails</module>
     <module>gavio-provider-openai</module>
     <module>gavio-provider-anthropic</module>
+    <module>gavio-provider-gemini</module>
+    <module>gavio-provider-azure</module>
+    <module>gavio-provider-ollama</module>
     <module>gavio-testing</module>
   </modules>
 
