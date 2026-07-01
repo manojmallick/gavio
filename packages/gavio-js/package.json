@@ -7,31 +7,86 @@
   "engines": {
     "node": ">=18"
   },
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
   "files": [
     "dist",
     "src",
     "README.md"
   ],
   "exports": {
-    ".": "./src/index.ts",
-    "./interceptors/pii": "./src/interceptors/pii/index.ts",
-    "./interceptors/pii/scanners": "./src/interceptors/pii/scanners/index.ts",
-    "./interceptors/audit": "./src/interceptors/audit/index.ts",
-    "./interceptors/audit/sinks": "./src/interceptors/audit/sinks/index.ts",
-    "./interceptors/cache": "./src/interceptors/cache/index.ts",
-    "./interceptors/cache/backends": "./src/interceptors/cache/backends/index.ts",
-    "./interceptors/reliability": "./src/interceptors/reliability/index.ts",
-    "./providers": "./src/providers/index.ts",
-    "./providers/openai": "./src/providers/openai.ts",
-    "./providers/anthropic": "./src/providers/anthropic.ts",
-    "./testing": "./src/testing/index.ts"
+    ".": {
+      "types": "./dist/esm/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/cjs/index.js"
+    },
+    "./interceptors/pii": {
+      "types": "./dist/esm/interceptors/pii/index.d.ts",
+      "import": "./dist/esm/interceptors/pii/index.js",
+      "require": "./dist/cjs/interceptors/pii/index.js"
+    },
+    "./interceptors/pii/scanners": {
+      "types": "./dist/esm/interceptors/pii/scanners/index.d.ts",
+      "import": "./dist/esm/interceptors/pii/scanners/index.js",
+      "require": "./dist/cjs/interceptors/pii/scanners/index.js"
+    },
+    "./interceptors/audit": {
+      "types": "./dist/esm/interceptors/audit/index.d.ts",
+      "import": "./dist/esm/interceptors/audit/index.js",
+      "require": "./dist/cjs/interceptors/audit/index.js"
+    },
+    "./interceptors/audit/sinks": {
+      "types": "./dist/esm/interceptors/audit/sinks/index.d.ts",
+      "import": "./dist/esm/interceptors/audit/sinks/index.js",
+      "require": "./dist/cjs/interceptors/audit/sinks/index.js"
+    },
+    "./interceptors/cache": {
+      "types": "./dist/esm/interceptors/cache/index.d.ts",
+      "import": "./dist/esm/interceptors/cache/index.js",
+      "require": "./dist/cjs/interceptors/cache/index.js"
+    },
+    "./interceptors/cache/backends": {
+      "types": "./dist/esm/interceptors/cache/backends/index.d.ts",
+      "import": "./dist/esm/interceptors/cache/backends/index.js",
+      "require": "./dist/cjs/interceptors/cache/backends/index.js"
+    },
+    "./interceptors/reliability": {
+      "types": "./dist/esm/interceptors/reliability/index.d.ts",
+      "import": "./dist/esm/interceptors/reliability/index.js",
+      "require": "./dist/cjs/interceptors/reliability/index.js"
+    },
+    "./providers": {
+      "types": "./dist/esm/providers/index.d.ts",
+      "import": "./dist/esm/providers/index.js",
+      "require": "./dist/cjs/providers/index.js"
+    },
+    "./providers/openai": {
+      "types": "./dist/esm/providers/openai.d.ts",
+      "import": "./dist/esm/providers/openai.js",
+      "require": "./dist/cjs/providers/openai.js"
+    },
+    "./providers/anthropic": {
+      "types": "./dist/esm/providers/anthropic.d.ts",
+      "import": "./dist/esm/providers/anthropic.js",
+      "require": "./dist/cjs/providers/anthropic.js"
+    },
+    "./testing": {
+      "types": "./dist/esm/testing/index.d.ts",
+      "import": "./dist/esm/testing/index.js",
+      "require": "./dist/cjs/testing/index.js"
+    }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "npm run build:esm && npm run build:cjs && node scripts/finalize-build.mjs",
+    "build:esm": "tsc -p tsconfig.build.esm.json",
+    "build:cjs": "tsc -p tsconfig.build.cjs.json",
+    "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "smoke": "tsc -p tsconfig.build.json && node scripts/smoke.mjs"
+    "smoke": "npm run build && node scripts/smoke.mjs",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "keywords": [
     "ai",

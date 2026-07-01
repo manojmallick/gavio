@@ -11,80 +11,23 @@ Feature IDs reference the [Feature Registry](./MASTER_PLAN.md#4-feature-registry
 
 ## [Unreleased]
 
-Changes in active development, not yet released.
-
-### Added
-- **Python SDK — v0.1.0 Foundation implementation** (`packages/gavio-py`). First
-  working reference implementation of the gateway. Zero mandatory runtime
-  dependencies; Python 3.10+.
-  - Core: `Gateway` fluent builder, `InterceptorChain` (onion pre/post model),
-    `GavioRequest` / `GavioResponse`, `InterceptorContext`, UUID v7 (monotonic)
-    `trace_id`, `agent_id` / `parent_trace_id` fields.
-  - `F-SEC-01` PII Guard regex tier — `EmailScanner`, `IbanScanner` (ISO 13616
-    mod-97), `BsnScanner` (11-proef), `CreditCardScanner` (Luhn),
-    `PhoneScanner`, `IpAddressScanner` (IPv4/IPv6), `SsnScanner`; redact / mask /
-    tag / block modes; restore-on-response; overlap resolution; entity-type
-    logging (never raw values).
-  - `F-SEC-04` `SecretScanner` — API keys, AWS keys, GitHub tokens, JWTs, PEM
-    private keys, DB connection strings.
-  - `F-REL-01` `RetryInterceptor` (exponential backoff + jitter),
-    `F-REL-02` `FallbackChain`, `F-REL-07` `TimeoutPolicy` — composed around the
-    provider call via the `ExecutorPolicy` base.
-  - `F-GOV-01` Token cost tracking — `PricingProvider`, `cost_usd` on every
-    response.
-  - `F-OBS-01` `AuditInterceptor` + `AuditRecord` (SHA-256 prompt/response
-    hashes, metadata only), `F-OBS-05` `StdoutSink`.
-  - `F-DX-01` dev mode (auto-wires `MockProvider` + stdout audit),
-    `F-DX-02` dry-run mode.
-  - Provider adapters: `OpenAIAdapter`, `AnthropicAdapter` (stdlib HTTP, no SDK
-    dependency), `MockProvider`.
-  - `MemoryBackend` cache substrate; `GavioTestKit` + synthetic fixtures.
-  - 37 unit tests passing; ruff clean.
-- **JavaScript/TypeScript SDK — v0.1.0 Foundation** (`packages/gavio-js`). Full
-  parity with the Python reference; zero runtime dependencies; ESM; Node.js 18+.
-  - Core: `Gateway` (object config + `.use()` / `.withAdapter()`),
-    `InterceptorChain`, `GavioRequest` / `GavioResponse` (camelCase), monotonic
-    UUID v7 `traceId`, error hierarchy, factory-function interceptors.
-  - `F-SEC-01` PII Guard regex tier + `F-SEC-04` secret scanner (same 8
-    scanners, checksums, redact/mask/tag/block, restore, overlap resolution).
-  - `F-REL-01/02/07` retry / fallback / timeout via the `ExecutorPolicy` model.
-  - `F-GOV-01` cost tracking, `F-OBS-01/05` audit + stdout sink (SHA-256 via
-    `node:crypto`), `F-DX-01/02` dev + dry-run modes.
-  - Providers: OpenAI, Anthropic (native `fetch`), Mock. `GavioTestKit`.
-  - 59 unit tests passing; `tsc --noEmit` strict clean.
-- **Java SDK — v0.1.0 Foundation** (`packages/gavio-java`). Maven multi-module
-  (`gavio-core`, `-interceptor-pii`, `-interceptor-audit`,
-  `-interceptor-reliability`, `-provider-openai`, `-provider-anthropic`,
-  `-testing`); Java 17 target; zero runtime dependencies (hand-rolled JSON).
-  - Immutable records + builders; `CompletableFuture<GavioResponse>` async;
-    monotonic thread-safe UUID v7; `ExecutorPolicy` composition.
-  - Same feature set: PII Guard + secret scanner, retry/fallback/timeout, cost
-    tracking, audit + stdout sink (`MessageDigest` SHA-256), dev + dry-run.
-  - 50 tests passing across modules (`mvn test` → BUILD SUCCESS).
-- All three SDKs verified to emit identical UUID v7 trace-id format and audit
-  log lines (cross-SDK parity).
-- **Canonical spec** (`spec/`) — JSON Schema (Draft 2020-12) for `GavioRequest`,
-  `GavioResponse`, `AuditRecord`, `PiiMatch`, `InterceptorResult`, plus a README
-  documenting the camelCase wire format and Python snake_case mapping.
-- **Shared cross-SDK test vectors** (`test-vectors/pii/`) — `checksums.json`
-  (single-scanner regex/checksum cases) and `detection.json` (full-guard
-  detection cases), verified against the Python reference. Each SDK loads and
-  runs them in its own suite (Python `test_vectors.py`, JS `test-vectors.test.ts`,
-  Java `TestVectorsTest`), so a parity regression in any language fails its CI.
-- **CI** (`.github/workflows/ci.yml`) — runs all three SDK suites (Python 3.10–3.12,
-  Node 18/20/22, Java 17/21), including the shared vectors, on every push and PR.
-
-### Changed
-- Nothing yet.
+Nothing yet.
 
 ---
 
-## [0.1.0] — TBD
+## [0.1.0] — 2026-07-01
 
 ### Summary
 Foundation release. Working interceptor pipeline with provider adapters,
 PII Guard (regex tier), audit logging, retry/fallback, and dev mode.
-Ships across Python, Java, and JavaScript simultaneously.
+Ships across Python, Java, and JavaScript simultaneously — plus a canonical
+spec (`spec/`) and shared cross-SDK test vectors (`test-vectors/`).
+
+**224 tests total** — Python 63, JavaScript 85, Java 76, each including the
+shared vectors. CI (`.github/workflows/ci.yml`) runs all three suites on every
+push and PR. Provider adapters use no vendor SDKs (stdlib HTTP everywhere).
+The JavaScript package ships a dual ESM + CJS build with per-subpath type
+definitions. Monotonic UUID v7 trace-id format verified identical across SDKs.
 
 ### Added
 
@@ -158,6 +101,16 @@ Ships across Python, Java, and JavaScript simultaneously.
 - Sub-path imports for tree-shaking (`gavio/interceptors/pii`, etc.)
 - Node.js 18+, Deno 1.40+, Bun 1.0+ support
 - `edgeMode: true` for Cloudflare Workers / Vercel Edge
+
+#### Cross-SDK infrastructure
+- Canonical spec in `spec/` — JSON Schema (Draft 2020-12) for `GavioRequest`,
+  `GavioResponse`, `AuditRecord`, `PiiMatch`, `InterceptorResult`
+- Shared test vectors in `test-vectors/pii/` (`checksums.json`, `detection.json`)
+  loaded and run by all three SDKs, enforcing behavioural parity
+- CI workflow (`.github/workflows/ci.yml`) running Python (3.10–3.12),
+  JavaScript (Node 18/20/22), and Java (17/21) suites incl. the shared vectors
+- Repository governance: `LICENSE` (MIT), `CONTRIBUTING.md`, `SECURITY.md`,
+  `CODE_OF_CONDUCT.md`
 
 ### Notes
 - APIs may change before v0.2.0. Semver stability guarantee begins at v0.2.0.

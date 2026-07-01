@@ -6,8 +6,8 @@
  * reply, and prints the audit PII entity types.
  */
 
-import { Gateway } from '../dist/index.js'
-import { piiGuard } from '../dist/interceptors/pii/index.js'
+import { Gateway } from '../dist/esm/index.js'
+import { piiGuard } from '../dist/esm/interceptors/pii/index.js'
 
 const gw = new Gateway({ devMode: true }).use(piiGuard())
 
