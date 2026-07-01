@@ -17,14 +17,14 @@ You only need to do the one-time setup (§1–2) once. After that, releasing is 
 |---|---|---|
 | PyPI | `gavio` | the project name `gavio` on pypi.org |
 | npm | `gavio` | the package name `gavio` on npmjs.com |
-| Maven Central | groupId `io.gavio` | **domain ownership of `gavio.io`** |
+| Maven Central | groupId `io.github.manojmallick` | your GitHub account (auto-verified) |
 
-> ⚠️ **Maven Central namespace.** Central verifies `io.gavio` by asking you to
-> prove you control the `gavio.io` domain (a DNS TXT record). If you do **not**
-> own `gavio.io`, switch the groupId to **`io.github.manojmallick`**, which
-> Central auto-verifies against your GitHub account — no domain needed. That
-> change touches every `pom.xml` (`groupId` + internal dependency `groupId`s);
-> ask and I'll do it.
+> **Maven Central namespace.** The groupId is **`io.github.manojmallick`**, which
+> Sonatype Central auto-verifies against your GitHub account — no domain needed.
+> (The Java package in source stays `io.gavio.*`; groupId and package don't have
+> to match.) To register it: sign in at central.sonatype.com → *Namespaces* →
+> *Add Namespace* → `io.github.manojmallick` → follow the GitHub verification
+> (it has you create a public repo whose name is the verification code).
 
 > If `gavio` is already taken on npm or PyPI, use a scope/owner prefix
 > (`@manojmallick/gavio`, or a different PyPI name) — tell me and I'll update the
@@ -34,7 +34,7 @@ You only need to do the one-time setup (§1–2) once. After that, releasing is 
 
 - **PyPI** — account at https://pypi.org (enable 2FA).
 - **Sonatype Central Portal** — account at https://central.sonatype.com, with the
-  `io.gavio` (or `io.github.manojmallick`) namespace registered + verified.
+  `io.github.manojmallick` namespace registered + verified (GitHub auto-verify).
 - **npm** — account at https://npmjs.com (already set up).
 
 ---

@@ -92,7 +92,7 @@ definitions. Monotonic UUID v7 trace-id format verified identical across SDKs.
 - Java 17+ required (uses records, sealed interfaces)
 - Java 21 virtual thread support for non-blocking I/O
 - `gavio-spring-boot-starter` — auto-configuration, health indicator, Micrometer metrics
-- All artifacts published to Maven Central under `io.gavio` groupId
+- All artifacts published to Maven Central under `io.github.manojmallick` groupId
 
 #### JavaScript-specific
 - `gavio` package on npm — ESM + CJS dual build

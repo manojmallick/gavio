@@ -16,22 +16,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 
 ```xml
 <dependency>
-  <groupId>io.gavio</groupId>
+  <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
   <version>0.1.0</version>
 </dependency>
 <dependency>
-  <groupId>io.gavio</groupId>
+  <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
   <version>0.1.0</version>
 </dependency>
 <dependency>
-  <groupId>io.gavio</groupId>
+  <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
   <version>0.1.0</version>
 </dependency>
 <dependency>
-  <groupId>io.gavio</groupId>
+  <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
   <version>0.1.0</version>
 </dependency>
