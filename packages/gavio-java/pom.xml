@@ -192,7 +192,10 @@
               <!-- server-id 'central' is configured by setup-java in CI. -->
               <publishingServerId>central</publishingServerId>
               <autoPublish>true</autoPublish>
-              <waitUntil>published</waitUntil>
+              <!-- Wait only for validation (bounded), not full publish. Central
+                   auto-publishes after; 'published' can hang for a long time on
+                   a first-time namespace and stall the CI job. -->
+              <waitUntil>validated</waitUntil>
             </configuration>
           </plugin>
         </plugins>
