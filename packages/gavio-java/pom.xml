@@ -45,6 +45,7 @@
     <module>gavio-interceptor-governance</module>
     <module>gavio-interceptor-guardrails</module>
     <module>gavio-interceptor-metrics</module>
+    <module>gavio-interceptor-quality</module>
     <module>gavio-provider-openai</module>
     <module>gavio-provider-anthropic</module>
     <module>gavio-provider-gemini</module>
@@ -109,6 +110,11 @@
       <dependency>
         <groupId>io.github.manojmallick</groupId>
         <artifactId>gavio-interceptor-metrics</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.manojmallick</groupId>
+        <artifactId>gavio-interceptor-quality</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

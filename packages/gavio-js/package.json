@@ -85,6 +85,11 @@
       "import": "./dist/esm/interceptors/metrics/index.js",
       "require": "./dist/cjs/interceptors/metrics/index.js"
     },
+    "./interceptors/quality": {
+      "types": "./dist/esm/interceptors/quality/index.d.ts",
+      "import": "./dist/esm/interceptors/quality/index.js",
+      "require": "./dist/cjs/interceptors/quality/index.js"
+    },
     "./shim/openai": {
       "types": "./dist/esm/shim/openai.d.ts",
       "import": "./dist/esm/shim/openai.js",
