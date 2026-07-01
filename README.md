@@ -230,4 +230,12 @@ gavio/
 
 ## License
 
-[MIT](./LICENSE) © the Gavio project contributors.
+[MIT](./LICENSE) © 2026 Manoj Mallick
+
+---
+
+<div align="center">
+
+MIT © 2026 Manoj Mallick · Made in Amsterdam 🇳🇱
+
+</div>

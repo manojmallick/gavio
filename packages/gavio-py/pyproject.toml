@@ -9,8 +9,12 @@ description = "The open standard AI gateway for production systems — PII prote
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Gavio core team" }]
-keywords = ["llm", "ai", "gateway", "pii", "audit", "openai", "anthropic", "interceptor"]
+authors = [{ name = "Manoj Mallick" }]
+keywords = [
+    "llm", "ai", "ai-gateway", "llm-gateway", "llmops", "gateway",
+    "pii", "pii-redaction", "audit", "observability", "reliability",
+    "cost-tracking", "interceptor", "openai", "anthropic",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",

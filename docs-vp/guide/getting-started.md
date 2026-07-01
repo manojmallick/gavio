@@ -1,3 +1,7 @@
+---
+description: "Get a working LLM call through Gavio in under 5 minutes — Python, JavaScript, or Java. PII redaction, audit, and cost tracking in dev mode, no API key."
+---
+
 # Getting started
 
 Get a working LLM call through Gavio in under 5 minutes — in whichever language

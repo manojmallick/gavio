@@ -1,0 +1,14 @@
+{
+  "name": "gavio-example-quickstart",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Gavio quickstart in plain JavaScript (ESM + CJS).",
+  "scripts": {
+    "start": "node quickstart.mjs",
+    "start:cjs": "node quickstart.cjs"
+  },
+  "dependencies": {
+    "gavio": "^0.1.0"
+  }
+}

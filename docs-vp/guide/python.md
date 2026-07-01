@@ -1,3 +1,7 @@
+---
+description: "Gavio Python SDK guide — install, Gateway API, interceptors, providers, testing. Async-first, zero mandatory dependencies, Python 3.10+."
+---
+
 # Python SDK (`gavio`)
 
 > PyPI package `gavio` · Python 3.10+ · async-first · zero mandatory dependencies

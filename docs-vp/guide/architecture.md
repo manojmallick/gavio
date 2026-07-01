@@ -1,3 +1,7 @@
+---
+description: "How Gavio works: request lifecycle, the pre/post interceptor chain, executor policies for retry/timeout/fallback, and the canonical data model."
+---
+
 # Architecture
 
 Gavio is a thin, deterministic pipeline around a provider call. Understanding

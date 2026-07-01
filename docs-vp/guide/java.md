@@ -1,3 +1,7 @@
+---
+description: "Gavio Java SDK guide — Maven artifacts, Gateway API, interceptors, providers, testing. Java 17+, CompletableFuture async, zero mandatory dependencies."
+---
+
 # Java SDK (`io.github.manojmallick:gavio-*`)
 
 > Maven Central · Java 17+ · immutable records + builders · `CompletableFuture`

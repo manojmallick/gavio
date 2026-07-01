@@ -1,8 +1,13 @@
 import { defineConfig } from 'vitepress'
 
+// Canonical docs domain — change this to your deployed docs URL.
+const HOSTNAME = 'https://gavio.io'
+
 export default defineConfig({
   base: '/',
+  lang: 'en-US',
   title: 'Gavio',
+  titleTemplate: ':title · Gavio — AI gateway',
   description:
     'The open standard AI gateway for production systems. PII protection, audit trails, reliability, and cost control as composable interceptors — same API in Python, Java, and JavaScript.',
 
@@ -10,9 +15,42 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
 
+  // Generates /sitemap.xml for search engines.
+  sitemap: { hostname: HOSTNAME },
+
   head: [
+    ['meta', { name: 'author', content: 'Manoj Mallick' }],
+    [
+      'meta',
+      {
+        name: 'keywords',
+        content:
+          'ai gateway, llm gateway, pii redaction, pii guard, llm audit, ai observability, ai reliability, retry fallback, openai, anthropic, python ai gateway, java ai gateway, javascript ai gateway, gavio',
+      },
+    ],
+    ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: 'Gavio' }],
+    ['meta', { property: 'og:title', content: 'Gavio — the open standard AI gateway' }],
+    [
+      'meta',
+      {
+        property: 'og:description',
+        content:
+          'PII protection, audit trails, reliability, and cost control as composable interceptors. Same API in Python, Java, and JavaScript.',
+      },
+    ],
+    ['meta', { property: 'og:url', content: HOSTNAME + '/' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:title', content: 'Gavio — the open standard AI gateway' }],
+    [
+      'meta',
+      {
+        name: 'twitter:description',
+        content:
+          'PII protection, audit, reliability, cost control — one interceptor API in Python, Java, and JavaScript.',
+      },
+    ],
+    ['link', { rel: 'canonical', href: HOSTNAME + '/' }],
   ],
 
   themeConfig: {

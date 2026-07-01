@@ -1,3 +1,7 @@
+---
+description: "Gavio's built-in interceptors — PII Guard, secret scanner, retry, fallback, timeout, audit — and how to write your own scanner or interceptor."
+---
+
 # Interceptors
 
 Every Gavio feature is an interceptor. This page covers the built-ins shipped in

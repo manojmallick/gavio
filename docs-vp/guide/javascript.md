@@ -1,3 +1,7 @@
+---
+description: "Gavio JavaScript/TypeScript SDK guide — install, Gateway API, dual ESM+CJS, sub-path imports, providers, testing. Node 18+, zero runtime deps."
+---
+
 # JavaScript / TypeScript SDK (`gavio`)
 
 > npm package `gavio` · Node 18+ · TypeScript · dual ESM + CJS · zero runtime deps
