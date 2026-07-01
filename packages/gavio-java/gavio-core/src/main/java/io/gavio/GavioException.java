@@ -92,4 +92,39 @@ public class GavioException extends RuntimeException {
             super(message);
         }
     }
+
+    /** The circuit breaker is open; the call was rejected without hitting the provider. */
+    public static class CircuitOpenException extends ProviderUnavailableException {
+        public CircuitOpenException(String message) {
+            super(message);
+        }
+    }
+
+    /** A local rate limit (requests/tokens per minute) was exceeded. */
+    public static class RateLimitExceededException extends GavioException {
+        public RateLimitExceededException(String message) {
+            super(message);
+        }
+    }
+
+    /** The caller's role is not permitted to use the requested model (RBAC). */
+    public static class ModelNotAllowedException extends GavioException {
+        public ModelNotAllowedException(String role, String model) {
+            super("role '" + role + "' may not use model '" + model + "'");
+        }
+    }
+
+    /** Output failed a guardrail validator with onFailure=ERROR. */
+    public static class GuardrailViolationException extends GavioException {
+        public GuardrailViolationException(String message) {
+            super(message);
+        }
+    }
+
+    /** A prompt-injection attempt was detected and the guard is in block mode. */
+    public static class PromptInjectionException extends GavioException {
+        public PromptInjectionException(String message) {
+            super(message);
+        }
+    }
 }

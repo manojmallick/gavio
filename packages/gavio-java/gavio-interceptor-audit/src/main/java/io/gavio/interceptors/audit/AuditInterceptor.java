@@ -26,13 +26,20 @@ public final class AuditInterceptor implements Interceptor {
     private static final String PROMPT_HASH_KEY = "audit_prompt_hash";
 
     private final AuditSink sink;
+    private final boolean hashChain;
+    private String lastHash = "";
 
     public AuditInterceptor() {
-        this(new StdoutSink());
+        this(new StdoutSink(), false);
     }
 
     public AuditInterceptor(AuditSink sink) {
+        this(sink, false);
+    }
+
+    public AuditInterceptor(AuditSink sink, boolean hashChain) {
         this.sink = sink != null ? sink : new StdoutSink();
+        this.hashChain = hashChain;
     }
 
     @Override
@@ -55,7 +62,12 @@ public final class AuditInterceptor implements Interceptor {
     public CompletableFuture<GavioResponse> after(GavioResponse response, InterceptorContext ctx) {
         Object promptHash = ctx.state().get(PROMPT_HASH_KEY);
         CacheType ct = response.cacheType();
+        String prev;
+        synchronized (this) {
+            prev = hashChain ? lastHash : "";
+        }
         AuditRecord record = AuditRecord.builder()
+                .previousHash(prev)
                 .traceId(response.traceId())
                 .parentTraceId(ctx.parentTraceId())
                 .agentId(ctx.agentId())
@@ -78,6 +90,11 @@ public final class AuditInterceptor implements Interceptor {
                 .riskScore(ctx.riskScore())
                 .build();
 
+        if (hashChain) {
+            synchronized (this) {
+                lastHash = record.contentHash();
+            }
+        }
         GavioResponse withAudit = response.withAudit(record);
         try {
             sink.write(record).join();
@@ -95,14 +112,20 @@ public final class AuditInterceptor implements Interceptor {
     /** Fluent builder for {@link AuditInterceptor}. */
     public static final class Builder {
         private AuditSink sink = new StdoutSink();
+        private boolean hashChain = false;
 
         public Builder sink(AuditSink sink) {
             this.sink = sink;
             return this;
         }
 
+        public Builder hashChain(boolean hashChain) {
+            this.hashChain = hashChain;
+            return this;
+        }
+
         public AuditInterceptor build() {
-            return new AuditInterceptor(sink);
+            return new AuditInterceptor(sink, hashChain);
         }
     }
 }
