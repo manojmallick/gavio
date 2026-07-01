@@ -11,7 +11,25 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+Working toward **v0.2.0 — Production core**.
+
+### Added
+- **Caching (Python)** — `SemanticCache` interceptor:
+  - `F-CACHE-01` exact SHA-256 cache (keyed on provider + model + messages +
+    options); a hit returns the cached response and skips the provider.
+  - `F-CACHE-02` semantic cache — cosine similarity over embeddings, with a
+    configurable `similarity_threshold`. Ships a zero-dependency
+    `HashingEmbedder` (pluggable `Embedder` protocol for real embedders).
+  - `F-CACHE-03` in-memory backends — `MemoryBackend` (exact) and
+    `InMemoryVectorBackend` (semantic).
+  - Implemented as an `ExecutorPolicy` (register outermost); sets `cache_hit` /
+    `cache_type` on the response. Composes with `PiiGuard` — a cache hit still
+    restores PII in the response.
+
+### Changed
+- `ExecutorPolicy` moved to `gavio.interceptors.executor` (re-exported from
+  `interceptors.reliability.policy` for compatibility) so caching and
+  reliability share it.
 
 ---
 
