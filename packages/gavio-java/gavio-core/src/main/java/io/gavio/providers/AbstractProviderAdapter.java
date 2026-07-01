@@ -14,6 +14,19 @@ public abstract class AbstractProviderAdapter implements ProviderAdapter {
         this.pricing = pricing != null ? pricing : new PricingProvider();
     }
 
+    /**
+     * Build a response from a fully buffered stream (F-REL-06). Streamed chunks
+     * carry text only, so token usage is estimated from prompt + content.
+     */
+    @Override
+    public GavioResponse buildStreamResponse(GavioRequest request, String content, long startedNanos) {
+        TokenUsage usage = new TokenUsage(
+                PricingProvider.estimateTokens(request.promptText()),
+                PricingProvider.estimateTokens(content));
+        String mv = reportedModelVersion().orElse(request.model());
+        return buildResponse(request, content, usage, mv, startedNanos);
+    }
+
     protected GavioResponse buildResponse(
             GavioRequest request,
             String content,

@@ -17,6 +17,11 @@ public interface ProviderAdapter {
         throw new UnsupportedOperationException(providerName() + " does not support streaming");
     }
 
+    /** Build a response from a fully buffered stream (F-REL-06). */
+    default GavioResponse buildStreamResponse(GavioRequest request, String content, long startedNanos) {
+        throw new UnsupportedOperationException(providerName() + " does not support streaming");
+    }
+
     CompletableFuture<Boolean> healthCheck();
 
     default Optional<String> reportedModelVersion() {

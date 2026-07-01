@@ -6,12 +6,14 @@ import io.gavio.interceptors.Interceptor;
 import io.gavio.interceptors.InterceptorChain;
 import io.gavio.interceptors.InterceptorContext;
 import io.gavio.providers.ProviderAdapter;
+import io.gavio.providers.StreamBuffer;
 import io.gavio.types.Message;
 import io.gavio.types.Provider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 
 /**
  * The entry point. Wires interceptors around a provider adapter.
@@ -90,6 +92,62 @@ public final class Gateway {
             options.forEach(b::option);
         }
         return complete(b.build());
+    }
+
+    /**
+     * Stream a completion, buffering the provider stream (F-REL-06).
+     *
+     * <p>The provider stream is buffered in full so the post-interceptor pipeline
+     * (guardrails, PII restore, audit) runs on the complete response before any
+     * chunk reaches the caller. The returned publisher emits the final, fully
+     * processed content as a single item. Pre/post interceptors run via the
+     * chain; executor policies (retry, circuit breaker, cache) are not applied to
+     * the streaming path.
+     */
+    public Flow.Publisher<String> stream(GavioRequest request) {
+        InterceptorContext ctx = new InterceptorContext(request.traceId())
+                .agentId(request.agentId())
+                .parentTraceId(request.parentTraceId())
+                .sessionId(request.sessionId())
+                .dryRun(dryRun);
+        long started = System.nanoTime();
+        Executor bufferingExecutor = req -> StreamBuffer.collect(adapter.stream(req))
+                .thenApply(buffer -> adapter.buildStreamResponse(req, buffer.text(), started));
+        CompletableFuture<GavioResponse> responseFuture = chain.execute(request, ctx, bufferingExecutor);
+
+        return subscriber -> subscriber.onSubscribe(new Flow.Subscription() {
+            private boolean served = false;
+
+            @Override
+            public void request(long n) {
+                if (served || n <= 0) {
+                    return;
+                }
+                served = true;
+                responseFuture.whenComplete((response, error) -> {
+                    if (error != null) {
+                        subscriber.onError(error);
+                    } else {
+                        subscriber.onNext(response.content());
+                        subscriber.onComplete();
+                    }
+                });
+            }
+
+            @Override
+            public void cancel() {
+                served = true;
+            }
+        });
+    }
+
+    /** Convenience overload matching {@code complete(messages)}. */
+    public Flow.Publisher<String> stream(List<Message> messages) {
+        return stream(GavioRequest.builder()
+                .messages(messages)
+                .model(model)
+                .provider(Provider.coerce(adapter.providerName()))
+                .build());
     }
 
     public CompletableFuture<Boolean> healthCheck() {

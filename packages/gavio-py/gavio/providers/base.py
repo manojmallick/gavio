@@ -6,7 +6,7 @@ import time
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 
-from ..pricing import PricingProvider
+from ..pricing import PricingProvider, estimate_tokens
 from ..request import GavioRequest
 from ..response import GavioResponse
 from ..types import TokenUsage
@@ -38,6 +38,21 @@ class ProviderAdapter(ABC):
     @property
     def reported_model_version(self) -> str | None:
         return None
+
+    def build_stream_response(
+        self, request: GavioRequest, content: str, started_at: float
+    ) -> GavioResponse:
+        """Build a response from a fully buffered stream (F-REL-06).
+
+        Streamed chunks carry text only, so token usage is estimated from the
+        assembled prompt and content.
+        """
+        usage = TokenUsage(
+            prompt_tokens=estimate_tokens(request.prompt_text()),
+            completion_tokens=estimate_tokens(content),
+        )
+        model_version = self.reported_model_version or request.model
+        return self._build_response(request, content, usage, model_version, started_at)
 
     def _build_response(
         self,
