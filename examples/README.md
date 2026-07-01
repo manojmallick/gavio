@@ -13,6 +13,12 @@ Examples 01 and 03 need **no API key** (dev mode). Example 02 uses a real
 provider if `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is set, and otherwise falls
 back to the mock provider so it always runs.
 
+### v0.2.0
+
+| # | Project | What it shows | Needs a key? |
+|---|---|---|---|
+| 04 | [python/04-production-stack](./python/04-production-stack/) | The **Production core** stack — hash-chain audit → PII → rate limit → guardrails → semantic cache | no |
+
 ## Run them
 
 **Python** (3.10+)

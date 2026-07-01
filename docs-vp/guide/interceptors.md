@@ -1,18 +1,18 @@
----
-description: "Gavio's built-in interceptors — PII Guard, secret scanner, retry, fallback, timeout, audit — and how to write your own scanner or interceptor."
----
-
 # Interceptors
 
-Every Gavio feature is an interceptor. This page covers the built-ins shipped in
-v0.1.0 and how to write your own.
+Every Gavio feature is an interceptor. This page covers the built-ins and how to
+write your own.
 
-- [PII Guard](#pii-guard-f-sec-01)
-- [Secret scanner](#secret-scanner-f-sec-04)
-- [Reliability: retry / timeout / fallback](#reliability)
-- [Audit](#audit-f-obs-01)
-- [Writing a custom scanner](#writing-a-custom-scanner)
-- [Writing a custom interceptor](#writing-a-custom-interceptor)
+**v0.1.0** — [PII Guard](#pii-guard-f-sec-01) ·
+[Secret scanner](#secret-scanner-f-sec-04) · [Reliability](#reliability) ·
+[Audit](#audit-f-obs-01) · [custom scanner](#writing-a-custom-scanner) ·
+[custom interceptor](#writing-a-custom-interceptor)
+
+**v0.2.0 (Production core)** — [Caching](#caching-f-cache-010203) ·
+[Circuit breaker + load balancer](#reliability--circuit-breaker--load-balancer-f-rel-0304) ·
+[Governance](#governance-f-gov-020304) · [Guardrails](#guardrails-f-qua-0102) ·
+[Prompt-injection](#prompt-injection-defense-f-sec-05) ·
+[Tamper-evident audit](#tamper-evident-audit--multi-agent-trace-f-obs-0203)
 
 ---
 
@@ -144,3 +144,100 @@ class HeaderTagger(Interceptor):
 
 For something that must retry or wrap the provider call, subclass
 `ExecutorPolicy` and implement `around(request, ctx, call_next)` instead.
+
+---
+
+## v0.2.0 — Production core interceptors
+
+The following ship in v0.2.0 across all three SDKs. API names below use the
+Python style; JavaScript uses camelCase factory functions
+(`semanticCache()`, `circuitBreaker()`, …) and Java uses builders
+(`SemanticCache.builder()`, `CircuitBreaker.builder()`, …).
+
+### Caching (`F-CACHE-01/02/03`)
+
+`SemanticCache` is an `ExecutorPolicy` — a hit returns the cached response and
+skips the provider. Register it **outermost**. Exact SHA-256 tier is always on;
+pass an `embedder` to enable the semantic (cosine-similarity) tier.
+
+```python
+from gavio.interceptors.cache import SemanticCache, HashingEmbedder
+
+SemanticCache(
+    embedder=HashingEmbedder(),        # omit for exact-only
+    similarity_threshold=0.95,
+    exact_ttl_seconds=3600,
+)
+```
+
+A cache hit sets `cache_hit` / `cache_type` on the response and composes with
+`PiiGuard` (PII is still restored). The `HashingEmbedder` is zero-dependency;
+plug in a real embedder implementing the `Embedder` protocol for production.
+
+### Reliability — circuit breaker + load balancer (`F-REL-03/04`)
+
+```python
+from gavio.interceptors.reliability import CircuitBreaker, LoadBalancer
+
+CircuitBreaker(failure_threshold=5, recovery_timeout_seconds=30)  # fast-fails while open
+LoadBalancer([adapter_a, adapter_b], weights=[2, 1])              # weighted round-robin
+```
+
+Both are `ExecutorPolicy`. The breaker opens after N consecutive provider errors
+and fast-fails with `CircuitOpenError`; the balancer distributes across a pool of
+provider adapters.
+
+### Governance (`F-GOV-02/03/04`)
+
+```python
+from gavio.interceptors.governance import CostControl, RateLimiter, ModelPolicy
+
+CostControl(hard_cap_usd=50, soft_cap_usd=10, scope="agent", window="day")   # budget
+RateLimiter(max_requests_per_minute=60, max_tokens_per_minute=100_000)       # rate limit
+ModelPolicy(roles={"analyst": ["gpt-4o-mini"], "admin": ["*"]})              # RBAC
+```
+
+Budget blocks with `BudgetExceededError`, rate limiting with
+`RateLimitExceededError`, and RBAC with `ModelNotAllowedError` (role read from
+`request.metadata["role"]`).
+
+### Guardrails (`F-QUA-01/02`)
+
+```python
+from gavio.interceptors.guardrails import GuardrailsInterceptor
+from gavio.interceptors.guardrails.validators import (
+    JsonSchemaValidator, RegexDenylistValidator, RegexAllowlistValidator,
+)
+
+GuardrailsInterceptor(
+    validators=[JsonSchemaValidator({"type": "object", "required": ["answer"]}),
+                RegexDenylistValidator([r"(?i)competitor"])],
+    on_failure="error",   # error | retry | warn
+)
+```
+
+An `ExecutorPolicy` that validates the response; on failure it raises
+`GuardrailViolationError`, retries the provider, or warns. Records
+`guardrail_outcome` for the audit trail.
+
+### Prompt-injection defense (`F-SEC-05`)
+
+```python
+from gavio.interceptors.injection import PromptInjectionGuard
+
+PromptInjectionGuard(action="block")   # or "flag"
+```
+
+Scans user/tool messages against a curated pattern corpus (Python/JS also
+support an optional semantic tier via an `embedder`); blocks with
+`PromptInjectionError` or flags by setting `risk_score`.
+
+### Tamper-evident audit + multi-agent trace (`F-OBS-02/03`)
+
+```python
+from gavio.interceptors.audit import AuditInterceptor, verify_chain, build_call_graph
+
+AuditInterceptor(hash_chain=True)   # links records via previous_hash
+verify_chain(records)               # detects any edit/reorder/deletion
+build_call_graph(records)           # reconstruct the multi-agent DAG
+```

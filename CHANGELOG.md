@@ -41,33 +41,33 @@ deferred — the Spring starter / explicit builders are the idiomatic path).
   - Implemented as an `ExecutorPolicy` (register outermost); sets `cache_hit` /
     `cache_type` on the response. Composes with `PiiGuard` — a cache hit still
     restores PII in the response.
-- **Hash-chain audit (Python, `F-OBS-02`)** — `AuditInterceptor(hash_chain=True)`
+- **Hash-chain audit (all SDKs, `F-OBS-02`)** — `AuditInterceptor(hash_chain=True)`
   links each record via `previous_hash` (SHA-256 of the prior record);
   `verify_chain(records)` detects any edit, reorder, or deletion.
-- **Multi-agent DAG trace (Python, `F-OBS-03`)** — `build_call_graph(records)`
+- **Multi-agent DAG trace (all SDKs, `F-OBS-03`)** — `build_call_graph(records)`
   reconstructs the call graph from `parent_trace_id` + `agent_id`.
-- **Circuit breaker (Python, `F-REL-03`)** — `CircuitBreaker` `ExecutorPolicy`
+- **Circuit breaker (all SDKs, `F-REL-03`)** — `CircuitBreaker` `ExecutorPolicy`
   with closed/open/half-open states; fast-fails with `CircuitOpenError` while
   open, probes on recovery.
-- **Governance (Python)** — `CostControl` budget caps (`F-GOV-02`, soft/hard per
+- **Governance (all SDKs)** — `CostControl` budget caps (`F-GOV-02`, soft/hard per
   scope+window), `RateLimiter` (`F-GOV-03`, requests + tokens per minute),
   `ModelPolicy` RBAC allowlists (`F-GOV-04`). New errors: `RateLimitExceededError`,
   `ModelNotAllowedError`.
-- **Guardrails (Python)** — `GuardrailsInterceptor` (`ExecutorPolicy`, on_failure
+- **Guardrails (all SDKs)** — `GuardrailsInterceptor` (`ExecutorPolicy`, on_failure
   error/retry/warn) with `JsonSchemaValidator` (`F-QUA-01`, zero-dep JSON Schema
   subset) and `RegexDenylistValidator` / `RegexAllowlistValidator` (`F-QUA-02`);
   records `guardrail_outcome` for the audit trail.
-- **New provider adapters (Python)** — `GeminiAdapter` (role/system mapping),
+- **New provider adapters (all SDKs)** — `GeminiAdapter` (role/system mapping),
   `AzureOpenAIAdapter` (deployment routing), `OllamaAdapter` (local, free);
   registered in the provider registry with pricing entries. All stdlib HTTP.
-- **Prompt injection defense (Python, `F-SEC-05`)** — `PromptInjectionGuard`
+- **Prompt injection defense (all SDKs, `F-SEC-05`)** — `PromptInjectionGuard`
   (curated pattern corpus + optional semantic similarity); block or flag,
   records a `risk_score`. New `PromptInjectionError`.
-- **Load balancing (Python, `F-REL-04`)** — `LoadBalancer` `ExecutorPolicy`,
+- **Load balancing (all SDKs, `F-REL-04`)** — `LoadBalancer` `ExecutorPolicy`,
   weighted round-robin across a pool of provider adapters.
-- **OpenAI drop-in shim (Python, `F-DX-04`)** — `gavio.shim.openai.GavioOpenAI`
+- **OpenAI drop-in shim (all SDKs, `F-DX-04`)** — `gavio.shim.openai.GavioOpenAI`
   with an OpenAI-client-shaped `chat.completions.create` / `acreate`.
-- **Config loader (Python, `F-DX-05`)** — `Gateway.from_config(path | dict)`
+- **Config loader (Python + JavaScript; Java deferred, `F-DX-05`)** — `Gateway.from_config(path | dict)`
   builds a gateway from JSON (stdlib) or YAML (optional PyYAML), with `${ENV}`
   expansion.
 

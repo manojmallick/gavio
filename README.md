@@ -37,12 +37,12 @@ provider, log an audit trail, track spend. Gavio ships them once, as swappable
 interceptors, with **identical behaviour across three languages** — enforced by
 [shared test vectors](./test-vectors/).
 
-- **Provider-agnostic** — OpenAI, Anthropic, Mock (more in v0.2.0). Switching is a config change.
+- **Provider-agnostic** — OpenAI, Anthropic, Gemini, Azure, Ollama, Mock. Switching is a config change.
 - **Zero mandatory dependencies** in every core (stdlib HTTP everywhere — no vendor SDKs).
 - **Dev mode** — the whole stack runs in-process with a mock provider. No API key, no network.
 - **Audit by default** — every call logged as metadata + SHA-256 content hashes (never raw text).
 
-> **Status:** v0.1.0 (Foundation). Pre-1.0, APIs may change until v0.2.0. See the [CHANGELOG](./CHANGELOG.md).
+> **Status:** v0.2.0 (Production core). Pre-1.0, APIs may still change. See the [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -117,7 +117,7 @@ showing `EMAIL` was detected and redacted before the (mock) provider ever saw it
 |---|---|---|
 | **Python** 3.10+ | `pip install gavio` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
 | **JavaScript** (Node 18+) | `npm install gavio` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:0.1.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:0.2.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -161,7 +161,7 @@ Immutable records + builders, `CompletableFuture` async, Java 17+.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
 </dependency>
 ```
 
@@ -169,7 +169,9 @@ Immutable records + builders, `CompletableFuture` async, Java 17+.
 
 ---
 
-## What ships in v0.1.0
+## What ships
+
+**v0.1.0 — Foundation**
 
 | Area | Feature | ID |
 |---|---|---|
@@ -181,9 +183,21 @@ Immutable records + builders, `CompletableFuture` async, Java 17+.
 | **DX** | Dev mode, dry-run mode, test kit | `F-DX-01/02` |
 | **Providers** | OpenAI, Anthropic (stdlib HTTP), Mock | — |
 
-**224 tests** across the three SDKs (Python 63 · JavaScript 85 · Java 76), each
-running the [shared cross-SDK vectors](./test-vectors/). Roadmap → v0.2.0
-(caching, circuit breaker, multi-agent DAG trace, NER PII, guardrails).
+**v0.2.0 — Production core**
+
+| Area | Feature | ID |
+|---|---|---|
+| **Caching** | Semantic + exact cache (cosine + SHA-256), in-memory backends | `F-CACHE-01/02/03` |
+| **Reliability** | Circuit breaker, load balancer | `F-REL-03/04` |
+| **Governance** | Budget caps, rate limiting, model RBAC | `F-GOV-02/03/04` |
+| **Quality** | Guardrails — JSON-schema + regex allow/deny | `F-QUA-01/02` |
+| **Security** | Prompt-injection defense | `F-SEC-05` |
+| **Observability** | Hash-chain (tamper-evident) audit, multi-agent DAG trace | `F-OBS-02/03` |
+| **DX** | OpenAI drop-in shim, config loader | `F-DX-04/05` |
+| **Providers** | Gemini, Azure OpenAI, Ollama | — |
+
+**325 tests** across the three SDKs (Python 102 · JavaScript 115 · Java 108).
+See the [CHANGELOG](./CHANGELOG.md) and [interceptors guide](./docs/interceptors.md).
 
 ---
 
