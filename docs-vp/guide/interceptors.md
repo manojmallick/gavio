@@ -14,6 +14,11 @@ write your own.
 [Prompt-injection](#prompt-injection-defense-f-sec-05) ·
 [Tamper-evident audit](#tamper-evident-audit--multi-agent-trace-f-obs-0203)
 
+**v0.3.0 (Observability depth)** — [Prompt lineage](#prompt-lineage-f-obs-04) ·
+[Prometheus metrics](#prometheus-metrics-f-obs-08) ·
+[Risk scoring](#risk-scoring-f-qua-06) ·
+[Streaming](#streaming--streambuffer-f-rel-06)
+
 ---
 
 ## PII Guard (`F-SEC-01`)
@@ -241,3 +246,90 @@ AuditInterceptor(hash_chain=True)   # links records via previous_hash
 verify_chain(records)               # detects any edit/reorder/deletion
 build_call_graph(records)           # reconstruct the multi-agent DAG
 ```
+
+---
+
+## v0.3.0 — Observability depth
+
+Ships in v0.3.0 across all three SDKs. Python style shown; JavaScript uses
+camelCase factories (`metricsInterceptor()`, `riskScorer()`) and Java uses
+classes / builders (`new MetricsInterceptor()`, `new RiskScorer()`).
+
+### Prompt lineage (`F-OBS-04`)
+
+Attach the provenance of a prompt — the template, the variables bound into it,
+and the RAG chunk **sources** — to a request. The audit interceptor copies it
+onto the `AuditRecord` so any prompt can be reconstructed and debugged. RAG chunk
+*text is never stored* — only source references — so the record stays
+metadata-only.
+
+```python
+from gavio import PromptLineage, RagChunk
+
+await gw.complete(
+    messages=[...],
+    lineage=PromptLineage(
+        template_id="support-reply",
+        template_version="v3",
+        variables={"customer": "Ada", "tier": "gold"},
+        rag_chunks=[RagChunk(source="doc://kb/refunds", chunk_id="c1", score=0.92)],
+    ),
+)
+```
+
+Lineage participates in the hash-chain `contentHash()`. Also threaded through
+`Gateway.stream(...)`.
+
+### Prometheus metrics (`F-OBS-08`)
+
+`MetricsInterceptor` records per-request metrics into a `PrometheusMetrics`
+registry; scrape it via `render()` for the Prometheus text exposition format —
+no client library, zero dependencies.
+
+```python
+from gavio.interceptors.metrics import MetricsInterceptor
+
+metrics = MetricsInterceptor()
+gw = Gateway.builder().dev_mode(True).use(metrics).build()
+# ...
+print(metrics.metrics.render())
+```
+
+Emits `gavio_requests_total`, `gavio_tokens_total{kind}`, `gavio_cost_usd_total`,
+`gavio_request_latency_ms` (histogram), and `gavio_cache_hits_total` — all
+labelled by `provider` and `model`. (Python `gavio.interceptors.metrics`; JS
+`gavio/interceptors/metrics`; Java module `gavio-interceptor-metrics`.)
+
+### Risk scoring (`F-QUA-06`)
+
+`RiskScorer` folds the per-request signals other interceptors leave on the
+context — PII entities found, guardrail outcome (`FAIL`/`HITL`), and the
+prompt-injection risk — into a single composite score in `[0, 1]`, written to
+`ctx.risk_score` and recorded on the `AuditRecord`.
+
+```python
+from gavio.interceptors.quality import RiskScorer, RiskWeights
+
+RiskScorer()                                   # default weights
+RiskScorer(RiskWeights(pii=0.3, guardrail=0.4, injection=0.3, pii_saturation=4))
+```
+
+Register it **inside** the audit interceptor so audit sees the composite. Weights
+are configurable and the composite is clamped. (New `quality` family: Python
+`gavio.interceptors.quality`; JS `gavio/interceptors/quality`; Java module
+`gavio-interceptor-quality`.)
+
+### Streaming — StreamBuffer (`F-REL-06`)
+
+`Gateway.stream(...)` drives the provider's streaming API but **buffers** the
+response in full (via `StreamBuffer`) before the post-interceptor pipeline runs —
+so guardrails, PII restore, and audit see, and can rewrite or block, the complete
+response before any chunk reaches the caller.
+
+```python
+async for chunk in gw.stream(messages=[{"role": "user", "content": "hi"}]):
+    print(chunk, end="")
+```
+
+Executor policies (retry, circuit breaker, cache) are not applied to the
+streaming path in this release.

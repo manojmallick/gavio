@@ -27,19 +27,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:0.2.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:0.2.0")
+implementation("io.github.manojmallick:gavio-core:0.3.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:0.3.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -58,6 +58,8 @@ implementation("io.github.manojmallick:gavio-interceptor-pii:0.2.0")
 | `gavio-interceptor-reliability` | `RetryInterceptor`, `TimeoutPolicy`, `FallbackChain`, `CircuitBreaker`, `LoadBalancer` |
 | `gavio-interceptor-governance` | `CostControl`, `RateLimiter`, `ModelPolicy` |
 | `gavio-interceptor-guardrails` | `GuardrailsInterceptor`, JSON-schema + regex validators |
+| `gavio-interceptor-metrics` | `MetricsInterceptor`, `PrometheusMetrics` (F-OBS-08) |
+| `gavio-interceptor-quality` | `RiskScorer`, `RiskWeights` (F-QUA-06) |
 | `gavio-provider-openai` | `OpenAiAdapter` (+ `GavioOpenAI` drop-in shim) |
 | `gavio-provider-anthropic` | `AnthropicAdapter` |
 | `gavio-provider-gemini` | `GeminiAdapter` |
