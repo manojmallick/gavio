@@ -80,8 +80,9 @@ def test_complete_sync_outside_loop():
 
 
 async def test_unavailable_provider_raises():
+    # Bedrock ships in v0.3.0 — not yet in the registry.
     with pytest.raises(ConfigurationError):
-        Gateway.builder().provider(Provider.GEMINI).build()
+        Gateway.builder().provider(Provider.BEDROCK).build()
 
 
 async def test_dry_run_does_not_redact():

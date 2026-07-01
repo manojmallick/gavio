@@ -41,6 +41,9 @@ Working toward **v0.2.0 — Production core**.
   error/retry/warn) with `JsonSchemaValidator` (`F-QUA-01`, zero-dep JSON Schema
   subset) and `RegexDenylistValidator` / `RegexAllowlistValidator` (`F-QUA-02`);
   records `guardrail_outcome` for the audit trail.
+- **New provider adapters (Python)** — `GeminiAdapter` (role/system mapping),
+  `AzureOpenAIAdapter` (deployment routing), `OllamaAdapter` (local, free);
+  registered in the provider registry with pricing entries. All stdlib HTTP.
 
 ### Changed
 - `ExecutorPolicy` moved to `gavio.interceptors.executor` (re-exported from
