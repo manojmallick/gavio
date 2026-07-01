@@ -1,0 +1,46 @@
+name: Release npm (manual)
+
+# Manually publish the gavio-js package to npm from the default branch.
+# Use this to (re)publish npm independently of the tag-triggered full release
+# (e.g. after a provenance/package.json fix) without touching PyPI or Maven.
+
+on:
+  workflow_dispatch:
+    inputs:
+      provenance:
+        description: 'Attach build provenance'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write   # npm provenance (OIDC)
+
+jobs:
+  publish-npm:
+    name: Publish → npmjs.com
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install, typecheck, test
+        working-directory: packages/gavio-js
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+
+      - name: Publish to npm
+        working-directory: packages/gavio-js
+        run: |
+          if [ "${{ inputs.provenance }}" = "true" ]; then
+            npm publish --provenance --access public
+          else
+            npm publish --access public
+          fi
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
