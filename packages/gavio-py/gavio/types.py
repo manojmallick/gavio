@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 # A provider-agnostic chat message. Kept as a plain dict for ergonomics and
 # zero-dependency JSON serialisation.
@@ -72,4 +73,45 @@ class TokenUsage:
             "prompt_tokens": self.prompt_tokens,
             "completion_tokens": self.completion_tokens,
             "total_tokens": self.total_tokens,
+        }
+
+
+@dataclass(frozen=True)
+class RagChunk:
+    """A single retrieved source that contributed to a prompt.
+
+    Carries a *reference* to the source — never the retrieved text — so prompt
+    lineage stays within the audit record's metadata-only contract.
+    """
+
+    source: str
+    chunk_id: str | None = None
+    score: float | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"source": self.source, "chunk_id": self.chunk_id, "score": self.score}
+
+
+@dataclass
+class PromptLineage:
+    """Provenance for a rendered prompt (F-OBS-04).
+
+    Records the template, the variable bindings interpolated into it, and the
+    RAG chunk *sources* retrieved for it. Attached to a :class:`GavioRequest` by
+    the caller and copied into the :class:`AuditRecord` so any prompt can be
+    reconstructed and debugged. RAG chunk text is never stored — only source
+    references (see :class:`RagChunk`).
+    """
+
+    template_id: str | None = None
+    template_version: str | None = None
+    variables: dict[str, Any] = field(default_factory=dict)
+    rag_chunks: list[RagChunk] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "template_id": self.template_id,
+            "template_version": self.template_version,
+            "variables": dict(self.variables),
+            "rag_chunks": [c.to_dict() for c in self.rag_chunks],
         }

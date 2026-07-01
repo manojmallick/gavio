@@ -16,6 +16,7 @@ from .sinks.stdout import StdoutSink
 logger = logging.getLogger("gavio.audit")
 
 _PROMPT_HASH_KEY = "audit_prompt_hash"
+_LINEAGE_KEY = "audit_lineage"
 
 
 class AuditInterceptor(Interceptor):
@@ -52,6 +53,8 @@ class AuditInterceptor(Interceptor):
         self, request: GavioRequest, ctx: InterceptorContext
     ) -> GavioRequest:
         ctx.state[_PROMPT_HASH_KEY] = AuditRecord.hash_text(request.prompt_text())
+        if request.lineage is not None:
+            ctx.state[_LINEAGE_KEY] = request.lineage
         return request
 
     async def after(
@@ -78,6 +81,7 @@ class AuditInterceptor(Interceptor):
             cache_type=response.cache_type.value if response.cache_type else None,
             guardrail_outcome=ctx.guardrail_outcome,
             risk_score=ctx.risk_score,
+            lineage=ctx.state.get(_LINEAGE_KEY),
         )
         if self.hash_chain:
             async with self._chain_lock:

@@ -37,7 +37,36 @@
     "cacheType": { "type": ["string", "null"] },
     "guardrailOutcome": { "type": ["string", "null"], "enum": ["PASS", "FAIL", "HITL", null] },
     "riskScore": { "type": ["number", "null"] },
+    "lineage": {
+      "anyOf": [{ "$ref": "#/$defs/promptLineage" }, { "type": "null" }],
+      "description": "Prompt provenance (F-OBS-04, v0.3.0): template, variable bindings, and RAG chunk sources. Null when not supplied."
+    },
     "previousHash": { "type": "string", "description": "SHA-256 of the previous record (hash-chain, F-OBS-02, v0.2.0). Empty in v0.1.0." },
     "schemaVersion": { "type": "string", "const": "1.0" }
+  },
+  "$defs": {
+    "promptLineage": {
+      "type": "object",
+      "description": "Provenance for a rendered prompt. RAG chunk text is never stored — only source references.",
+      "properties": {
+        "templateId": { "type": ["string", "null"] },
+        "templateVersion": { "type": ["string", "null"] },
+        "variables": { "type": "object", "additionalProperties": true },
+        "ragChunks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source"],
+            "properties": {
+              "source": { "type": "string" },
+              "chunkId": { "type": ["string", "null"] },
+              "score": { "type": ["number", "null"] }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
   }
 }

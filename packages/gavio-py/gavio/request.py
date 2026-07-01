@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ._ids import new_trace_id
-from .types import Message, Provider
+from .types import Message, PromptLineage, Provider
 
 
 @dataclass
@@ -26,6 +26,7 @@ class GavioRequest:
     session_id: str | None = None
     options: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    lineage: PromptLineage | None = None
 
     def __post_init__(self) -> None:
         self.provider = Provider.coerce(self.provider)
@@ -54,4 +55,5 @@ class GavioRequest:
             session_id=self.session_id,
             options=dict(self.options),
             metadata=dict(self.metadata),
+            lineage=self.lineage,
         )

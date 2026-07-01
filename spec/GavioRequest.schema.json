@@ -31,9 +31,35 @@
       },
       "additionalProperties": true
     },
-    "metadata": { "type": "object", "additionalProperties": true }
+    "metadata": { "type": "object", "additionalProperties": true },
+    "lineage": {
+      "anyOf": [{ "$ref": "#/$defs/promptLineage" }, { "type": "null" }],
+      "description": "Prompt provenance (F-OBS-04): template, variable bindings, and RAG chunk sources. Copied into the AuditRecord."
+    }
   },
   "$defs": {
+    "promptLineage": {
+      "type": "object",
+      "description": "Provenance for a rendered prompt. RAG chunk text is never stored — only source references.",
+      "properties": {
+        "templateId": { "type": ["string", "null"] },
+        "templateVersion": { "type": ["string", "null"] },
+        "variables": { "type": "object", "additionalProperties": true },
+        "ragChunks": { "type": "array", "items": { "$ref": "#/$defs/ragChunk" } }
+      },
+      "additionalProperties": false
+    },
+    "ragChunk": {
+      "type": "object",
+      "description": "A reference to a retrieved source — never the retrieved text.",
+      "required": ["source"],
+      "properties": {
+        "source": { "type": "string" },
+        "chunkId": { "type": ["string", "null"] },
+        "score": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
     "message": {
       "type": "object",
       "required": ["role", "content"],

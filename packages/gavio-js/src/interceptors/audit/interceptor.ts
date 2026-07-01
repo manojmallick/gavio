@@ -3,12 +3,14 @@
 import type { InterceptorContext } from '../../context.js'
 import type { GavioRequest } from '../../request.js'
 import type { GavioResponse } from '../../response.js'
+import type { PromptLineage } from '../../types.js'
 import type { Interceptor } from '../base.js'
 import { AuditRecord } from './record.js'
 import type { AuditSink } from './sink.js'
 import { stdoutSink } from './sinks/stdout.js'
 
 const PROMPT_HASH_KEY = 'audit_prompt_hash'
+const LINEAGE_KEY = 'audit_lineage'
 
 export const AUDIT_NAME = 'audit'
 
@@ -41,6 +43,7 @@ class AuditInterceptor implements Interceptor {
 
   async before(request: GavioRequest, ctx: InterceptorContext): Promise<GavioRequest> {
     ctx.state[PROMPT_HASH_KEY] = AuditRecord.hashText(request.promptText())
+    if (request.lineage != null) ctx.state[LINEAGE_KEY] = request.lineage
     return request
   }
 
@@ -69,6 +72,7 @@ class AuditInterceptor implements Interceptor {
       cacheType: response.cacheType,
       guardrailOutcome: ctx.guardrailOutcome,
       riskScore: ctx.riskScore,
+      lineage: (ctx.state[LINEAGE_KEY] as PromptLineage | undefined) ?? null,
     })
     if (this.hashChain) {
       record.previousHash = this.lastHash

@@ -1,12 +1,23 @@
 /** AuditRecord — the immutable, per-request audit entry. */
 
 import { createHash } from 'node:crypto'
-import { TokenUsage } from '../../types.js'
+import { PromptLineage, TokenUsage } from '../../types.js'
 
 export const SCHEMA_VERSION = '1.0'
 
 function sha256(text: string): string {
   return createHash('sha256').update(text, 'utf-8').digest('hex')
+}
+
+/** Deterministic JSON with keys sorted at every nesting level. */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value) ?? 'null'
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(',')}]`
+  const obj = value as Record<string, unknown>
+  const parts = Object.keys(obj)
+    .sort()
+    .map((k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`)
+  return `{${parts.join(',')}}`
 }
 
 export interface AuditRecordInit {
@@ -30,6 +41,7 @@ export interface AuditRecordInit {
   cacheType?: string | null
   guardrailOutcome?: string | null
   riskScore?: number | null
+  lineage?: PromptLineage | null
   previousHash?: string
   schemaVersion?: string
 }
@@ -62,6 +74,7 @@ export class AuditRecord {
   cacheType: string | null
   guardrailOutcome: string | null
   riskScore: number | null
+  lineage: PromptLineage | null
   previousHash: string
   schemaVersion: string
 
@@ -86,6 +99,7 @@ export class AuditRecord {
     this.cacheType = init.cacheType ?? null
     this.guardrailOutcome = init.guardrailOutcome ?? null
     this.riskScore = init.riskScore ?? null
+    this.lineage = init.lineage ?? null
     this.previousHash = init.previousHash ?? ''
     this.schemaVersion = init.schemaVersion ?? SCHEMA_VERSION
   }
@@ -120,15 +134,15 @@ export class AuditRecord {
       cacheType: this.cacheType,
       guardrailOutcome: this.guardrailOutcome,
       riskScore: this.riskScore,
+      lineage: this.lineage ? this.lineage.toJSON() : null,
       previousHash: this.previousHash,
       schemaVersion: this.schemaVersion,
     }
   }
 
-  /** Stable JSON with sorted keys — used for the v0.2.0 hash chain. */
+  /** Stable JSON with recursively sorted keys — used for the v0.2.0 hash chain. */
   toCanonicalJson(): string {
-    const data = this.toJSON()
-    return JSON.stringify(data, Object.keys(data).sort())
+    return stableStringify(this.toJSON())
   }
 
   /** Hash of this record's content — used to build the v0.2.0 chain. */

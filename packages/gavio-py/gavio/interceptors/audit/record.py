@@ -7,7 +7,7 @@ import json
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 
-from ...types import TokenUsage
+from ...types import PromptLineage, TokenUsage
 
 SCHEMA_VERSION = "1.0"
 
@@ -45,6 +45,7 @@ class AuditRecord:
     cache_type: str | None = None
     guardrail_outcome: str | None = None
     risk_score: float | None = None
+    lineage: PromptLineage | None = None
     previous_hash: str = ""
     schema_version: str = SCHEMA_VERSION
 

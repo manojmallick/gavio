@@ -13,7 +13,7 @@ import { mockProvider } from './providers/mock.js'
 import { GavioRequest } from './request.js'
 import type { GavioResponse } from './response.js'
 import { Provider, coerceProvider } from './types.js'
-import type { Message } from './types.js'
+import type { Message, PromptLineage, PromptLineageInit } from './types.js'
 
 export interface GatewayOptions {
   provider?: Provider | string
@@ -33,6 +33,8 @@ export interface CompleteOptions {
   metadata?: Record<string, unknown>
   /** Provider sampling options (temperature, maxTokens, etc.). */
   options?: Record<string, unknown>
+  /** Prompt provenance (F-OBS-04): template, variables, and RAG chunk sources. */
+  lineage?: PromptLineage | PromptLineageInit | null
 }
 
 const DEFAULT_MODELS: Record<string, string> = {
@@ -109,6 +111,7 @@ export class Gateway {
       sessionId: opts.sessionId ?? null,
       options: opts.options ?? {},
       metadata: opts.metadata ?? {},
+      lineage: opts.lineage ?? null,
     })
     const ctx = new InterceptorContext({
       traceId: request.traceId,
