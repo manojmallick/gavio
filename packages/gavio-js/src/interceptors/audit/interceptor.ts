@@ -14,6 +14,8 @@ export const AUDIT_NAME = 'audit'
 
 export interface AuditInterceptorOptions {
   sink?: AuditSink | 'stdout'
+  /** F-OBS-02: link each record via previousHash into a tamper-evident chain. */
+  hashChain?: boolean
 }
 
 /**
@@ -29,9 +31,12 @@ class AuditInterceptor implements Interceptor {
   readonly dryRunSafe = true // auditing is observation-only, so it always runs
 
   private readonly sink: AuditSink
+  private readonly hashChain: boolean
+  private lastHash = ''
 
   constructor(options: AuditInterceptorOptions = {}) {
     this.sink = resolveSink(options.sink)
+    this.hashChain = options.hashChain ?? false
   }
 
   async before(request: GavioRequest, ctx: InterceptorContext): Promise<GavioRequest> {
@@ -65,6 +70,10 @@ class AuditInterceptor implements Interceptor {
       guardrailOutcome: ctx.guardrailOutcome,
       riskScore: ctx.riskScore,
     })
+    if (this.hashChain) {
+      record.previousHash = this.lastHash
+      this.lastHash = record.contentHash()
+    }
     response.audit = record
     try {
       await this.sink.write(record)

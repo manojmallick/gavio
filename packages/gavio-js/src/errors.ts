@@ -43,5 +43,33 @@ export class PiiBlockedError extends GavioError {
 /** A hard budget cap was exceeded. Never swallow this — surface to user. */
 export class BudgetExceededError extends GavioError {}
 
+/** The circuit breaker is open; the call was rejected without hitting the provider. */
+export class CircuitOpenError extends ProviderUnavailableError {}
+
+/** A local rate limit (requests/tokens per minute) was exceeded. */
+export class RateLimitExceededError extends GavioError {}
+
+/** The caller's role is not permitted to use the requested model (RBAC). */
+export class ModelNotAllowedError extends GavioError {
+  readonly role: string
+  readonly model: string
+
+  constructor(role: string, model: string) {
+    super(`role ${JSON.stringify(role)} may not use model ${JSON.stringify(model)}`)
+    this.role = role
+    this.model = model
+  }
+}
+
 /** Output failed a guardrail validator with onFailure='error'. */
 export class GuardrailViolationError extends GavioError {}
+
+/** A prompt-injection attempt was detected and the guard is in block mode. */
+export class PromptInjectionError extends GavioError {
+  readonly patterns: string[]
+
+  constructor(patterns: string[]) {
+    super(`prompt injection detected: ${patterns.join(', ')}`)
+    this.patterns = patterns
+  }
+}
