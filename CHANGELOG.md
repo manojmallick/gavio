@@ -44,6 +44,16 @@ Working toward **v0.2.0 — Production core**.
 - **New provider adapters (Python)** — `GeminiAdapter` (role/system mapping),
   `AzureOpenAIAdapter` (deployment routing), `OllamaAdapter` (local, free);
   registered in the provider registry with pricing entries. All stdlib HTTP.
+- **Prompt injection defense (Python, `F-SEC-05`)** — `PromptInjectionGuard`
+  (curated pattern corpus + optional semantic similarity); block or flag,
+  records a `risk_score`. New `PromptInjectionError`.
+- **Load balancing (Python, `F-REL-04`)** — `LoadBalancer` `ExecutorPolicy`,
+  weighted round-robin across a pool of provider adapters.
+- **OpenAI drop-in shim (Python, `F-DX-04`)** — `gavio.shim.openai.GavioOpenAI`
+  with an OpenAI-client-shaped `chat.completions.create` / `acreate`.
+- **Config loader (Python, `F-DX-05`)** — `Gateway.from_config(path | dict)`
+  builds a gateway from JSON (stdlib) or YAML (optional PyYAML), with `${ENV}`
+  expansion.
 
 ### Changed
 - `ExecutorPolicy` moved to `gavio.interceptors.executor` (re-exported from

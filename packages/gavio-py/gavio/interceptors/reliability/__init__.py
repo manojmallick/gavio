@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .circuit_breaker import CircuitBreaker, CircuitState
 from .fallback import FallbackChain
+from .load_balancer import LoadBalancer
 from .policy import ExecutorPolicy
 from .retry import RetryInterceptor
 from .timeout import TimeoutPolicy
@@ -15,4 +16,5 @@ __all__ = [
     "FallbackChain",
     "CircuitBreaker",
     "CircuitState",
+    "LoadBalancer",
 ]

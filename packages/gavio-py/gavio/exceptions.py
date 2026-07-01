@@ -68,3 +68,11 @@ class ModelNotAllowedError(GavioError):
 
 class GuardrailViolationError(GavioError):
     """Output failed a guardrail validator with on_failure='error'."""
+
+
+class PromptInjectionError(GavioError):
+    """A prompt-injection attempt was detected and the guard is in block mode."""
+
+    def __init__(self, patterns: list[str]) -> None:
+        self.patterns = patterns
+        super().__init__(f"prompt injection detected: {patterns}")

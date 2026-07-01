@@ -52,6 +52,14 @@ class Gateway:
     def builder() -> GatewayBuilder:
         return GatewayBuilder()
 
+    @classmethod
+    def from_config(cls, config: str | dict) -> Gateway:
+        """Build a Gateway from a config dict or a JSON/YAML file path (F-DX-05)."""
+        from .config import build_from_config, load_config
+
+        data = config if isinstance(config, dict) else load_config(config)
+        return build_from_config(data)
+
     @property
     def model(self) -> str:
         return self._model
