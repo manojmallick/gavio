@@ -32,6 +32,15 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   (retry, circuit breaker, cache) are not applied to the streaming path in this
   release. First v0.2.0-planned reliability gap now closed. `StreamBuffer` lives
   in `io.gavio.providers` in Java (core cannot depend on the reliability module).
+- **Risk scoring (all SDKs, `F-QUA-06`)** — `RiskScorer` folds the per-request
+  signals other interceptors leave on the context — PII entities found, guardrail
+  outcome (`FAIL`/`HITL`), and the prompt-injection risk — into a single
+  composite score in `[0, 1]`, written to `ctx.risk_score` and recorded on the
+  `AuditRecord`. Configurable weights (default PII 0.3 · guardrail 0.4 · injection
+  0.3), clamped; exposes a pure `score(...)` method. Introduces a new `quality`
+  interceptor family (`gavio.interceptors.quality`, `gavio/interceptors/quality`,
+  Java module `gavio-interceptor-quality`) for the F-QUA features. Another v0.3.0
+  feature.
 
 ### Fixed
 - **JS audit hash chain** — `AuditRecord.toCanonicalJson()` now sorts keys
