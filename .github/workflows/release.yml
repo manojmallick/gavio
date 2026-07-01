@@ -1,8 +1,13 @@
 name: Release (PyPI + Maven Central + npm)
 
 # Push a version tag (e.g. v0.1.0) to publish all three SDKs in lockstep.
-# Each job gates on its own tests and verifies the manifest version matches
-# the tag before publishing. A single GitHub Release is created at the end.
+# Each job:
+#   1. gates on its own tests,
+#   2. verifies the manifest version matches the tag,
+#   3. checks the target registry and SKIPS publish if that version already
+#      exists (so a re-run after a partial failure is safe — no duplicate error),
+#   4. publishes.
+# A single GitHub Release is created at the end.
 #
 # Required repository secrets:
 #   PYPI_TOKEN               PyPI API token (starts with "pypi-")
@@ -10,7 +15,7 @@ name: Release (PyPI + Maven Central + npm)
 #   MAVEN_CENTRAL_PASSWORD   Sonatype Central Portal token password
 #   GPG_PRIVATE_KEY          ASCII-armored GPG private key (for signing jars)
 #   GPG_PASSPHRASE           passphrase for that GPG key
-#   NPM_TOKEN                npm automation token (already added)
+#   NPM_TOKEN                npm automation token
 # See RELEASING.md for how to obtain each.
 
 on:
@@ -49,18 +54,32 @@ jobs:
           fi
           echo "✓ $PKG"
 
+      - name: Already on PyPI?
+        id: check
+        working-directory: packages/gavio-py
+        run: |
+          VER=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/gavio/$VER/json")
+          if [ "$CODE" = "200" ]; then
+            echo "already=true" >> "$GITHUB_OUTPUT"; echo "gavio $VER already on PyPI — skipping publish"
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Build sdist + wheel
+        if: steps.check.outputs.already != 'true'
         working-directory: packages/gavio-py
         run: |
           pip install build
           python -m build
 
       - name: Publish to PyPI
+        if: steps.check.outputs.already != 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: packages/gavio-py/dist
           password: ${{ secrets.PYPI_TOKEN }}
-          skip-existing: true   # idempotent: a re-run won't fail if 0.1.0 is already up
+          skip-existing: true   # belt-and-suspenders idempotency
 
   # ── Java → Maven Central ──────────────────────────────────────────────────
   publish-java:
@@ -88,7 +107,21 @@ jobs:
           fi
           echo "✓ $PKG"
 
+      - name: Already on Maven Central?
+        id: check
+        working-directory: packages/gavio-java
+        run: |
+          VER=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+          URL="https://repo1.maven.org/maven2/io/github/manojmallick/gavio-core/$VER/gavio-core-$VER.pom"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+          if [ "$CODE" = "200" ]; then
+            echo "already=true" >> "$GITHUB_OUTPUT"; echo "gavio-core $VER already on Central — skipping deploy"
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy (test + sign + publish)
+        if: steps.check.outputs.already != 'true'
         working-directory: packages/gavio-java
         run: mvn -B -Prelease deploy
         env:
@@ -123,7 +156,19 @@ jobs:
           fi
           echo "✓ $PKG"
 
+      - name: Already on npm?
+        id: check
+        working-directory: packages/gavio-js
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          if npm view "gavio@$VER" version >/dev/null 2>&1; then
+            echo "already=true" >> "$GITHUB_OUTPUT"; echo "gavio@$VER already on npm — skipping publish"
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
+        if: steps.check.outputs.already != 'true'
         working-directory: packages/gavio-js
         run: npm publish --provenance --access public   # prepublishOnly builds dist/
         env:

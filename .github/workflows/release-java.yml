@@ -27,7 +27,21 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
+      - name: Already on Maven Central?
+        id: check
+        working-directory: packages/gavio-java
+        run: |
+          VER=$(mvn -q -DforceStdout help:evaluate -Dexpression=project.version)
+          URL="https://repo1.maven.org/maven2/io/github/manojmallick/gavio-core/$VER/gavio-core-$VER.pom"
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+          if [ "$CODE" = "200" ]; then
+            echo "already=true" >> "$GITHUB_OUTPUT"; echo "gavio-core $VER already on Central — skipping deploy"
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy (test + sign + publish)
+        if: steps.check.outputs.already != 'true'
         working-directory: packages/gavio-java
         run: mvn -B -Prelease deploy
         env:

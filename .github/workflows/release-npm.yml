@@ -34,7 +34,19 @@ jobs:
           npm run typecheck
           npm test
 
+      - name: Already on npm?
+        id: check
+        working-directory: packages/gavio-js
+        run: |
+          VER=$(node -p "require('./package.json').version")
+          if npm view "gavio@$VER" version >/dev/null 2>&1; then
+            echo "already=true" >> "$GITHUB_OUTPUT"; echo "gavio@$VER already on npm — skipping publish"
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish to npm
+        if: steps.check.outputs.already != 'true'
         working-directory: packages/gavio-js
         run: |
           if [ "${{ inputs.provenance }}" = "true" ]; then
