@@ -7,6 +7,7 @@ import io.gavio.types.Message;
 import io.gavio.types.TokenUsage;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
 
 /**
  * Deterministic, offline provider for dev mode and tests.
@@ -65,6 +66,31 @@ public final class MockProvider extends AbstractProviderAdapter {
                 PricingProvider.estimateTokens(content));
         return CompletableFuture.completedFuture(
                 buildResponse(request, content, usage, modelVersion, started));
+    }
+
+    @Override
+    public Flow.Publisher<String> stream(GavioRequest request) {
+        String[] tokens = contentFor(request).split(" ");
+        return subscriber -> subscriber.onSubscribe(new Flow.Subscription() {
+            private int idx = 0;
+            private boolean cancelled = false;
+
+            @Override
+            public void request(long n) {
+                for (long k = 0; k < n && idx < tokens.length && !cancelled; k++) {
+                    subscriber.onNext(tokens[idx++] + " ");
+                }
+                if (idx >= tokens.length && !cancelled) {
+                    cancelled = true;
+                    subscriber.onComplete();
+                }
+            }
+
+            @Override
+            public void cancel() {
+                cancelled = true;
+            }
+        });
     }
 
     @Override

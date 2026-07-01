@@ -6,6 +6,7 @@ import { auditInterceptor, isAuditInterceptor } from './interceptors/audit/index
 import { isExecutorPolicy } from './interceptors/base.js'
 import type { Executor, ExecutorPolicy, Interceptor } from './interceptors/base.js'
 import { InterceptorChain } from './interceptors/chain.js'
+import { StreamBuffer } from './interceptors/reliability/stream-buffer.js'
 import { PricingProvider } from './pricing.js'
 import { buildAdapter } from './providers/index.js'
 import type { ProviderAdapter } from './providers/base.js'
@@ -120,6 +121,53 @@ export class Gateway {
 
     const { chain, executor } = this.buildPipeline(adapter, ctx)
     return chain.execute(request, ctx, executor)
+  }
+
+  /**
+   * Stream a completion, buffering the provider stream (F-REL-06).
+   *
+   * The provider stream is buffered in full so the post-interceptor pipeline
+   * (guardrails, PII restore, audit) runs on the complete response before any
+   * chunk reaches the caller. Pre/post interceptors run via the chain; executor
+   * policies (retry, circuit breaker, cache) are not applied to the streaming
+   * path.
+   */
+  async *stream(opts: CompleteOptions): AsyncGenerator<string> {
+    const adapter = this.resolveAdapter()
+    if (adapter.stream === undefined || adapter.buildStreamResponse === undefined) {
+      throw new ConfigurationError(`${adapter.providerName} does not support streaming`)
+    }
+    const model = opts.model ?? this.modelHint ?? this.resolveModel(adapter)
+
+    const request = new GavioRequest({
+      messages: opts.messages,
+      model,
+      provider: coerceProvider(adapter.providerName),
+      agentId: opts.agentId ?? null,
+      parentTraceId: opts.parentTraceId ?? null,
+      sessionId: opts.sessionId ?? null,
+      options: opts.options ?? {},
+      metadata: opts.metadata ?? {},
+    })
+    const ctx = new InterceptorContext({
+      traceId: request.traceId,
+      agentId: request.agentId,
+      parentTraceId: request.parentTraceId,
+      sessionId: request.sessionId,
+      dryRun: this.dryRunMode,
+    })
+
+    const startedAt = performance.now()
+    const buffer = new StreamBuffer()
+    const { chain } = this.buildPipeline(adapter, ctx)
+    const bufferingExecutor: Executor = async (req) => {
+      for await (const chunk of adapter.stream!(req)) buffer.append(chunk)
+      return adapter.buildStreamResponse!(req, buffer.text(), startedAt)
+    }
+
+    const response = await chain.execute(request, ctx, bufferingExecutor)
+    // Post-interceptors have run on the fully buffered response; emit it now.
+    yield response.content
   }
 
   async healthCheck(): Promise<boolean> {

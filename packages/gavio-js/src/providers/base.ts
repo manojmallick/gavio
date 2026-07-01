@@ -1,6 +1,6 @@
 /** ProviderAdapter interface and shared response-building helpers. */
 
-import { PricingProvider } from '../pricing.js'
+import { PricingProvider, estimateTokens } from '../pricing.js'
 import { GavioRequest } from '../request.js'
 import { GavioResponse } from '../response.js'
 import { TokenUsage } from '../types.js'
@@ -10,6 +10,8 @@ export interface ProviderAdapter {
   readonly providerName: string
   complete(request: GavioRequest): Promise<GavioResponse>
   stream?(request: GavioRequest): AsyncIterable<string>
+  /** Build a response from a fully buffered stream (F-REL-06). */
+  buildStreamResponse?(request: GavioRequest, content: string, startedAt: number): GavioResponse
   healthCheck(): Promise<boolean>
   readonly reportedModelVersion?: string | null
 }
@@ -28,6 +30,24 @@ export abstract class BaseProviderAdapter implements ProviderAdapter {
 
   get reportedModelVersion(): string | null {
     return null
+  }
+
+  /**
+   * Build a response from a fully buffered stream (F-REL-06). Streamed chunks
+   * carry text only, so token usage is estimated from prompt + content.
+   */
+  buildStreamResponse(request: GavioRequest, content: string, startedAt: number): GavioResponse {
+    const usage = new TokenUsage(
+      estimateTokens(request.promptText()),
+      estimateTokens(content),
+    )
+    return this.buildResponse(
+      request,
+      content,
+      usage,
+      this.reportedModelVersion ?? request.model,
+      startedAt,
+    )
   }
 
   protected buildResponse(

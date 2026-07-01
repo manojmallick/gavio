@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
+from collections.abc import AsyncIterator
 from typing import Any
 
 from .context import InterceptorContext
@@ -12,6 +14,7 @@ from .interceptors.audit import AuditInterceptor
 from .interceptors.base import Interceptor
 from .interceptors.chain import Executor, InterceptorChain
 from .interceptors.reliability.policy import ExecutorPolicy
+from .interceptors.reliability.stream_buffer import StreamBuffer
 from .pricing import PricingProvider
 from .providers import ProviderAdapter, build_adapter
 from .providers.mock import MockProvider
@@ -98,6 +101,54 @@ class Gateway:
         )
         executor = self._build_executor(ctx)
         return await self._chain.execute(request, ctx, executor)
+
+    async def stream(
+        self,
+        messages: list[Message],
+        *,
+        model: str | None = None,
+        agent_id: str | None = None,
+        parent_trace_id: str | None = None,
+        session_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        **options: Any,
+    ) -> AsyncIterator[str]:
+        """Stream a completion, buffering the provider stream (F-REL-06).
+
+        The provider stream is buffered in full so the post-interceptor pipeline
+        (guardrails, PII restore, audit) runs on the complete response before any
+        chunk reaches the caller. Pre/post interceptors run via the chain;
+        executor policies (retry, circuit breaker, cache) are not applied to the
+        streaming path.
+        """
+        request = GavioRequest(
+            messages=messages,
+            model=model or self._model,
+            provider=Provider.coerce(self._adapter.provider_name),
+            agent_id=agent_id,
+            parent_trace_id=parent_trace_id,
+            session_id=session_id,
+            options=options,
+            metadata=metadata or {},
+        )
+        ctx = InterceptorContext(
+            trace_id=request.trace_id,
+            agent_id=agent_id,
+            parent_trace_id=parent_trace_id,
+            session_id=session_id,
+            dry_run=self._dry_run,
+        )
+        started = time.monotonic()
+        buffer = StreamBuffer()
+
+        async def buffering_executor(req: GavioRequest) -> GavioResponse:
+            async for chunk in self._adapter.stream(req):
+                buffer.append(chunk)
+            return self._adapter.build_stream_response(req, buffer.text(), started)
+
+        response = await self._chain.execute(request, ctx, buffering_executor)
+        # Post-interceptors have run on the fully buffered response; emit it now.
+        yield response.content
 
     def complete_sync(
         self, messages: list[Message], **kwargs: Any
