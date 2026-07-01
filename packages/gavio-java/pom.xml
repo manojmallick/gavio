@@ -41,6 +41,7 @@
     <module>gavio-interceptor-pii</module>
     <module>gavio-interceptor-audit</module>
     <module>gavio-interceptor-reliability</module>
+    <module>gavio-interceptor-cache</module>
     <module>gavio-provider-openai</module>
     <module>gavio-provider-anthropic</module>
     <module>gavio-testing</module>
@@ -82,6 +83,11 @@
       <dependency>
         <groupId>io.github.manojmallick</groupId>
         <artifactId>gavio-interceptor-reliability</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.manojmallick</groupId>
+        <artifactId>gavio-interceptor-cache</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
