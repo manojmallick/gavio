@@ -42,6 +42,8 @@
     <module>gavio-interceptor-audit</module>
     <module>gavio-interceptor-reliability</module>
     <module>gavio-interceptor-cache</module>
+    <module>gavio-interceptor-governance</module>
+    <module>gavio-interceptor-guardrails</module>
     <module>gavio-provider-openai</module>
     <module>gavio-provider-anthropic</module>
     <module>gavio-testing</module>
@@ -88,6 +90,16 @@
       <dependency>
         <groupId>io.github.manojmallick</groupId>
         <artifactId>gavio-interceptor-cache</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.manojmallick</groupId>
+        <artifactId>gavio-interceptor-governance</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.manojmallick</groupId>
+        <artifactId>gavio-interceptor-guardrails</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
