@@ -204,6 +204,7 @@ running the [shared cross-SDK vectors](./test-vectors/). Roadmap → v0.2.0
 | [docs/architecture.md](./docs/architecture.md) | Request lifecycle, the interceptor chain, data model |
 | [docs/interceptors.md](./docs/interceptors.md) | Every built-in interceptor + writing your own |
 | [docs/packages/](./docs/packages/) | Deep guide per SDK |
+| [examples/](./examples/) | Runnable example projects (Python) |
 | [spec/](./spec/) | Canonical JSON Schema data model |
 | [test-vectors/](./test-vectors/) | Shared cross-SDK conformance cases |
 | [RELEASING.md](./RELEASING.md) | How releases are cut (PyPI + Maven Central + npm) |
