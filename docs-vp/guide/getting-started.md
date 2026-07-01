@@ -21,7 +21,7 @@ you use. Every example below runs **as-is** in dev mode (no API key, no network)
 |---|---|
 | Python 3.10+ | `pip install gavio` |
 | JavaScript (Node 18+) | `npm install gavio` |
-| Java 17+ | add `io.github.manojmallick:gavio-core:0.1.0` (Maven) |
+| Java 17+ | add `io.github.manojmallick:gavio-core:0.2.0` (Maven) |
 
 ---
 
@@ -133,7 +133,8 @@ Gateway gw = Gateway.builder()
     .build();
 ```
 
-`OPENAI_API_KEY` / provider `openai` works the same way.
+`openai`, `gemini`, `azure_openai`, and `ollama` (local, no key) work the same
+way — the provider list grew in **v0.2.0**. See the per-language provider tables.
 
 ---
 
