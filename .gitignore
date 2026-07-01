@@ -58,6 +58,8 @@ hs_err_pid*
 .context/
 .sigmap-cache/
 
-# Note: the planning docs (MASTER_PLAN.md, SDK_*.md, DOCUMENTATION_PLAN.md) are
-# committed on purpose — they are the project's roadmap/spec and are referenced
-# by CHANGELOG.md, spec/README.md, and the SDK READMEs.
+
+# ---docs--- #
+MASTER_*.md
+SDK_*.md
+*PLAN.md
