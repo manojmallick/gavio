@@ -32,6 +32,14 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   (retry, circuit breaker, cache) are not applied to the streaming path in this
   release. First v0.2.0-planned reliability gap now closed. `StreamBuffer` lives
   in `io.gavio.providers` in Java (core cannot depend on the reliability module).
+- **Prometheus metrics (all SDKs, `F-OBS-08`)** — `MetricsInterceptor` records
+  per-request metrics into a `PrometheusMetrics` registry, exposed via
+  `render()` as the Prometheus text exposition format: `gavio_requests_total`,
+  `gavio_tokens_total{kind}`, `gavio_cost_usd_total`, `gavio_request_latency_ms`
+  (histogram), and `gavio_cache_hits_total` — all labelled by `provider` and
+  `model`. Hand-rolled exposition, **zero runtime dependencies**. Java ships a
+  new `gavio-interceptor-metrics` module; JS adds the `gavio/interceptors/metrics`
+  subpath. Another v0.3.0 (Observability depth) feature.
 
 ### Fixed
 - **JS audit hash chain** — `AuditRecord.toCanonicalJson()` now sorts keys
