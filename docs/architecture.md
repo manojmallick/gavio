@@ -106,15 +106,18 @@ Canonical shapes live in [`spec/`](../spec/) as JSON Schema. The wire format is
 
 **AuditRecord** — metadata **and content hashes only**, never raw text:
 `prompt_hash` / `response_hash` (SHA-256), token usage, cost, latency,
-`pii_entity_types` / `pii_entity_counts`, `interceptors_fired`, `schema_version`.
-`previous_hash` is reserved for the v0.2.0 hash-chain (`F-OBS-02`).
+`pii_entity_types` / `pii_entity_counts`, `interceptors_fired`, `cache_hit` /
+`cache_type`, `guardrail_outcome`, `risk_score`, `schema_version`.
+`previous_hash` links each record into the v0.2.0 tamper-evident hash-chain
+(`F-OBS-02`) when `hash_chain=True`.
 
 ---
 
 ## Provider adapters
 
 A `ProviderAdapter` implements `complete(request) → response`, optional
-`stream(...)`, and `health_check()`. v0.1.0 ships **OpenAI**, **Anthropic**
-(both over stdlib HTTP — no vendor SDK), and **Mock**. Cost is computed from
-token usage via a shared pricing table. Adding a provider is a single class; see
+`stream(...)`, and `health_check()`. Gavio ships **OpenAI**, **Anthropic**, and
+**Mock** (v0.1.0), plus **Gemini**, **Azure OpenAI**, and **Ollama** (v0.2.0) —
+all over stdlib HTTP, no vendor SDK. Cost is computed from token usage via a
+shared pricing table. Adding a provider is a single class; see
 [interceptors.md](./interceptors.md) and each package guide.

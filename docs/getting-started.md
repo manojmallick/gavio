@@ -129,7 +129,8 @@ Gateway gw = Gateway.builder()
     .build();
 ```
 
-`OPENAI_API_KEY` / provider `openai` works the same way.
+`openai`, `gemini`, `azure_openai`, and `ollama` (local, no key) work the same
+way — the provider list grew in **v0.2.0**. See the per-language provider tables.
 
 ---
 

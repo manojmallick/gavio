@@ -56,7 +56,7 @@ implementation("io.github.manojmallick:gavio-interceptor-pii:0.4.0")
 | `gavio-interceptor-audit` | `AuditInterceptor`, `AuditRecord`, `StdoutSink`, hash-chain + call-graph |
 | `gavio-interceptor-cache` | `SemanticCache`, `MemoryCacheBackend`, `RedisCacheBackend`/`RedisVectorBackend` (F-CACHE-04) |
 | `gavio-interceptor-reliability` | `RetryInterceptor`, `TimeoutPolicy`, `FallbackChain`, `CircuitBreaker`, `LoadBalancer` |
-| `gavio-interceptor-governance` | `CostControl`, `RateLimiter`, `ModelPolicy` |
+| `gavio-interceptor-governance` | `CostControl`, `RateLimiter`, `ModelPolicy`, `CostRouter` (F-GOV-06) |
 | `gavio-interceptor-guardrails` | `GuardrailsInterceptor`, JSON-schema + regex validators |
 | `gavio-interceptor-metrics` | `MetricsInterceptor`, `PrometheusMetrics` (F-OBS-08) |
 | `gavio-interceptor-quality` | `RiskScorer`, `RiskWeights` (F-QUA-06) |

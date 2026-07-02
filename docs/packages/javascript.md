@@ -105,7 +105,12 @@ const gw = new Gateway({ provider: 'anthropic', model: 'claude-sonnet-4-6' })
 |---|---|---|
 | Anthropic | `'anthropic'` | `ANTHROPIC_API_KEY` |
 | OpenAI | `'openai'` | `OPENAI_API_KEY` |
+| Gemini | `'gemini'` | `GEMINI_API_KEY` |
+| Azure OpenAI | `'azure_openai'` | `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT` |
+| Ollama | `'ollama'` | — (local; `OLLAMA_HOST`) |
 | Mock | dev mode / `mockProvider()` | — |
+
+Gemini, Azure OpenAI, and Ollama were added in **v0.2.0**.
 
 ```typescript
 import { anthropicAdapter } from 'gavio/providers/anthropic'

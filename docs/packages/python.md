@@ -96,11 +96,17 @@ See [interceptors.md](../interceptors.md) for options and custom scanners.
 
 ## Providers
 
-| Provider | `provider=` | Env var | Default model |
+| Provider | `provider=` | Env var | Model |
 |---|---|---|---|
-| Anthropic | `"anthropic"` / `Provider.ANTHROPIC` | `ANTHROPIC_API_KEY` | `claude-sonnet-4-6` |
-| OpenAI | `"openai"` / `Provider.OPENAI` | `OPENAI_API_KEY` | `gpt-4o` |
+| Anthropic | `"anthropic"` / `Provider.ANTHROPIC` | `ANTHROPIC_API_KEY` | `claude-sonnet-4-6` (default) |
+| OpenAI | `"openai"` / `Provider.OPENAI` | `OPENAI_API_KEY` | `gpt-4o` (default) |
+| Gemini | `"gemini"` / `Provider.GEMINI` | `GEMINI_API_KEY` | e.g. `gemini-2.0-flash` |
+| Azure OpenAI | `"azure_openai"` / `Provider.AZURE_OPENAI` | `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT` | your deployment name |
+| Ollama | `"ollama"` / `Provider.OLLAMA` | — (local; `OLLAMA_HOST`) | any pulled model, e.g. `llama3.2` — cost $0 |
 | Mock | `"mock"` / dev mode | — | `mock` |
+
+Gemini, Azure OpenAI, and Ollama were added in **v0.2.0**; every adapter uses
+stdlib HTTP (no vendor SDK).
 
 Full adapter config:
 

@@ -49,10 +49,18 @@ implementation("io.github.manojmallick:gavio-interceptor-pii:0.4.0")
 |---|---|
 | `gavio-core` | Gateway, request/response records, interceptor chain, providers base, Mock |
 | `gavio-interceptor-pii` | `PiiGuard`, scanners (Email/Iban/Bsn/CreditCard/Phone/IpAddress/Ssn/Secret) |
-| `gavio-interceptor-audit` | `AuditInterceptor`, `AuditRecord`, `StdoutSink` |
-| `gavio-interceptor-reliability` | `RetryInterceptor`, `TimeoutPolicy`, `FallbackChain` |
-| `gavio-provider-openai` | `OpenAiAdapter` |
+| `gavio-interceptor-audit` | `AuditInterceptor`, `AuditRecord`, `StdoutSink`, hash-chain + call-graph |
+| `gavio-interceptor-cache` | `SemanticCache`, `MemoryCacheBackend`, `RedisCacheBackend`/`RedisVectorBackend` (F-CACHE-04) |
+| `gavio-interceptor-reliability` | `RetryInterceptor`, `TimeoutPolicy`, `FallbackChain`, `CircuitBreaker`, `LoadBalancer` |
+| `gavio-interceptor-governance` | `CostControl`, `RateLimiter`, `ModelPolicy`, `CostRouter` (F-GOV-06) |
+| `gavio-interceptor-guardrails` | `GuardrailsInterceptor`, JSON-schema + regex validators |
+| `gavio-interceptor-metrics` | `MetricsInterceptor`, `PrometheusMetrics` (F-OBS-08) |
+| `gavio-interceptor-quality` | `RiskScorer`, `RiskWeights` (F-QUA-06) |
+| `gavio-provider-openai` | `OpenAiAdapter` (+ `GavioOpenAI` drop-in shim) |
 | `gavio-provider-anthropic` | `AnthropicAdapter` |
+| `gavio-provider-gemini` | `GeminiAdapter` |
+| `gavio-provider-azure` | `AzureOpenAiAdapter` |
+| `gavio-provider-ollama` | `OllamaAdapter` (local, free) |
 | `gavio-testing` | `GavioTestKit`, `MockProvider`, `GavioAssertions` |
 
 ---
@@ -128,7 +136,13 @@ Retry / timeout / fallback implement `ExecutorPolicy` and wrap the provider call
 |---|---|---|
 | Anthropic | `ANTHROPIC` | `ANTHROPIC_API_KEY` |
 | OpenAI | `OPENAI` | `OPENAI_API_KEY` |
+| Gemini | `GEMINI` | `GEMINI_API_KEY` |
+| Azure OpenAI | `AZURE_OPENAI` | `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT` |
+| Ollama | `OLLAMA` | — (local; `OLLAMA_HOST`) |
 | Mock | dev mode / `MockProvider` | — |
+
+Gemini, Azure OpenAI, and Ollama were added in **v0.2.0** (add the matching
+`gavio-provider-*` artifact).
 
 Adapters use `java.net.http.HttpClient` (async `sendAsync`) with a hand-rolled
 JSON reader/writer — no external JSON dependency.
