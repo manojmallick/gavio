@@ -11,6 +11,18 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.4.0] — 2026-07-02
+
+### Summary
+**Distributed caching.** A production-grade Redis backend for `SemanticCache`
+— shared exact and semantic cache hits across processes — across **Python,
+Java, and JavaScript**. Deferred from v0.2.0, closes out the last of the three
+issues that carried over from that release. Feature ID `F-CACHE-04`.
+
 ### Added
 - **Redis cache backend (all SDKs, `F-CACHE-04`)** — `RedisBackend`/`RedisVectorBackend`
   (Python), `redisCacheBackend`/`redisVectorBackend` (JavaScript), and
