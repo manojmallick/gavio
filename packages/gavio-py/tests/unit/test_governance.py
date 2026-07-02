@@ -1,4 +1,5 @@
-"""Tests for governance: budget (F-GOV-02), rate limit (F-GOV-03), RBAC (F-GOV-04)."""
+"""Tests for governance: budget (F-GOV-02), rate limit (F-GOV-03), RBAC (F-GOV-04),
+cost-optimiser routing (F-GOV-06)."""
 
 from __future__ import annotations
 
@@ -10,7 +11,13 @@ from gavio.exceptions import (
     ModelNotAllowedError,
     RateLimitExceededError,
 )
-from gavio.interceptors.governance import CostControl, ModelPolicy, RateLimiter
+from gavio.interceptors.governance import (
+    CostControl,
+    CostRouter,
+    HeuristicComplexityScorer,
+    ModelPolicy,
+    RateLimiter,
+)
 from gavio.pricing import PricingProvider
 from gavio.providers.mock import MockProvider
 
@@ -68,3 +75,54 @@ async def test_model_policy_wildcard():
     await gw.complete(
         messages=[{"role": "user", "content": "hi"}], metadata={"role": "admin"}
     )
+
+
+async def test_cost_router_reroutes_simple_prompt():
+    gw = _gw(CostRouter(simple_model="mock-mini"))
+    r = await gw.complete(messages=[{"role": "user", "content": "What is 2+2?"}])
+    assert r.model == "mock-mini"
+
+
+async def test_cost_router_skips_complex_prompt():
+    gw = _gw(CostRouter(simple_model="mock-mini", complexity_threshold=0.35))
+    r = await gw.complete(
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "Explain why the trade-off between consistency and "
+                    "availability matters here, and compare it to the CAP "
+                    "theorem, analyzing multiple failure scenarios in detail."
+                ),
+            }
+        ]
+    )
+    assert r.model == "mock"
+
+
+async def test_cost_router_skips_when_already_on_simple_model():
+    gw = _gw(CostRouter(simple_model="mock"))
+    r = await gw.complete(messages=[{"role": "user", "content": "hi"}])
+    assert r.model == "mock"
+
+
+async def test_cost_router_custom_scorer():
+    class AlwaysComplex:
+        def score(self, text: str) -> float:
+            return 1.0
+
+    gw = _gw(CostRouter(simple_model="mock-mini", scorer=AlwaysComplex()))
+    r = await gw.complete(messages=[{"role": "user", "content": "What is 2+2?"}])
+    assert r.model == "mock"
+
+
+def test_heuristic_complexity_scorer():
+    scorer = HeuristicComplexityScorer()
+    simple = scorer.score("What is 2+2?")
+    complex_ = scorer.score(
+        "Explain why the trade-off between consistency and availability "
+        "matters, and compare it to the CAP theorem across failure scenarios."
+    )
+    assert 0.0 <= simple <= 1.0
+    assert 0.0 <= complex_ <= 1.0
+    assert simple < complex_

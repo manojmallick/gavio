@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { Gateway } from '../../src/gateway.js'
-import { costControl, rateLimiter, modelPolicy } from '../../src/interceptors/governance/index.js'
+import {
+  costControl,
+  rateLimiter,
+  modelPolicy,
+  costRouter,
+  heuristicComplexityScorer,
+} from '../../src/interceptors/governance/index.js'
 import {
   guardrails,
   jsonSchemaValidator,
@@ -55,6 +61,57 @@ describe('modelPolicy (F-GOV-04)', () => {
     await expect(
       g.complete({ messages: [{ role: 'user', content: 'hi' }], metadata: { role: 'guest' } }),
     ).rejects.toBeInstanceOf(ModelNotAllowedError)
+  })
+})
+
+describe('costRouter (F-GOV-06)', () => {
+  it('reroutes a simple prompt to the cheaper model', async () => {
+    const g = gw('x', undefined, costRouter({ simpleModel: 'mock-mini' }))
+    const r = await g.complete({ messages: [{ role: 'user', content: 'What is 2+2?' }] })
+    expect(r.model).toBe('mock-mini')
+  })
+
+  it('skips a complex prompt', async () => {
+    const g = gw('x', undefined, costRouter({ simpleModel: 'mock-mini', complexityThreshold: 0.35 }))
+    const r = await g.complete({
+      messages: [
+        {
+          role: 'user',
+          content:
+            'Explain why the trade-off between consistency and availability matters here, ' +
+            'and compare it to the CAP theorem, analyzing multiple failure scenarios in detail.',
+        },
+      ],
+    })
+    expect(r.model).toBe('mock')
+  })
+
+  it('skips when already on the simple model', async () => {
+    const g = gw('x', undefined, costRouter({ simpleModel: 'mock' }))
+    const r = await g.complete({ messages: [{ role: 'user', content: 'hi' }] })
+    expect(r.model).toBe('mock')
+  })
+
+  it('accepts a custom scorer', async () => {
+    const g = gw('x', undefined, costRouter({ simpleModel: 'mock-mini', scorer: { score: () => 1.0 } }))
+    const r = await g.complete({ messages: [{ role: 'user', content: 'What is 2+2?' }] })
+    expect(r.model).toBe('mock')
+  })
+})
+
+describe('heuristicComplexityScorer', () => {
+  it('scores a simple prompt lower than a complex one', () => {
+    const scorer = heuristicComplexityScorer()
+    const simple = scorer.score('What is 2+2?')
+    const complex = scorer.score(
+      'Explain why the trade-off between consistency and availability matters, ' +
+        'and compare it to the CAP theorem across failure scenarios.',
+    )
+    expect(simple).toBeGreaterThanOrEqual(0)
+    expect(simple).toBeLessThanOrEqual(1)
+    expect(complex).toBeGreaterThanOrEqual(0)
+    expect(complex).toBeLessThanOrEqual(1)
+    expect(simple).toBeLessThan(complex)
   })
 })
 
