@@ -19,6 +19,8 @@ write your own.
 [Risk scoring](#risk-scoring-f-qua-06) ·
 [Streaming](#streaming--streambuffer-f-rel-06)
 
+**v0.4.0** — [Redis cache backend](#redis-backend-f-cache-04)
+
 ---
 
 ## PII Guard (`F-SEC-01`)
@@ -179,11 +181,12 @@ A cache hit sets `cache_hit` / `cache_type` on the response and composes with
 `PiiGuard` (PII is still restored). The `HashingEmbedder` is zero-dependency;
 plug in a real embedder implementing the `Embedder` protocol for production.
 
-**Redis backend (`F-CACHE-04`)** — the default `MemoryBackend`/`InMemoryVectorBackend`
-are per-process; swap in a Redis-backed pair to share cache hits across
-processes/instances. Entries are namespaced under a Redis Set index, so
-`clear()` only removes keys that backend itself wrote, never the whole
-database.
+#### Redis backend (`F-CACHE-04`)
+
+The default `MemoryBackend`/`InMemoryVectorBackend` are per-process; swap in a
+Redis-backed pair to share cache hits across processes/instances. Entries are
+namespaced under a Redis Set index, so `clear()` only removes keys that
+backend itself wrote, never the whole database.
 
 ```python
 from gavio.interceptors.cache import SemanticCache, HashingEmbedder
