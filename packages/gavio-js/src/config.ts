@@ -10,7 +10,7 @@ import { readFileSync } from 'node:fs'
 import { ConfigurationError } from './errors.js'
 import { Gateway } from './gateway.js'
 import { auditInterceptor } from './interceptors/audit/index.js'
-import { hashingEmbedder, semanticCache } from './interceptors/cache/index.js'
+import { hashingEmbedder, redisCacheBackend, semanticCache } from './interceptors/cache/index.js'
 import { costControl, modelPolicy, rateLimiter } from './interceptors/governance/index.js'
 import { promptInjectionGuard } from './interceptors/injection.js'
 import { piiGuard } from './interceptors/pii/index.js'
@@ -100,8 +100,13 @@ export function buildFromConfig(config: Cfg): Gateway {
   }
   if ((c = cfg('semantic_cache'))) {
     const embedder = (c['enableSemantic'] ?? c['enable_semantic']) ? hashingEmbedder() : undefined
+    const backend =
+      c['backend'] === 'redis'
+        ? redisCacheBackend({ url: (c['redisUrl'] ?? c['redis_url']) as string | undefined })
+        : undefined
     gw = gw.use(
       semanticCache({
+        backend,
         embedder,
         similarityThreshold: Number(c['similarityThreshold'] ?? c['similarity_threshold'] ?? 0.95),
       }),

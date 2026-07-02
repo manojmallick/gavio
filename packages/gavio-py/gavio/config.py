@@ -107,8 +107,14 @@ def build_from_config(config: dict) -> Any:
         builder.use(ModelPolicy(roles=c.get("roles", {})))
     if (c := cfg("semantic_cache")) is not None:
         embedder = HashingEmbedder() if c.get("enable_semantic") else None
+        backend = None
+        if c.get("backend") == "redis":
+            from .interceptors.cache.backends import RedisBackend
+
+            backend = RedisBackend(url=c.get("redis_url", "redis://localhost:6379"))
         builder.use(
             SemanticCache(
+                backend=backend,
                 embedder=embedder,
                 similarity_threshold=float(c.get("similarity_threshold", 0.95)),
                 exact_ttl_seconds=int(c.get("exact_ttl_seconds", 3600)),
