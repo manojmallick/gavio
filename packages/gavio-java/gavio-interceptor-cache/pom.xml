@@ -10,7 +10,7 @@
   </parent>
   <artifactId>gavio-interceptor-cache</artifactId>
   <name>Gavio Cache</name>
-  <description>SemanticCache interceptor — exact SHA-256 + semantic cosine caching (F-CACHE-01/02/03).</description>
+  <description>SemanticCache interceptor — exact SHA-256 + semantic cosine caching, in-memory and Redis backends (F-CACHE-01/02/03/04).</description>
   <dependencies>
     <dependency>
       <groupId>io.github.manojmallick</groupId>

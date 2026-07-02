@@ -130,7 +130,8 @@ published to its native registry.
 
 The **reference implementation**. Async-first (`await gw.complete(...)`), sync
 wrapper (`complete_sync`), full type hints + `py.typed`. Zero mandatory deps;
-optional extras (`gavio[presidio]`, `gavio[redis]`, …) land in later versions.
+`gavio[redis]` adds a distributed cache backend, other optional extras
+(`gavio[presidio]`, …) land in later versions.
 
 ```bash
 pip install gavio

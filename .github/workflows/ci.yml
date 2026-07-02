@@ -20,16 +20,25 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.10", "3.11", "3.12"]
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install
-        run: pip install -e ".[dev]"
+        run: pip install -e ".[dev,redis]"
       - name: Lint (ruff)
         run: ruff check gavio tests
-      - name: Test (pytest, incl. shared vectors)
+      - name: Test (pytest, incl. shared vectors + Redis backend, F-CACHE-04)
         run: pytest tests/unit -q
 
   javascript:
@@ -41,6 +50,15 @@ jobs:
     strategy:
       matrix:
         node-version: ["18", "20", "22"]
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -50,7 +68,7 @@ jobs:
         run: npm ci
       - name: Typecheck
         run: npm run typecheck
-      - name: Test (vitest, incl. shared vectors)
+      - name: Test (vitest, incl. shared vectors + Redis backend, F-CACHE-04)
         run: npm test
 
   java:
@@ -62,6 +80,15 @@ jobs:
     strategy:
       matrix:
         java-version: ["17", "21"]
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -69,5 +96,5 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java-version }}
           cache: maven
-      - name: Test (maven, incl. shared vectors)
+      - name: Test (maven, incl. shared vectors + Redis backend, F-CACHE-04)
         run: mvn -B test

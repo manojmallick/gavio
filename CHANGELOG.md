@@ -11,7 +11,20 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Redis cache backend (all SDKs, `F-CACHE-04`)** — `RedisBackend`/`RedisVectorBackend`
+  (Python), `redisCacheBackend`/`redisVectorBackend` (JavaScript), and
+  `RedisCacheBackend`/`RedisVectorBackend` (Java) give `SemanticCache` a
+  production-grade, distributed cache backend so exact and semantic hits are
+  shared across processes. Python uses the optional `redis` package
+  (`pip install gavio[redis]`); JavaScript and Java hand-roll a minimal RESP2
+  client over `node:net`/`java.net.Socket` — zero runtime dependencies, matching
+  the project's stdlib-only provider adapters. Entries are namespaced under a
+  Redis Set index so `clear()` only removes keys the backend itself wrote,
+  never the whole database; TTLs use Redis's native expiry. The in-memory
+  backends remain the zero-infra default (design principle P4). Wired into the
+  Python and JavaScript config loaders (`semantic_cache.backend: redis`).
+  Deferred from v0.2.0.
 
 ---
 
