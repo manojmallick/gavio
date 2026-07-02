@@ -21,6 +21,8 @@ write your own.
 
 **v0.4.0** — [Redis cache backend](#redis-backend-f-cache-04)
 
+**v0.5.0** — [Cost-optimiser routing](#cost-optimiser-routing-f-gov-06)
+
 ---
 
 ## PII Guard (`F-SEC-01`)
@@ -233,6 +235,26 @@ ModelPolicy(roles={"analyst": ["gpt-4o-mini"], "admin": ["*"]})              # R
 Budget blocks with `BudgetExceededError`, rate limiting with
 `RateLimitExceededError`, and RBAC with `ModelNotAllowedError` (role read from
 `request.metadata["role"]`).
+
+#### Cost-optimiser routing (`F-GOV-06`)
+
+`CostRouter` reroutes a request to a cheaper `simple_model` when a pluggable
+`ComplexityScorer` scores its prompt below `complexity_threshold`. The default
+`HeuristicComplexityScorer` is zero-dependency — prompt length (via the same
+token estimator `PricingProvider` uses) plus reasoning-keyword density
+(`why`, `compare`, `trade-off`, `explain`, …).
+
+```python
+from gavio.interceptors.governance import CostRouter
+
+CostRouter(simple_model="gpt-4o-mini", complexity_threshold=0.35)
+```
+
+Register it early, before caching, so a rerouted request's cache key reflects
+the model it actually ran on. Records its decision (`rerouted`,
+`original_model`, `complexity_score`) in `ctx.state["cost_router"]` — the
+audit trail's `model` field already reflects the rerouted model once it runs,
+so no schema changes were needed.
 
 ### Guardrails (`F-QUA-01/02`)
 

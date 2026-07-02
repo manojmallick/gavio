@@ -76,6 +76,13 @@ public record GavioRequest(
                 parentTraceId, sessionId, options, metadata, lineage);
     }
 
+    /** Return a copy with a different model (used by cost-optimiser rerouting). */
+    public GavioRequest withModel(String newModel) {
+        return new GavioRequest(
+                messages, newModel, provider, traceId, agentId,
+                parentTraceId, sessionId, options, metadata, lineage);
+    }
+
     public static Builder builder() {
         return new Builder();
     }

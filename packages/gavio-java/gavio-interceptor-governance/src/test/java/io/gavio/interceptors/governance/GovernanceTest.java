@@ -1,13 +1,16 @@
 package io.gavio.interceptors.governance;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.gavio.Gateway;
 import io.gavio.GavioException.BudgetExceededException;
 import io.gavio.GavioException.ModelNotAllowedException;
 import io.gavio.GavioException.RateLimitExceededException;
 import io.gavio.GavioRequest;
+import io.gavio.GavioResponse;
 import io.gavio.PricingProvider;
 import io.gavio.interceptors.Interceptor;
 import io.gavio.providers.MockProvider;
@@ -62,5 +65,53 @@ class GovernanceTest {
         CompletionException ex = assertThrows(
                 CompletionException.class, () -> gw.complete(req("hi", Map.of("role", "guest"))).join());
         assertInstanceOf(ModelNotAllowedException.class, ex.getCause());
+    }
+
+    @Test
+    void costRouterReroutesSimplePrompt() {
+        Gateway gw = gw(new MockProvider("x"), CostRouter.builder().simpleModel("mock-mini").build());
+        GavioResponse r = gw.complete(req("What is 2+2?", null)).join();
+        assertEquals("mock-mini", r.model());
+    }
+
+    @Test
+    void costRouterSkipsComplexPrompt() {
+        Gateway gw = gw(
+                new MockProvider("x"),
+                CostRouter.builder().simpleModel("mock-mini").complexityThreshold(0.35).build());
+        GavioResponse r = gw.complete(req(
+                "Explain why the trade-off between consistency and availability matters here, "
+                        + "and compare it to the CAP theorem, analyzing multiple failure scenarios in detail.",
+                null)).join();
+        assertEquals("mock", r.model());
+    }
+
+    @Test
+    void costRouterSkipsWhenAlreadyOnSimpleModel() {
+        Gateway gw = gw(new MockProvider("x"), CostRouter.builder().simpleModel("mock").build());
+        GavioResponse r = gw.complete(req("hi", null)).join();
+        assertEquals("mock", r.model());
+    }
+
+    @Test
+    void costRouterAcceptsCustomScorer() {
+        ComplexityScorer alwaysComplex = text -> 1.0;
+        Gateway gw = gw(
+                new MockProvider("x"),
+                CostRouter.builder().simpleModel("mock-mini").scorer(alwaysComplex).build());
+        GavioResponse r = gw.complete(req("What is 2+2?", null)).join();
+        assertEquals("mock", r.model());
+    }
+
+    @Test
+    void heuristicComplexityScorerRanksSimpleBelowComplex() {
+        HeuristicComplexityScorer scorer = new HeuristicComplexityScorer();
+        double simple = scorer.score("What is 2+2?");
+        double complex = scorer.score(
+                "Explain why the trade-off between consistency and availability matters, "
+                        + "and compare it to the CAP theorem across failure scenarios.");
+        assertTrue(simple >= 0.0 && simple <= 1.0);
+        assertTrue(complex >= 0.0 && complex <= 1.0);
+        assertTrue(simple < complex);
     }
 }

@@ -11,7 +11,18 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Cost-optimiser routing (all SDKs, `F-GOV-06`)** — `CostRouter` reroutes a
+  request to a cheaper `simple_model` when a pluggable `ComplexityScorer`
+  scores its prompt below `complexity_threshold`. Ships a zero-dependency
+  default `HeuristicComplexityScorer` (prompt length via the same token
+  estimator `PricingProvider` uses, plus reasoning-keyword density). Java's
+  `GavioRequest` gained `withModel(String)` alongside its existing
+  `withProvider`, so the rewrite mirrors the established
+  `withMessages`/`withProvider`/`copy_with_messages` idiom used by
+  `LoadBalancer`/`FallbackChain`. Records its decision in
+  `ctx.state["cost_router"]` — no `AuditRecord` schema changes needed, since
+  the audit trail's `model` field already reflects the rerouted model.
 
 ---
 
