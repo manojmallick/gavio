@@ -25,7 +25,8 @@ pip install gavio            # core, zero deps
 pip install "gavio[dev]"     # + pytest, pytest-asyncio, ruff, mypy
 ```
 
-Planned optional extras (later versions): `gavio[presidio]`, `gavio[redis]`,
+Optional extras: `gavio[redis]` (`RedisBackend`/`RedisVectorBackend` for the
+semantic cache, F-CACHE-04). Planned for later versions: `gavio[presidio]`,
 `gavio[otel]`, `gavio[elasticsearch]`, `gavio[all]`.
 
 ---

@@ -54,7 +54,7 @@ implementation("io.github.manojmallick:gavio-interceptor-pii:0.3.0")
 | `gavio-core` | Gateway, request/response records, interceptor chain, providers base, Mock |
 | `gavio-interceptor-pii` | `PiiGuard`, scanners (Email/Iban/Bsn/CreditCard/Phone/IpAddress/Ssn/Secret) |
 | `gavio-interceptor-audit` | `AuditInterceptor`, `AuditRecord`, `StdoutSink`, hash-chain + call-graph |
-| `gavio-interceptor-cache` | `SemanticCache`, `MemoryCacheBackend` |
+| `gavio-interceptor-cache` | `SemanticCache`, `MemoryCacheBackend`, `RedisCacheBackend`/`RedisVectorBackend` (F-CACHE-04) |
 | `gavio-interceptor-reliability` | `RetryInterceptor`, `TimeoutPolicy`, `FallbackChain`, `CircuitBreaker`, `LoadBalancer` |
 | `gavio-interceptor-governance` | `CostControl`, `RateLimiter`, `ModelPolicy` |
 | `gavio-interceptor-guardrails` | `GuardrailsInterceptor`, JSON-schema + regex validators |
