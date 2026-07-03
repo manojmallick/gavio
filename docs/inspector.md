@@ -1,6 +1,7 @@
 # Inspector
 
 **Added in v0.6.0** · Feature IDs: `F-DX-09` (core) · `F-DX-10` (UI)
+**Extended in v0.7.0** · `F-OBS-10` (agent DAG) · `F-DX-11` (replay) · `F-DX-08` (production dashboard) · `F-DX-12` (test-case export)
 
 The Gavio Inspector is an embedded, zero-dependency dev-time visualizer. While
 a request moves through the interceptor chain, the gateway emits span events —
@@ -52,3 +53,29 @@ The server binds `127.0.0.1` by default; non-loopback binds require an
 `/api/traces`, `/api/traces/{id}`, `/api/stream`) is identical in all three
 SDKs — contract in [`spec/InspectorEvent.schema.json`](../spec/InspectorEvent.schema.json),
 parity enforced by [`test-vectors/inspector/`](../test-vectors/inspector/).
+
+## Agentic & production mode (v0.7.0)
+
+- **Agent call graphs & sessions** (`F-OBS-10`) — `GET /api/dag?root=|session_id=`
+  builds the multi-agent DAG from `parent_trace_id`/`agent_id` with subtree
+  cost/latency/status rollups; `GET /api/sessions` aggregates per session.
+  DAG and Sessions tabs in the UI.
+- **Trace replay & edit-resend** (`F-DX-11`) — `POST /api/replay` re-fires a
+  captured request through the live gateway (full chain, never bypassed),
+  optionally with edited messages/model. `full` mode only — 403 otherwise.
+- **RED stats** — `GET /api/stats?group_by=provider|model|agent_id&since=`:
+  rate, error %, latency p50/p95/p99, tokens, cost, cache hit-rate, PII counts.
+- **Export as test case** (`F-DX-12`) —
+  `GET /api/traces/{id}/export?format=test-vector|testkit-py|testkit-java|testkit-js`;
+  PII values replaced with synthetic fixtures before export.
+- **Cost simulator** — `GET /api/simulate-cost?trace_id=&model=` recosts a
+  trace under a different model via the pricing table.
+- **Read-only dashboard** (`F-DX-08`, Python CLI) — write audits with
+  `AuditInterceptor(sink=JsonlSink("audit.jsonl"), hash_chain=True)`, then
+  `gavio inspect --store audit.jsonl` serves the metadata-mode dashboard with
+  search-by-content-hash (`/api/traces?q=`) and the hash-chain verifier
+  (`/api/chain/verify`, `F-OBS-02` surfaced) — no gateway, no content, no replay.
+
+Fleet extras: a prebuilt [Grafana dashboard](./grafana/gavio-dashboard.json)
+over the Prometheus metrics and the
+[InspectorEvent → OpenTelemetry mapping](./otel-mapping.md).

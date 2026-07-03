@@ -1,12 +1,18 @@
 # Inspector
 
 **Added in v0.6.0** · Feature IDs: `F-DX-09` (core) · `F-DX-10` (UI)
+**Extended in v0.7.0** · `F-OBS-10` (agent DAG) · `F-DX-11` (replay) · `F-DX-08` (production dashboard) · `F-DX-12` (test-case export)
 
 The Gavio Inspector is an embedded, zero-dependency dev-time visualizer. While
 a request moves through the interceptor chain, the gateway emits span events —
 which interceptor fired, in what order, what each one changed, how long each
 took, what the provider returned. A bounded ring buffer assembles them into
 traces, and a localhost HTTP server renders them in a self-contained web UI.
+
+Since v0.7.0 it also renders **multi-agent call graphs and sessions**, can
+**replay** any captured request, aggregates **RED stats**, **exports traces as
+test cases**, and doubles as a **read-only production dashboard** over a
+persisted audit store.
 
 It is **off by default** — dev mode does *not* enable it implicitly.
 
@@ -82,8 +88,15 @@ is set, all requests require `Authorization: Bearer <token>`.
 |---|---|
 | `GET /api/health` | status, SDK, version, mode, trace count |
 | `GET /api/pipeline` | chain composition + ordering lints |
-| `GET /api/traces?limit=N` | trace summaries, chronological |
+| `GET /api/traces?limit=N&q=` | trace summaries, chronological; `q` matches trace-id or content-hash prefixes |
 | `GET /api/traces/{id}` | one assembled trace: summary + ordered events |
+| `GET /api/dag?root=<id>` or `?session_id=<id>` | agent call graph with subtree cost/latency/status rollups <Badge type="tip" text="v0.7.0" /> |
+| `GET /api/sessions` | sessions with trace counts, errors, agents, cost, duration <Badge type="tip" text="v0.7.0" /> |
+| `GET /api/stats?group_by=&since=` | RED aggregates: rate, error %, latency p50/p95/p99, tokens, cost, cache hit-rate, PII counts <Badge type="tip" text="v0.7.0" /> |
+| `POST /api/replay` | re-fires a captured trace through the live gateway (`full` mode only) <Badge type="tip" text="v0.7.0" /> |
+| `GET /api/simulate-cost?trace_id=&model=` | recosts a trace under a different model <Badge type="tip" text="v0.7.0" /> |
+| `GET /api/traces/{id}/export?format=` | trace as a test case (see below) <Badge type="tip" text="v0.7.0" /> |
+| `GET /api/chain/verify` | walks the audit hash-chain; store mode only <Badge type="tip" text="v0.7.0" /> |
 | `GET /api/stream` | live event feed (Server-Sent Events) |
 | `GET /` | the bundled UI |
 
@@ -92,6 +105,75 @@ The event contract is canonical JSON Schema:
 Cross-SDK parity is enforced by shared
 [event-sequence test vectors](https://github.com/manojmallick/gavio/tree/main/test-vectors/inspector)
 that all three suites run.
+
+## Agent call graphs & sessions <Badge type="tip" text="v0.7.0" />
+
+Pass `agent_id`, `parent_trace_id`, and `session_id` on your gateway calls and
+the **DAG** tab reconstructs the multi-agent call graph — every node shows its
+own cost/latency/status plus subtree rollups (total traces, cost, latency,
+errors under that agent). The **Sessions** tab groups traces by `session_id`
+with per-session totals; clicking a session opens its graph.
+
+## Trace replay & edit-resend <Badge type="tip" text="v0.7.0" />
+
+From the trace detail (or `POST /api/replay {"traceId", "overrides"?}`) you can
+re-fire any captured request through the **live gateway** — the full
+interceptor chain runs again, PII guard included, never bypassed. Optionally
+edit the messages or the model first ("would haiku have been good enough?").
+The result opens as a new trace. Replay requires `full` capture mode — the
+endpoint returns 403 otherwise, and the store-backed dashboard never replays.
+
+## Export a trace as a test case <Badge type="tip" text="v0.7.0" />
+
+`GET /api/traces/{id}/export?format=test-vector|testkit-py|testkit-java|testkit-js`
+renders a captured trace as a shared `test-vectors/` JSON case or a runnable
+`GavioTestKit` unit test in any of the three languages. Detected PII values are
+replaced with the repo's synthetic fixtures (e.g. `jan@example.com`,
+`NL91ABNA0417164300`) before export, so real data never lands in a test file.
+Debug → regression test in one click. Requires `full` or `redacted` mode.
+
+## Cost simulator <Badge type="tip" text="v0.7.0" />
+
+`GET /api/simulate-cost?trace_id=<id>&model=<model>` recomputes a trace's cost
+from its captured token usage under a different model's pricing — e.g. "this
+call cost $0.0042 on sonnet; haiku would have been $0.0004".
+
+## Production mode: the read-only dashboard <Badge type="tip" text="v0.7.0" />
+
+Write your audit trail to a JSONL store, then serve the dashboard from it —
+no running gateway, `metadata` mode, no content, no replay:
+
+::: code-group
+
+```python [Python]
+from gavio.interceptors.audit import AuditInterceptor, JsonlSink
+
+gw = (
+    Gateway.builder()
+    .provider("anthropic")
+    .use(AuditInterceptor(sink=JsonlSink("audit.jsonl"), hash_chain=True))
+    .build()
+)
+```
+
+```bash [CLI]
+gavio inspect --store audit.jsonl          # http://127.0.0.1:7411
+gavio inspect --store audit.jsonl --port 7412 --token $TOKEN
+```
+
+:::
+
+The store-backed server adds what production debugging needs: **RED stats**
+(`/api/stats`), **search-by-content-hash** (`/api/traces?q=<hash prefix>` —
+hash the prompt locally, look it up without content ever reaching the server),
+and the **hash-chain verifier** (`/api/chain/verify`, `F-OBS-02` surfaced) that
+walks every `previous_hash` link and reports the first tampered record.
+
+For fleet-level observability, pair with the Prometheus metrics
+(`F-OBS-08`) and the prebuilt
+[Grafana dashboard](https://github.com/manojmallick/gavio/blob/main/docs/grafana/gavio-dashboard.json);
+the InspectorEvent → OpenTelemetry span mapping is documented in
+[docs/otel-mapping.md](https://github.com/manojmallick/gavio/blob/main/docs/otel-mapping.md).
 
 ## Recording decisions from your own interceptor
 
