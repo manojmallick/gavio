@@ -12,10 +12,10 @@
     <exec.mainClass>ProductionGateway</exec.mainClass>
   </properties>
   <dependencies>
-    <dependency><groupId>io.github.manojmallick</groupId><artifactId>gavio-core</artifactId><version>0.5.0</version></dependency>
-    <dependency><groupId>io.github.manojmallick</groupId><artifactId>gavio-interceptor-pii</artifactId><version>0.5.0</version></dependency>
-    <dependency><groupId>io.github.manojmallick</groupId><artifactId>gavio-interceptor-audit</artifactId><version>0.5.0</version></dependency>
-    <dependency><groupId>io.github.manojmallick</groupId><artifactId>gavio-interceptor-reliability</artifactId><version>0.5.0</version></dependency>
+    <dependency><groupId>io.github.manojmallick</groupId><artifactId>gavio-core</artifactId><version>0.5.1</version></dependency>
+    <dependency><groupId>io.github.manojmallick</groupId><artifactId>gavio-interceptor-pii</artifactId><version>0.5.1</version></dependency>
+    <dependency><groupId>io.github.manojmallick</groupId><artifactId>gavio-interceptor-audit</artifactId><version>0.5.1</version></dependency>
+    <dependency><groupId>io.github.manojmallick</groupId><artifactId>gavio-interceptor-reliability</artifactId><version>0.5.1</version></dependency>
   </dependencies>
   <build><plugins>
     <plugin><groupId>org.codehaus.mojo</groupId><artifactId>exec-maven-plugin</artifactId><version>3.2.0</version>
