@@ -81,6 +81,10 @@ export class Gateway {
     this.dryRunMode = options.dryRun ?? false
     this.pricing = options.pricing ?? new PricingProvider()
     this.inspectorInstance = this.buildInspector(options.inspect)
+    if (this.inspectorInstance !== null) {
+      // /api/replay re-fires through this gateway's full pipeline (F-DX-11).
+      this.inspectorInstance.replayHandler = (opts) => this.complete(opts)
+    }
   }
 
   /**
@@ -98,7 +102,7 @@ export class Gateway {
       this.devMode,
     )
     if (!resolved.enabled) return null
-    return new Inspector(resolved, () => this.pipelineInfo())
+    return new Inspector(resolved, () => this.pipelineInfo(), { pricing: this.pricing })
   }
 
   /** The Inspector attached to this gateway, or null when disabled. */

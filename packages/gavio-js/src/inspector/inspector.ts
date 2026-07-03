@@ -4,25 +4,40 @@
  * when inspection is explicitly enabled.
  */
 
+import { PricingProvider } from '../pricing.js'
 import type { GavioRequest } from '../request.js'
 import { TraceBuffer } from './buffer.js'
 import { InspectorBus } from './bus.js'
 import type { ResolvedInspectorConfig } from './config.js'
 import { TraceEmitter } from './emitter.js'
 import { InspectorServer } from './server.js'
-import type { PipelineInfo } from './server.js'
+import type { PipelineInfo, ReplayHandler } from './server.js'
+
+export interface InspectorOptions {
+  /** Used by /api/simulate-cost; the Gateway passes its PricingProvider. */
+  pricing?: PricingProvider
+}
 
 export class Inspector {
   readonly config: ResolvedInspectorConfig
   readonly bus: InspectorBus
   readonly buffer: TraceBuffer
   readonly server: InspectorServer | null
+  /** Used by /api/simulate-cost; the Gateway passes its PricingProvider. */
+  readonly pricing: PricingProvider
+  /** Wired by the Gateway: /api/replay re-fires through the live pipeline. */
+  replayHandler: ReplayHandler | null = null
 
-  constructor(config: ResolvedInspectorConfig, pipeline: () => PipelineInfo) {
+  constructor(
+    config: ResolvedInspectorConfig,
+    pipeline: () => PipelineInfo,
+    options: InspectorOptions = {},
+  ) {
     this.config = config
     this.bus = new InspectorBus()
     this.buffer = new TraceBuffer({ maxTraces: config.maxTraces })
     this.bus.subscribe((event) => this.buffer.handle(event))
+    this.pricing = options.pricing ?? new PricingProvider()
 
     this.server = config.startServer
       ? new InspectorServer({
@@ -33,6 +48,8 @@ export class Inspector {
           bind: config.bind,
           authToken: config.authToken,
           pipeline,
+          pricing: this.pricing,
+          replayHandler: () => this.replayHandler,
         })
       : null
   }

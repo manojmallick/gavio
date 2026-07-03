@@ -88,6 +88,25 @@
   .arrow { color: var(--dim); text-align: center; font-size: 11px; }
   #pipeline { flex: 1; overflow-y: auto; padding: 16px 20px; max-width: 720px; }
   .muted { color: var(--dim); }
+  /* v0.7.0 views */
+  .view { flex: 1; overflow-y: auto; padding: 16px 20px; }
+  table.grid { border-collapse: collapse; width: 100%; font: 12px var(--mono); }
+  table.grid th, table.grid td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  table.grid th { color: var(--dim); font-weight: 500; text-transform: uppercase; font-size: 10px; letter-spacing: .06em; }
+  table.grid tr.click { cursor: pointer; }
+  table.grid tr.click:hover { background: var(--panel); }
+  .btn { background: var(--panel2); border: 1px solid var(--border); color: var(--fg); border-radius: 6px; padding: 4px 12px; cursor: pointer; font-size: 12px; }
+  .btn:hover { border-color: var(--accent); }
+  .btn[disabled] { opacity: .4; cursor: not-allowed; }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-top: 8px; }
+  .dagnode { border: 1px solid var(--border); background: var(--panel); border-radius: 8px; padding: 6px 12px; margin: 4px 0; cursor: pointer; display: flex; gap: 10px; align-items: baseline; }
+  .dagnode:hover { border-color: var(--accent); }
+  .dagnode b { font: 12px var(--mono); }
+  .dagnode .roll { color: var(--dim); font: 11px var(--mono); margin-left: auto; }
+  .viewbar { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .viewbar input, .viewbar select { background: var(--panel2); border: 1px solid var(--border); color: var(--fg); border-radius: 6px; padding: 4px 8px; font-size: 12px; }
+  #replay-editor { display: none; margin-top: 8px; }
+  #replay-editor textarea { width: 100%; min-height: 90px; background: var(--panel); border: 1px solid var(--border); color: var(--fg); border-radius: 6px; padding: 8px; font: 12px var(--mono); }
 </style>
 </head>
 <body>
@@ -98,6 +117,9 @@
   <div id="conn" title="live stream"></div>
   <nav>
     <button id="tab-traces" class="active">Traces</button>
+    <button id="tab-sessions">Sessions</button>
+    <button id="tab-dag">DAG</button>
+    <button id="tab-stats">Stats</button>
     <button id="tab-pipeline">Pipeline</button>
   </nav>
 </header>
@@ -112,6 +134,9 @@
     <div id="rows"><div id="empty">Waiting for traffic…<br><span class="muted">Send a request through the gateway.</span></div></div>
   </section>
   <section id="detail"><div id="empty2" class="muted" style="padding:40px 20px;text-align:center">Select a trace.</div></section>
+  <section id="sessions" class="view" style="display:none"></section>
+  <section id="dag" class="view" style="display:none"></section>
+  <section id="stats" class="view" style="display:none"></section>
   <section id="pipeline" style="display:none"></section>
 </main>
 <script>
@@ -250,8 +275,136 @@ function renderDetail() {
   if (start?.data.messages) html += `<h2>Request${state.mode === "redacted" ? " (redacted)" : ""}</h2>` + start.data.messages.map((m) => `<pre><b>${esc(m.role)}</b>  ${esc(m.content)}</pre>`).join("");
   if (end?.data.content != null) html += `<h2>Response</h2><pre>${esc(end.data.content)}</pre>`;
   if (state.mode === "metadata") html += `<p class="muted">metadata mode — content is never captured.</p>`;
+  html += renderActions(s);
   $("#detail").innerHTML = html;
   for (const el of document.querySelectorAll(".span")) el.onclick = () => { state.selSpan = +el.dataset.i; renderDetail(); };
+  wireActions(s);
+}
+
+/* ---------- replay & export (F-DX-11 / F-DX-12) ---------- */
+function renderActions(s) {
+  let html = `<h2>Actions</h2><div class="actions">`;
+  if (state.mode === "full") {
+    html += `<button class="btn" id="act-replay">Replay</button><button class="btn" id="act-edit">Edit &amp; resend</button>`;
+  } else {
+    html += `<button class="btn" disabled title="replay requires full capture mode">Replay</button>`;
+  }
+  if (state.mode !== "metadata") {
+    const base = `/api/traces/${encodeURIComponent(s.traceId)}/export?format=`;
+    for (const f of ["test-vector", "testkit-py", "testkit-js", "testkit-java"]) {
+      html += `<a class="btn" href="${base}${f}" download>${f}</a>`;
+    }
+  } else {
+    html += `<span class="muted">export requires full or redacted mode</span>`;
+  }
+  html += `</div><div id="replay-editor">
+    <textarea id="replay-messages"></textarea>
+    <div class="actions"><input id="replay-model" placeholder="model override (optional)">
+    <button class="btn" id="act-resend">Send</button></div></div>`;
+  return html;
+}
+function wireActions(s) {
+  const replay = (overrides) =>
+    fetch("/api/replay", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ traceId: s.traceId, overrides }) })
+      .then((r) => r.json())
+      .then((d) => { if (d.traceId) { showTab("traces"); select(d.traceId); } else alert(d.error || "replay failed"); })
+      .catch((e) => alert("replay failed: " + e));
+  const btn = $("#act-replay"); if (btn) btn.onclick = () => replay(undefined);
+  const edit = $("#act-edit");
+  if (edit) edit.onclick = () => {
+    const tr = state.traces.get(s.traceId);
+    const start = tr?.events.find((e) => e.type === "trace.start");
+    $("#replay-messages").value = JSON.stringify(start?.data.messages || [], null, 2);
+    $("#replay-editor").style.display = "block";
+  };
+  const resend = $("#act-resend");
+  if (resend) resend.onclick = () => {
+    let messages;
+    try { messages = JSON.parse($("#replay-messages").value); } catch { alert("messages must be valid JSON"); return; }
+    const overrides = { messages };
+    if ($("#replay-model").value) overrides.model = $("#replay-model").value;
+    replay(overrides);
+  };
+}
+
+/* ---------- sessions view (F-OBS-10) ---------- */
+async function loadSessions() {
+  let d; try { d = await api("/api/sessions"); } catch { return; }
+  const sessions = d.sessions || [];
+  if (!sessions.length) { $("#sessions").innerHTML = '<p class="muted">No sessions yet — pass session_id on your gateway calls.</p>'; return; }
+  $("#sessions").innerHTML = `<h2 style="margin-bottom:10px">Sessions</h2><table class="grid"><tr>
+    <th>session</th><th>traces</th><th>errors</th><th>agents</th><th>cost</th><th>latency</th><th>first</th><th>last</th></tr>` +
+    sessions.map((s) => `<tr class="click" data-sid="${esc(s.sessionId)}">
+      <td>${esc(s.sessionId)}</td><td>${s.traces}</td><td>${s.errors}</td>
+      <td>${esc((s.agents || []).join(", "))}</td>
+      <td>$${Number(s.totalCostUsd || 0).toFixed(6)}</td><td>${s.totalLatencyMs}ms</td>
+      <td>${s.firstWallTimeUtc ? new Date(s.firstWallTimeUtc).toLocaleTimeString() : ""}</td>
+      <td>${s.lastWallTimeUtc ? new Date(s.lastWallTimeUtc).toLocaleTimeString() : ""}</td></tr>`).join("") + `</table>`;
+  for (const el of document.querySelectorAll("#sessions tr.click"))
+    el.onclick = () => { state.dagQuery = "session:" + el.dataset.sid; showTab("dag"); };
+}
+
+/* ---------- DAG view (F-OBS-10) ---------- */
+async function loadDag() {
+  const bar = `<div class="viewbar"><input id="dag-query" placeholder="session:<id> or root trace id" value="${esc(state.dagQuery || "")}">
+    <button class="btn" id="dag-go">Load</button></div>`;
+  const q = state.dagQuery;
+  let body = '<p class="muted">Enter a session id (session:&lt;id&gt;) or a root trace id.</p>';
+  if (q) {
+    const url = q.startsWith("session:")
+      ? "/api/dag?session_id=" + encodeURIComponent(q.slice(8))
+      : "/api/dag?root=" + encodeURIComponent(q);
+    try {
+      const d = await api(url);
+      if (d.error) body = `<p class="muted">${esc(d.error)}</p>`;
+      else body = renderDagTree(d);
+    } catch { body = '<p class="muted">DAG unavailable.</p>'; }
+  }
+  $("#dag").innerHTML = `<h2 style="margin-bottom:10px">Agent call graph</h2>` + bar + body;
+  const input = $("#dag-query");
+  if (state.dagQuery) input.value = state.dagQuery;
+  $("#dag-go").onclick = () => { state.dagQuery = input.value.trim(); loadDag(); };
+  input.onkeydown = (e) => { if (e.key === "Enter") { state.dagQuery = input.value.trim(); loadDag(); } };
+  for (const el of document.querySelectorAll(".dagnode"))
+    el.onclick = () => { showTab("traces"); select(el.dataset.id); };
+}
+function renderDagTree(dag) {
+  const nodes = new Map((dag.nodes || []).map((n) => [n.traceId, n]));
+  const children = {};
+  for (const e of dag.edges || []) (children[e.from] = children[e.from] || []).push(e.to);
+  const roots = (dag.nodes || []).filter((n) => !n.parentTraceId || !nodes.has(n.parentTraceId));
+  const renderNode = (n, depth) => {
+    const roll = n.subtree || {};
+    return `<div class="dagnode" data-id="${esc(n.traceId)}" style="margin-left:${depth * 26}px">
+      <b>${esc(n.agentId || "—")}</b><span class="muted">${esc(n.provider || "")}/${esc(n.model || "")}</span>
+      <span class="tag ${esc(n.status || "")}">${esc(n.status || "?")}</span>
+      <span class="roll">subtree: ${roll.traces || 1} traces · $${Number(roll.costUsd || 0).toFixed(6)} · ${roll.latencyMs || 0}ms${roll.errors ? " · " + roll.errors + " err" : ""}</span></div>` +
+      (children[n.traceId] || []).map((id) => nodes.has(id) ? renderNode(nodes.get(id), depth + 1) : "").join("");
+  };
+  if (!roots.length) return '<p class="muted">No traces matched.</p>';
+  return roots.map((n) => renderNode(n, 0)).join("");
+}
+
+/* ---------- stats view (F-DX-08) ---------- */
+async function loadStats() {
+  const groupBy = state.statsGroup || "";
+  let d; try { d = await api("/api/stats" + (groupBy ? "?group_by=" + groupBy : "")); } catch { return; }
+  const agg = (a) => a ? `<td>${a.requests}</td><td>${a.errors} (${(a.errorRate * 100).toFixed(1)}%)</td>
+    <td>${a.latencyMs.p50 ?? "—"} / ${a.latencyMs.p95 ?? "—"} / ${a.latencyMs.p99 ?? "—"}</td>
+    <td>${a.tokens.total}</td><td>$${Number(a.costUsd).toFixed(6)}</td>
+    <td>${a.cacheHits} (${(a.cacheHitRate * 100).toFixed(1)}%)</td>
+    <td>${esc(Object.entries(a.piiDetections || {}).map(([k, v]) => k + ":" + v).join(" ") || "—")}</td>` : "";
+  let html = `<h2 style="margin-bottom:10px">Stats</h2>
+    <div class="viewbar"><label class="muted">group by</label><select id="stats-group">
+      <option value="">—</option>
+      ${["provider", "model", "agent_id"].map((g) => `<option ${g === groupBy ? "selected" : ""}>${g}</option>`).join("")}
+    </select></div>
+    <table class="grid"><tr><th></th><th>requests</th><th>errors</th><th>latency p50/p95/p99 (ms)</th><th>tokens</th><th>cost</th><th>cache</th><th>pii</th></tr>
+    <tr><td><b>total</b></td>${agg(d.total)}</tr>` +
+    Object.entries(d.groups || {}).map(([k, a]) => `<tr><td>${esc(k)}</td>${agg(a)}</tr>`).join("") + `</table>`;
+  $("#stats").innerHTML = html;
+  $("#stats-group").onchange = (e) => { state.statsGroup = e.target.value; loadStats(); };
 }
 
 /* word-level diff highlight (LCS on tokens) */
@@ -300,8 +453,17 @@ async function loadPipeline() {
 }
 
 /* ---------- tabs & filters ---------- */
-$("#tab-traces").onclick = () => { $("#tab-traces").classList.add("active"); $("#tab-pipeline").classList.remove("active"); $("#list").style.display = "flex"; $("#detail").style.display = "block"; $("#pipeline").style.display = "none"; };
-$("#tab-pipeline").onclick = () => { $("#tab-pipeline").classList.add("active"); $("#tab-traces").classList.remove("active"); $("#list").style.display = "none"; $("#detail").style.display = "none"; $("#pipeline").style.display = "block"; loadPipeline(); };
+const TABS = { traces: null, sessions: loadSessions, dag: loadDag, stats: loadStats, pipeline: loadPipeline };
+function showTab(name) {
+  for (const tab of Object.keys(TABS)) {
+    $("#tab-" + tab).classList.toggle("active", tab === name);
+    if (tab !== "traces") $("#" + tab).style.display = tab === name ? "block" : "none";
+  }
+  $("#list").style.display = name === "traces" ? "flex" : "none";
+  $("#detail").style.display = name === "traces" ? "block" : "none";
+  if (TABS[name]) TABS[name]();
+}
+for (const tab of Object.keys(TABS)) $("#tab-" + tab).onclick = () => showTab(tab);
 $("#q").oninput = renderList; $("#fstatus").onchange = renderList;
 boot();
 </script>

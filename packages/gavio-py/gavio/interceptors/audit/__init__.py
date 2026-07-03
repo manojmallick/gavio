@@ -5,13 +5,14 @@ from __future__ import annotations
 from .interceptor import AuditInterceptor
 from .record import SCHEMA_VERSION, AuditRecord
 from .sink import AuditSink
-from .sinks import StdoutSink
+from .sinks import JsonlSink, StdoutSink
 from .trace import TraceNode, build_call_graph, verify_chain
 
 __all__ = [
     "AuditInterceptor",
     "AuditRecord",
     "AuditSink",
+    "JsonlSink",
     "StdoutSink",
     "SCHEMA_VERSION",
     "verify_chain",

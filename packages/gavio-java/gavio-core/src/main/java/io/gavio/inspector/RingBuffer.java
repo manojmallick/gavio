@@ -72,6 +72,12 @@ public final class RingBuffer implements Consumer<InspectorEvent> {
                 summary.put("piiEntityTypes", data.getOrDefault("piiEntityTypes", List.of()));
                 summary.put("interceptorsFired", data.getOrDefault("interceptorsFired", List.of()));
             }
+            case "provider.call.end" -> {
+                // Token usage feeds /api/stats and /api/simulate-cost.
+                if (data.containsKey("usage")) {
+                    summary.put("usage", data.get("usage"));
+                }
+            }
             default -> {
                 // Other event types only contribute to the event list.
             }

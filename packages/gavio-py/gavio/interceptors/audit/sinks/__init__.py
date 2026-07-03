@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .jsonl import JsonlSink
 from .stdout import StdoutSink
 
-__all__ = ["StdoutSink"]
+__all__ = ["JsonlSink", "StdoutSink"]

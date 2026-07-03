@@ -51,6 +51,9 @@ class Gateway:
         self._model = model
         self._dry_run = dry_run
         self._inspector = inspector
+        if inspector is not None:
+            # /api/replay re-fires through this gateway — full chain, never bypassed.
+            inspector.replay_handler = self.complete
         # Separate plain pre/post interceptors from executor-wrapping policies.
         self._policies: list[ExecutorPolicy] = [
             i for i in interceptors if isinstance(i, ExecutorPolicy)
@@ -324,6 +327,7 @@ class GatewayBuilder:
             "lints": compute_lints(names),
         }
         inspector = Inspector(config, pipeline, dev_mode=self._dev_mode)
+        inspector.pricing = self._pricing
         if config.start_server:
             inspector.start_server()
         return inspector

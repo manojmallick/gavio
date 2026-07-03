@@ -57,6 +57,28 @@ public final class Gateway {
             }
         }
         this.chain = new InterceptorChain(regular);
+        if (inspector != null) {
+            // POST /api/replay re-fires through this gateway's complete(), so a
+            // replayed request always runs the full interceptor chain (F-DX-11).
+            inspector.setReplayHandler(this::replay);
+        }
+    }
+
+    /** Replay handler wired into the inspector — builds a request and re-fires it. */
+    private CompletableFuture<GavioResponse> replay(
+            List<Message> messages, String replayModel,
+            Map<String, Object> metadata, Map<String, Object> options) {
+        GavioRequest.Builder builder = GavioRequest.builder()
+                .messages(messages)
+                .model(replayModel != null ? replayModel : model)
+                .provider(Provider.coerce(adapter.providerName()));
+        if (metadata != null) {
+            metadata.forEach(builder::metadata);
+        }
+        if (options != null) {
+            options.forEach(builder::option);
+        }
+        return complete(builder.build());
     }
 
     public static GavioBuilder builder() {
