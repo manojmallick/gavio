@@ -11,7 +11,19 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Cost-optimiser routing test coverage (`F-GOV-06`)** — each SDK's governance
+  suite now asserts the decision record `CostRouter` writes to
+  `ctx.state["cost_router"]` (`rerouted`, `original_model`, `complexity_score`)
+  and covers the threshold boundary (a score exactly at `complexity_threshold`
+  does not reroute).
+
+### Fixed
+- **Docs** — corrected stale version pins missed by the v0.5.0 cut: the Java
+  package README (`0.1.0` → `0.5.0`), the `examples/java` Maven poms
+  (`0.4.0` → `0.5.0`), and `SECURITY.md` supported versions (`0.1.x` → `0.5.x`).
+  Refreshed the root README (architecture section, feature list through v0.5.0)
+  and completed the changelog version-comparison footer links.
 
 ---
 
@@ -23,6 +35,8 @@ features" milestone — `CostRouter` across **Python, Java, and JavaScript**.
 Note this is a partial release against that theme: `F-SEC-09/10`, `F-GOV-07`,
 `F-OBS-10`, `F-QUA-09/10`, and `F-DX-08` remain unstarted. Feature ID
 `F-GOV-06`.
+
+Tests: Python 133 · JavaScript 146 · Java 140.
 
 ### Added
 - **Cost-optimiser routing (all SDKs, `F-GOV-06`)** — `CostRouter` reroutes a
@@ -427,6 +441,9 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/manojmallick/gavio/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/manojmallick/gavio/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/manojmallick/gavio/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/manojmallick/gavio/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/manojmallick/gavio/releases/tag/v0.1.0

@@ -13,10 +13,13 @@ import io.gavio.GavioRequest;
 import io.gavio.GavioResponse;
 import io.gavio.PricingProvider;
 import io.gavio.interceptors.Interceptor;
+import io.gavio.interceptors.InterceptorContext;
 import io.gavio.providers.MockProvider;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
 class GovernanceTest {
@@ -101,6 +104,54 @@ class GovernanceTest {
                 CostRouter.builder().simpleModel("mock-mini").scorer(alwaysComplex).build());
         GavioResponse r = gw.complete(req("What is 2+2?", null)).join();
         assertEquals("mock", r.model());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void costRouterRecordsDecision() {
+        // CostRouter runs before the capture interceptor, so the decision record
+        // is visible on the context by the time the capture reads it.
+        AtomicReference<Map<String, Object>> captured = new AtomicReference<>(Map.of());
+        Interceptor capture = new Interceptor() {
+            @Override
+            public String name() {
+                return "_capture_cost_router";
+            }
+
+            @Override
+            public CompletableFuture<GavioRequest> before(GavioRequest request, InterceptorContext ctx) {
+                Object decision = ctx.state().get("cost_router");
+                if (decision != null) {
+                    captured.set((Map<String, Object>) decision);
+                }
+                return CompletableFuture.completedFuture(request);
+            }
+        };
+        Gateway gw = Gateway.builder()
+                .adapter(new MockProvider("x"))
+                .model("mock")
+                .use(CostRouter.builder().simpleModel("mock-mini").build())
+                .use(capture)
+                .build();
+        GavioResponse r = gw.complete(req("hi", null)).join();
+        assertEquals("mock-mini", r.model());
+        assertEquals(true, captured.get().get("rerouted"));
+        assertEquals("mock", captured.get().get("originalModel"));
+        assertTrue((double) captured.get().get("complexityScore") < 0.35);
+    }
+
+    @Test
+    void costRouterDoesNotRerouteAtThreshold() {
+        ComplexityScorer atThreshold = text -> 0.35;
+        Gateway gw = gw(
+                new MockProvider("x"),
+                CostRouter.builder()
+                        .simpleModel("mock-mini")
+                        .complexityThreshold(0.35)
+                        .scorer(atThreshold)
+                        .build());
+        GavioResponse r = gw.complete(req("hi", null)).join();
+        assertEquals("mock", r.model()); // score == threshold is not < threshold → no reroute
     }
 
     @Test
