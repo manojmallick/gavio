@@ -220,3 +220,12 @@ public CompletableFuture<GavioRequest> before(GavioRequest request, InterceptorC
 
 With the inspector disabled the request path is untouched — emission is a
 no-op with no subscribers, and all suites run with it off by default.
+
+## Overhead <Badge type="tip" text="v0.8.0" />
+
+The performance budget (disabled ≈ 0, `metadata` < 1% p50, `full` < 5%) is
+enforced by the
+[`benchmarks/inspector/`](https://github.com/manojmallick/gavio/tree/main/benchmarks/inspector)
+harnesses, which run in CI for all three SDKs against a delay-padded mock
+provider. Measured p50 overhead per request: `metadata` 0.13–0.58%,
+`full` 0–2.7% — inside the budget in every SDK.

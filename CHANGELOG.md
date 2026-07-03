@@ -11,6 +11,23 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.8.0] — 2026-07-04
+
+### Summary
+**Inspector performance budget, enforced.** The `benchmarks/inspector/`
+overhead suite promised by the Inspector plan (deferred since v0.6.0) now
+runs in CI for all three SDKs, and the registry project links (PyPI /
+Maven Central) point at the real repository. Feature PR #35.
+
+Measured overhead vs the plan's budgets (<1% metadata, <5% full):
+metadata 0.13–0.58% p50, full 0–2.7% across the three SDKs.
+
+Tests: Python 168 · JavaScript 181 · Java 16 modules green.
+
 ### Added
 - **Inspector overhead benchmarks (`F-DX-09`)** — `benchmarks/inspector/`
   harnesses in all three SDKs measure per-request latency with the inspector
@@ -18,6 +35,13 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   the INSPECTOR_PLAN §13 performance budget with CI thresholds (metadata p50
   overhead < 10% of the simulated call, full < 25%); new `benchmarks` CI job
   runs all three on every PR (#34).
+
+### Fixed
+- Registry project links: `pyproject.toml` Homepage/Repository/Changelog
+  pointed at the unpurchased `gavio.io` domain and a nonexistent `gavio-ai`
+  org (rendered broken on PyPI); now `manojmallick.github.io/gavio` and
+  `github.com/manojmallick/gavio` (+ new Issues link). Maven parent pom
+  `<url>` likewise (#35).
 
 ---
 
@@ -555,7 +579,8 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/manojmallick/gavio/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/manojmallick/gavio/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/manojmallick/gavio/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/manojmallick/gavio/compare/v0.5.0...v0.5.1
