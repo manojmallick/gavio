@@ -26,7 +26,7 @@ features:
     linkText: Interceptors →
   - icon: 🔁
     title: Reliable by default
-    details: Retry with backoff, fallback, timeouts, circuit breaker, and load balancing wrap every call. Semantic caching, budgets/rate-limits, and guardrails ship in v0.2.0. Tamper-evident hash-chain audit — never raw text. v0.3.0 adds Prometheus metrics, prompt lineage, and composite risk scoring. v0.4.0 adds a distributed Redis cache backend. v0.5.0 adds cost-optimiser routing.
+    details: Retry with backoff, fallback, timeouts, circuit breaker, and load balancing wrap every call. Semantic caching, budgets/rate-limits, and guardrails ship in v0.2.0. Tamper-evident hash-chain audit — never raw text. v0.3.0 adds Prometheus metrics, prompt lineage, and composite risk scoring. v0.4.0 adds a distributed Redis cache backend. v0.5.0 adds cost-optimiser routing. v0.6.0 adds the embedded Inspector — a live dev-time visualizer for every request.
     link: /guide/interceptors
     linkText: Production core →
   - icon: 🌐
@@ -46,7 +46,7 @@ features:
 ```bash
 pip install gavio            # Python 3.10+
 npm install gavio            # Node 18+
-# Maven: io.github.manojmallick:gavio-core:0.5.1   (Java 17+)
+# Maven: io.github.manojmallick:gavio-core:0.6.0   (Java 17+)
 ```
 
 ## 30-second taste (Python, dev mode — no key)

@@ -10,7 +10,7 @@ import java.io.UncheckedIOException;
 public final class Inspector {
 
     /** Keep in sync with the parent pom's project.version. */
-    public static final String SDK_VERSION = "0.5.1";
+    public static final String SDK_VERSION = "0.6.0";
 
     private final InspectorConfig config;
     private final CaptureMode mode;

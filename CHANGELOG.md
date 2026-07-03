@@ -11,6 +11,22 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.6.0] — 2026-07-03
+
+### Summary
+**Inspector: dev-time visualizer.** The v0.6.0 milestone — an embedded,
+zero-dependency inspector across **Python, Java, and JavaScript**: live span
+events for every request through the chain, a bounded ring buffer, a localhost
+JSON API with SSE, and a self-contained web UI. Feature IDs `F-DX-09` and
+`F-DX-10`. Streaming emits a reduced event set (the buffered path) and
+`benchmarks/inspector/` is deferred to a follow-up.
+
+Tests: Python 148 · JavaScript 162 · Java 157.
+
 ### Added
 - **Inspector core (all SDKs, `F-DX-09`)** — embedded, zero-dependency dev-time
   visualizer plumbing: an in-process `InspectorBus` emits span events
@@ -477,7 +493,8 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/manojmallick/gavio/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/manojmallick/gavio/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/manojmallick/gavio/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/manojmallick/gavio/compare/v0.3.0...v0.4.0
