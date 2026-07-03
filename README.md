@@ -41,8 +41,9 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Zero mandatory dependencies** in every core (stdlib HTTP everywhere — no vendor SDKs).
 - **Dev mode** — the whole stack runs in-process with a mock provider. No API key, no network.
 - **Audit by default** — every call logged as metadata + SHA-256 content hashes (never raw text).
+- **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 
-> **Status:** v0.5.1 (Advanced features — cost-optimiser routing). Semver
+> **Status:** v0.6.0 (Inspector — dev-time visualizer). Semver
 > stability holds since v0.2.0; pre-1.0, some APIs may still change. See the
 > [CHANGELOG](./CHANGELOG.md).
 
@@ -166,7 +167,7 @@ showing `EMAIL` was detected and redacted before the (mock) provider ever saw it
 |---|---|---|
 | **Python** 3.10+ | `pip install gavio` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
 | **JavaScript** (Node 18+) | `npm install gavio` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:0.5.1` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:0.6.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -211,7 +212,7 @@ Immutable records + builders, `CompletableFuture` async, Java 17+.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.5.1</version>
+  <version>0.6.0</version>
 </dependency>
 ```
 

@@ -7,6 +7,7 @@ Start here, then dive into the language you use.
 - [Getting started](./getting-started.md) — 5-minute quickstart in all three languages
 - [Architecture](./architecture.md) — request lifecycle, interceptor chain, data model
 - [Interceptors](./interceptors.md) — every built-in + writing your own
+- [Inspector](./inspector.md) — dev-time visualizer: live traces, waterfalls, PII diffs
 
 ## Per-package guides
 

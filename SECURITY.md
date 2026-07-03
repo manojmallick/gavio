@@ -8,7 +8,7 @@ seriously.
 
 | Version | Supported |
 |---|---|
-| 0.5.x | ✅ (current) |
+| 0.6.x | ✅ (current) |
 | < 0.5 | ❌ |
 
 Pre-1.0, security fixes land on the latest minor only.
