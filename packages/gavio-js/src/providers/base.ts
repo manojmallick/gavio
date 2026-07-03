@@ -12,6 +12,8 @@ export interface ProviderAdapter {
   stream?(request: GavioRequest): AsyncIterable<string>
   /** Build a response from a fully buffered stream (F-REL-06). */
   buildStreamResponse?(request: GavioRequest, content: string, startedAt: number): GavioResponse
+  /** Embed the request's message contents (F-SEC-10). Optional per adapter. */
+  embed?(request: GavioRequest): Promise<GavioResponse>
   healthCheck(): Promise<boolean>
   readonly reportedModelVersion?: string | null
 }
@@ -48,6 +50,19 @@ export abstract class BaseProviderAdapter implements ProviderAdapter {
       this.reportedModelVersion ?? request.model,
       startedAt,
     )
+  }
+
+  /** Build an embedding response — empty content, one vector per input (F-SEC-10). */
+  protected buildEmbedResponse(
+    request: GavioRequest,
+    vectors: number[][],
+    usage: TokenUsage,
+    modelVersion: string,
+    startedAt: number,
+  ): GavioResponse {
+    const response = this.buildResponse(request, '', usage, modelVersion, startedAt)
+    response.embeddings = vectors
+    return response
   }
 
   protected buildResponse(

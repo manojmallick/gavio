@@ -5,6 +5,10 @@ import io.gavio.GavioResponse;
 import io.gavio.PricingProvider;
 import io.gavio.types.Message;
 import io.gavio.types.TokenUsage;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
@@ -66,6 +70,34 @@ public final class MockProvider extends AbstractProviderAdapter {
                 PricingProvider.estimateTokens(content));
         return CompletableFuture.completedFuture(
                 buildResponse(request, content, usage, modelVersion, started));
+    }
+
+    /** Deterministic 8-dim vector per message content (F-SEC-10). */
+    @Override
+    public CompletableFuture<GavioResponse> embed(GavioRequest request) {
+        long started = System.nanoTime();
+        List<List<Double>> vectors = new ArrayList<>();
+        for (Message message : request.messages()) {
+            vectors.add(mockVector(message.content()));
+        }
+        TokenUsage usage = new TokenUsage(PricingProvider.estimateTokens(request.promptText()), 0);
+        return CompletableFuture.completedFuture(
+                buildEmbedResponse(request, vectors, usage, modelVersion, started));
+    }
+
+    /** Stable pseudo-embedding: sha256 bytes scaled to [0, 1) — same numbers as the Python SDK. */
+    private static List<Double> mockVector(String text) {
+        byte[] digest;
+        try {
+            digest = MessageDigest.getInstance("SHA-256").digest(text.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 unavailable", e);
+        }
+        List<Double> vector = new ArrayList<>(8);
+        for (int i = 0; i < 8; i++) {
+            vector.add((digest[i] & 0xFF) / 255.0);
+        }
+        return List.copyOf(vector);
     }
 
     @Override

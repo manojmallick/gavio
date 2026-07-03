@@ -1,7 +1,7 @@
 /** Gateway — the entry point. Wires interceptors around a provider adapter. */
 
 import { InterceptorContext } from './context.js'
-import { ConfigurationError } from './errors.js'
+import { ConfigurationError, ProviderError } from './errors.js'
 import { auditInterceptor, isAuditInterceptor } from './interceptors/audit/index.js'
 import { isExecutorPolicy } from './interceptors/base.js'
 import type { Executor, ExecutorPolicy, Interceptor } from './interceptors/base.js'
@@ -48,6 +48,18 @@ export interface CompleteOptions {
   options?: Record<string, unknown>
   /** Prompt provenance (F-OBS-04): template, variables, and RAG chunk sources. */
   lineage?: PromptLineage | PromptLineageInit | null
+}
+
+export interface EmbedOptions {
+  /** Input texts — one embedding vector is returned per text. */
+  texts: string[]
+  model?: string
+  agentId?: string | null
+  parentTraceId?: string | null
+  sessionId?: string | null
+  metadata?: Record<string, unknown>
+  /** Provider embedding options (dimensions, encoding format, etc.). */
+  options?: Record<string, unknown>
 }
 
 const DEFAULT_MODELS: Record<string, string> = {
@@ -187,6 +199,53 @@ export class Gateway {
     })
 
     const { chain, executor } = this.buildPipeline(adapter, ctx)
+    return this.executeTraced(request, ctx, chain, executor)
+  }
+
+  /**
+   * Embed texts through the same interceptor pipeline as completions (F-SEC-10).
+   *
+   * Every input runs the full pre-interceptor chain — PII guard included —
+   * before the provider's embedding API is called, and the post chain (audit,
+   * metrics) runs on the way out. The response carries one vector per input in
+   * {@link GavioResponse.embeddings} and empty `content`.
+   */
+  async embed(opts: EmbedOptions): Promise<GavioResponse> {
+    const adapter = this.resolveAdapter()
+    if (adapter.embed === undefined) {
+      throw new ProviderError(`${adapter.providerName} does not support embeddings`)
+    }
+    const model = opts.model ?? this.modelHint ?? this.resolveModel(adapter)
+
+    const request = new GavioRequest({
+      messages: opts.texts.map((text) => ({ role: 'user', content: text })),
+      model,
+      provider: coerceProvider(adapter.providerName),
+      agentId: opts.agentId ?? null,
+      parentTraceId: opts.parentTraceId ?? null,
+      sessionId: opts.sessionId ?? null,
+      options: opts.options ?? {},
+      metadata: { ...(opts.metadata ?? {}), call_type: 'embedding' },
+    })
+    const ctx = new InterceptorContext({
+      traceId: request.traceId,
+      agentId: request.agentId,
+      parentTraceId: request.parentTraceId,
+      sessionId: request.sessionId,
+      dryRun: this.dryRunMode,
+    })
+
+    const { chain, executor } = this.buildPipeline(adapter, ctx, (req) => adapter.embed!(req))
+    return this.executeTraced(request, ctx, chain, executor)
+  }
+
+  /** Run the chain, bracketed by trace.start / trace.end when inspecting. */
+  private async executeTraced(
+    request: GavioRequest,
+    ctx: InterceptorContext,
+    chain: InterceptorChain,
+    executor: Executor,
+  ): Promise<GavioResponse> {
     if (this.inspectorInstance === null) {
       return chain.execute(request, ctx, executor)
     }
@@ -276,6 +335,7 @@ export class Gateway {
   private buildPipeline(
     adapter: ProviderAdapter,
     ctx: InterceptorContext,
+    call?: Executor,
   ): { chain: InterceptorChain; executor: Executor } {
     let interceptors = [...this.interceptors]
 
@@ -288,7 +348,7 @@ export class Gateway {
     const regular = interceptors.filter((i) => !isExecutorPolicy(i))
     const chain = new InterceptorChain(regular)
 
-    let executor: Executor = (request) => adapter.complete(request)
+    let executor: Executor = call ?? ((request) => adapter.complete(request))
     // Wrap so the first-registered policy ends up outermost.
     for (let i = policies.length - 1; i >= 0; i--) {
       executor = this.wrapPolicy(policies[i]!, executor, ctx)

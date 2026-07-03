@@ -1,5 +1,7 @@
 /** mockProvider — deterministic, offline provider for dev mode and tests. */
 
+import { createHash } from 'node:crypto'
+
 import { PricingProvider, estimateTokens } from '../pricing.js'
 import type { GavioRequest } from '../request.js'
 import type { GavioResponse } from '../response.js'
@@ -54,6 +56,14 @@ class MockProvider extends BaseProviderAdapter {
     return this.buildResponse(request, content, usage, this.modelVersion, started)
   }
 
+  /** Deterministic 8-dim vector per message content (F-SEC-10). */
+  async embed(request: GavioRequest): Promise<GavioResponse> {
+    const started = performance.now()
+    const vectors = request.messages.map((m) => mockVector(m.content ?? ''))
+    const usage = new TokenUsage(estimateTokens(request.promptText()))
+    return this.buildEmbedResponse(request, vectors, usage, this.modelVersion, started)
+  }
+
   async *stream(request: GavioRequest): AsyncIterable<string> {
     for (const token of this.contentFor(request).split(' ')) {
       yield token + ' '
@@ -63,6 +73,12 @@ class MockProvider extends BaseProviderAdapter {
   async healthCheck(): Promise<boolean> {
     return true
   }
+}
+
+/** Stable pseudo-embedding: sha256 bytes scaled to [0, 1). */
+function mockVector(text: string, dims = 8): number[] {
+  const digest = createHash('sha256').update(text, 'utf-8').digest()
+  return Array.from({ length: dims }, (_, i) => digest[i]! / 255)
 }
 
 /** Factory: build a mock provider adapter. */

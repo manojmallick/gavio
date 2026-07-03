@@ -20,20 +20,23 @@ class ProviderAdapter(ABC):
 
     @property
     @abstractmethod
-    def provider_name(self) -> str:
-        ...
+    def provider_name(self) -> str: ...
 
     @abstractmethod
-    async def complete(self, request: GavioRequest) -> GavioResponse:
-        ...
+    async def complete(self, request: GavioRequest) -> GavioResponse: ...
 
     async def stream(self, request: GavioRequest) -> AsyncIterator[str]:
         raise NotImplementedError(f"{self.provider_name} does not support streaming")
         yield ""  # pragma: no cover - makes this an async generator
 
+    async def embed(self, request: GavioRequest) -> GavioResponse:
+        """Embed the request's message contents (F-SEC-10). Optional per adapter."""
+        from ..exceptions import ProviderError
+
+        raise ProviderError(f"{self.provider_name} does not support embeddings")
+
     @abstractmethod
-    async def health_check(self) -> bool:
-        ...
+    async def health_check(self) -> bool: ...
 
     @property
     def reported_model_version(self) -> str | None:
@@ -53,6 +56,19 @@ class ProviderAdapter(ABC):
         )
         model_version = self.reported_model_version or request.model
         return self._build_response(request, content, usage, model_version, started_at)
+
+    def _build_embed_response(
+        self,
+        request: GavioRequest,
+        vectors: list[list[float]],
+        usage: TokenUsage,
+        model_version: str,
+        started_at: float,
+    ) -> GavioResponse:
+        """Build an embedding response — empty content, one vector per input."""
+        response = self._build_response(request, "", usage, model_version, started_at)
+        response.embeddings = vectors
+        return response
 
     def _build_response(
         self,

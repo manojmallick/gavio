@@ -11,7 +11,16 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Embedding call guard (all SDKs, `F-SEC-10`)** — new `Gateway.embed(texts)`
+  entry point runs embedding inputs through the same interceptor pipeline as
+  completions: PII guard scans/redacts every text before the provider's
+  embedding API is called, governance and audit interceptors fire, and the
+  Inspector traces the call. `GavioResponse` gains an `embeddings` field (one
+  vector per input); provider adapters gain an optional `embed()` (MockProvider
+  implements a deterministic reference); adapters without embedding support
+  fail with a clear `ProviderError`. Shared redaction cases in
+  `test-vectors/embedding/redaction.json` (#30).
 
 ---
 

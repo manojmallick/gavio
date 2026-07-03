@@ -18,6 +18,7 @@ export interface GavioResponseInit {
   interceptorsFired?: string[]
   audit?: AuditRecord | null
   metadata?: Record<string, unknown>
+  embeddings?: number[][] | null
 }
 
 /** Result of a gateway call, enriched by the post-interceptor pipeline. */
@@ -35,6 +36,8 @@ export class GavioResponse {
   interceptorsFired: string[]
   audit: AuditRecord | null
   metadata: Record<string, unknown>
+  /** Set on embedding calls (F-SEC-10): one vector per input text. */
+  embeddings: number[][] | null
 
   constructor(init: GavioResponseInit) {
     this.traceId = init.traceId
@@ -50,6 +53,7 @@ export class GavioResponse {
     this.interceptorsFired = init.interceptorsFired ?? []
     this.audit = init.audit ?? null
     this.metadata = init.metadata ?? {}
+    this.embeddings = init.embeddings ?? null
   }
 
   /** Return a copy with replaced content (used by PII restore, guardrails). */
@@ -68,6 +72,7 @@ export class GavioResponse {
       interceptorsFired: [...this.interceptorsFired],
       audit: this.audit,
       metadata: { ...this.metadata },
+      embeddings: this.embeddings,
     })
   }
 }

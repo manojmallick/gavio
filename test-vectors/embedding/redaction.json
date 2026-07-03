@@ -1,0 +1,36 @@
+{
+  "description": "Embedding call guard cases (F-SEC-10), shared by all three SDKs. For each case: build a gateway with PiiGuard (default config) and a capturing mock provider, run `texts` through the SDK's embed() entry point, then assert (1) the detected PII entity types match `expected.piiEntityTypes`, (2) the text that reached the provider contains every string in `expected.redactedContains` and none in `expected.redactedNotContains`, and (3) the response carries one embedding vector per input text.",
+  "schemaVersion": "1.0",
+  "cases": [
+    {
+      "id": "email-redacted",
+      "texts": ["please index: contact jan.real@corp.com for repository access"],
+      "expected": {
+        "piiEntityTypes": ["EMAIL"],
+        "redactedContains": ["[EMAIL_1]"],
+        "redactedNotContains": ["jan.real@corp.com"]
+      }
+    },
+    {
+      "id": "iban-among-clean-texts",
+      "texts": [
+        "quarterly report summary, nothing sensitive",
+        "transfer the retainer to NL91ABNA0417164300 before friday"
+      ],
+      "expected": {
+        "piiEntityTypes": ["IBAN"],
+        "redactedContains": ["[IBAN_1]"],
+        "redactedNotContains": ["NL91ABNA0417164300"]
+      }
+    },
+    {
+      "id": "no-pii-passes-through",
+      "texts": ["the interceptor chain pattern composes cleanly"],
+      "expected": {
+        "piiEntityTypes": [],
+        "redactedContains": ["the interceptor chain pattern composes cleanly"],
+        "redactedNotContains": []
+      }
+    }
+  ]
+}
