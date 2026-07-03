@@ -1,6 +1,6 @@
-# 04 · Production stack (v0.2.0)
+# 04 · Production core stack
 
-Composes the v0.2.0 "Production core" interceptors — **hash-chain audit → PII
+Composes the "Production core" interceptors — **hash-chain audit → PII
 guard → rate limiter → guardrails → semantic cache** — in one gateway (dev mode,
 no API key).
 

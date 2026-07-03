@@ -1,13 +1,16 @@
 # Gavio — Java SDK
 
 > The open standard AI gateway for production systems. PII protection, audit
-> trails, reliability, and cost control as composable interceptors.
+> trails, reliability, cost control, and an embedded inspector as composable
+> interceptors.
 
 `gavio` sits between your application and any LLM provider. The same request
-passes through a pre/post interceptor chain — PII redaction, retries, cost
-tracking, audit logging — before and after the provider call.
+passes through a pre/post interceptor chain — PII redaction, retries, caching,
+budgets, audit logging — before and after the provider call. Same API in
+[Python, Java, and JavaScript](https://github.com/manojmallick/gavio), enforced
+by shared cross-SDK test vectors.
 
-Part of the [Gavio](https://gavio.io) project. MIT licensed.
+Part of the [Gavio](https://manojmallick.github.io/gavio) project. MIT licensed.
 
 ## Install
 
@@ -37,7 +40,7 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 </dependency>
 ```
 
-Requires Java 17+ (records, sealed types, text blocks).
+Requires Java 17+. See the [module map](#module-map) for all artifacts.
 
 ## Quick start (dev mode — no API key, no network)
 
@@ -74,9 +77,7 @@ All gateway calls return `CompletableFuture<GavioResponse>`; use `.join()`,
 ## Real providers
 
 ```java
-import io.gavio.Gateway;
 import io.gavio.interceptors.audit.AuditInterceptor;
-import io.gavio.interceptors.pii.PiiGuard;
 import io.gavio.interceptors.reliability.RetryInterceptor;
 import io.gavio.interceptors.reliability.TimeoutPolicy;
 import io.gavio.providers.anthropic.AnthropicAdapter;
@@ -98,79 +99,100 @@ GavioResponse resp = gw.complete(
     GavioRequest.builder().message("user", "Hi").build()).join();
 ```
 
-`OpenAiAdapter` (`gavio-provider-openai`) works the same way and reads
-`OPENAI_API_KEY`. Reliability policies (`RetryInterceptor`, `TimeoutPolicy`,
-`FallbackChain`) implement `ExecutorPolicy` and wrap the provider executor —
-the first registered is outermost.
+`OpenAiAdapter`, `GeminiAdapter`, `AzureOpenAiAdapter`, and `OllamaAdapter`
+work the same way — switching providers is a config change, never an
+application change. Reliability policies implement `ExecutorPolicy` and wrap
+the provider executor — the first registered is outermost.
 
-## Custom scanner
+Streaming buffers the provider stream (`F-REL-06`) so post-interceptors run on
+the complete response — the publisher emits the fully processed content:
 
 ```java
-import io.gavio.interceptors.pii.*;
-import java.util.List;
-import java.util.regex.*;
-
-public class IngAccountScanner implements PiiScanner {
-    private static final Pattern P = Pattern.compile("\\bNL\\d{2}INGB\\d{10}\\b");
-
-    public String entityType() { return "ING_ACCOUNT"; }
-
-    public List<PiiMatch> scan(String text, ScanContext ctx) {
-        var out = new java.util.ArrayList<PiiMatch>();
-        Matcher m = P.matcher(text);
-        while (m.find()) {
-            out.add(PiiMatch.builder()
-                .entityType(entityType()).start(m.start()).end(m.end())
-                .value(m.group())
-                .replacement("[ING_ACCOUNT_" + ctx.nextIndex(entityType()) + "]")
-                .build());
-        }
-        return out;
-    }
-}
+Flow.Publisher<String> out = gw.stream(List.of(Message.of("user", "Hi")));
 ```
 
-## What ships in v0.1.0
+Embeddings run through the same pipeline — inputs are PII-scanned before the
+provider's embedding API is called:
 
-- **Core** (`gavio-core`) — `Gateway` fluent builder, `InterceptorChain`,
-  `GavioRequest` / `GavioResponse` records, UUID v7 monotonic `traceId`,
-  `Message`, `TokenUsage`, `PricingProvider`, `ExecutorPolicy` SPI, zero-dep JSON.
-- **PII Guard** (`gavio-interceptor-pii`, F-SEC-01) — Email, IBAN (ISO 13616
-  mod-97), BSN (11-proef), CreditCard (Luhn), Phone, IP (v4/v6), SSN scanners,
-  redact / mask / tag / block, restore-on-response, greedy overlap resolution,
-  per-sensitivity confidence floors.
-- **Secret Scanner** (F-SEC-04) — API keys, JWTs, PEM keys, DB connection strings.
-- **Reliability** (`gavio-interceptor-reliability`) — retry with capped
-  exponential backoff + jitter (F-REL-01), fallback chain (F-REL-02),
-  timeout (F-REL-07).
-- **Cost tracking** (F-GOV-01) — per-request `costUsd` via `PricingProvider`.
-- **Audit** (`gavio-interceptor-audit`, F-OBS-01) — `AuditRecord` with SHA-256
-  prompt/response hashes (metadata only, never content) + `StdoutSink` (F-OBS-05).
-- **Dev mode** (F-DX-01) and **dry-run mode** (F-DX-02).
-- **Providers** — OpenAI, Anthropic (over `java.net.http.HttpClient`), Mock.
-- **Testing** (`gavio-testing`) — `GavioTestKit`, `MockProvider`,
-  `GavioAssertions`, synthetic `Fixtures`.
+```java
+GavioResponse resp = gw.embed(List.of("index this: contact jan@example.com")).join();
+System.out.println(resp.embeddings().size());   // one vector per input, PII never left
+```
 
-Planned for v0.2.0+: semantic cache, guardrails, governance, Spring Boot
-starter, `RemoteNerScanner`, and the Gemini / Azure / Ollama providers.
+## The Inspector
 
-See the [Java guide](../../docs/packages/java.md) for the full API reference.
+An embedded, zero-dependency visualizer for the pipeline: live traces,
+per-interceptor waterfalls, PII redaction diffs, multi-agent call graphs,
+replay, RED stats, and a read-only production dashboard.
+
+```java
+Gateway gw = Gateway.builder().devMode(true).inspect(true).build();
+// open http://127.0.0.1:7411 and send a request
+```
+
+Capture modes: full (dev-mode default), redacted, and metadata (default
+outside dev mode — no content, no replay). The `gavio inspect --store` CLI
+for JSONL audit files is Python-only; the Java inspector serves the same
+dashboard endpoints from its embedded server.
+
+## What's inside
+
+Every feature is an interceptor you compose explicitly — no hidden magic.
+
+- **Privacy & security** — `PiiGuard` with Email, IBAN (mod-97), BSN (11-proef),
+  CreditCard (Luhn), Phone, IP, SSN scanners, redact/mask/tag/block + restore,
+  and custom scanners via the `PiiScanner` SPI (`F-SEC-01`); `SecretScanner`
+  (`F-SEC-04`); `PromptInjectionGuard` (`F-SEC-05`); embedding call guard
+  (`F-SEC-10`).
+- **Reliability** — `RetryInterceptor` (`F-REL-01`), `FallbackChain`
+  (`F-REL-02`), `CircuitBreaker` (`F-REL-03`), `LoadBalancer` (`F-REL-04`),
+  buffered streaming (`F-REL-06`), `TimeoutPolicy` (`F-REL-07`).
+- **Caching** — `SemanticCache`: SHA-256 exact + semantic (cosine) cache with
+  in-memory and Redis backends (`F-CACHE-01/02/03/04`).
+- **Cost & governance** — per-request cost tracking via `PricingProvider`
+  (`F-GOV-01`), `CostControl` budget caps (`F-GOV-02`), `RateLimiter`
+  (`F-GOV-03`), `ModelPolicy` (`F-GOV-04`), `CostRouter` (`F-GOV-06`).
+- **Observability** — `AuditInterceptor` with SHA-256 content hashes, never raw
+  text (`F-OBS-01`), tamper-evident hash chain (`F-OBS-02`), multi-agent DAG
+  tracing via `agentId`/`parentTraceId` (`F-OBS-03`), prompt lineage
+  (`F-OBS-04`), `MetricsInterceptor` Prometheus metrics (`F-OBS-08`),
+  `StdoutSink`.
+- **Quality** — `GuardrailsInterceptor` with `JsonSchemaValidator` and regex
+  validators (`F-QUA-01/02`), composite `RiskScorer` (`F-QUA-06`).
+- **Inspector** — dev-time visualizer (`F-DX-09/10`), agent call graphs and
+  session views (`F-OBS-10`), trace replay (`F-DX-11`), PII-sanitized
+  test-case export (`F-DX-12`), read-only production dashboard (`F-DX-08`).
+- **Developer experience** — dev mode (`F-DX-01`), dry-run (`F-DX-02`),
+  `GavioTestKit` + `MockProvider` + `GavioAssertions` in `gavio-testing`
+  (`F-DX-03`), `GavioOpenAI` drop-in shim (`F-DX-04`).
+- **Providers** — OpenAI, Anthropic, Gemini, Azure OpenAI, Ollama, Mock — all
+  over `java.net.http.HttpClient`.
+
+See the [documentation site](https://manojmallick.github.io/gavio), the
+[Java guide](../../docs/packages/java.md), the runnable
+[examples](../../examples/), and the [CHANGELOG](../../CHANGELOG.md) for
+version-by-version detail.
 
 ## Build & test
 
 ```bash
-mvn -q compile        # all modules
-mvn test              # JUnit 5 suite (50 tests)
+mvn test              # JUnit 5 suite, all modules
 ```
 
 ## Module map
 
-| Artifact | Contains | Version |
-|---|---|---|
-| `gavio-core` | Gateway, request/response model, interceptor chain, pricing, JSON | `0.1.0` |
-| `gavio-interceptor-pii` | PiiGuard, PiiScanner, built-in scanners | `0.1.0` |
-| `gavio-interceptor-audit` | AuditInterceptor, AuditSink, AuditRecord, StdoutSink | `0.1.0` |
-| `gavio-interceptor-reliability` | RetryInterceptor, FallbackChain, TimeoutPolicy | `0.1.0` |
-| `gavio-provider-openai` | OpenAI adapter | `0.1.0` |
-| `gavio-provider-anthropic` | Anthropic adapter | `0.1.0` |
-| `gavio-testing` | GavioTestKit, MockProvider, GavioAssertions | `0.1.0` |
+All artifacts share the `io.github.manojmallick` group id and version `0.8.0`.
+
+| Artifact | Contains |
+|---|---|
+| `gavio-core` | Gateway, request/response model, interceptor chain, pricing, inspector, OpenAI shim, zero-dep JSON |
+| `gavio-interceptor-pii` | PiiGuard, PiiScanner SPI, built-in scanners, SecretScanner, PromptInjectionGuard |
+| `gavio-interceptor-audit` | AuditInterceptor, AuditSink, AuditRecord, hash chain, StdoutSink |
+| `gavio-interceptor-reliability` | RetryInterceptor, FallbackChain, CircuitBreaker, LoadBalancer, TimeoutPolicy |
+| `gavio-interceptor-cache` | SemanticCache, memory/Redis backends, vector backends |
+| `gavio-interceptor-governance` | CostControl, RateLimiter, ModelPolicy, CostRouter |
+| `gavio-interceptor-guardrails` | GuardrailsInterceptor, JsonSchemaValidator, regex validators |
+| `gavio-interceptor-metrics` | MetricsInterceptor, PrometheusMetrics |
+| `gavio-interceptor-quality` | RiskScorer |
+| `gavio-provider-openai` / `-anthropic` / `-gemini` / `-azure` / `-ollama` | Provider adapters |
+| `gavio-testing` | GavioTestKit, MockProvider, GavioAssertions, Fixtures |

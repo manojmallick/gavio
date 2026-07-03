@@ -120,6 +120,37 @@ gw = (Gateway.builder()
 
 ---
 
+## Inspector
+
+Enable the embedded pipeline visualizer (`F-DX-09/10`, off by default) and open
+`http://127.0.0.1:7411` — live traces, waterfalls, PII diffs, agent call
+graphs, replay, stats. Full guide: [docs/inspector.md](../inspector.md).
+
+```python
+gw = Gateway.builder().dev_mode(True).inspect(True).build()
+```
+
+For production, write audits to a JSONL store and serve the read-only
+dashboard from it (`F-DX-08`):
+
+```python
+from gavio.interceptors.audit import AuditInterceptor, JsonlSink
+builder.use(AuditInterceptor(sink=JsonlSink("audit.jsonl"), hash_chain=True))
+```
+
+```bash
+gavio inspect --store audit.jsonl
+```
+
+## Embeddings
+
+`gw.embed(texts)` (`F-SEC-10`, next release) runs embedding inputs through the
+same interceptor pipeline as completions — PII is scanned and redacted before
+the provider's embedding API is called; the response carries one vector per
+input in `resp.embeddings`.
+
+---
+
 ## Testing
 
 `GavioTestKit` drives an interceptor chain in isolation against a `MockProvider`.

@@ -1,11 +1,11 @@
-"""Gavio v0.2.0 production stack — caching, guardrails, governance, audit chain.
+"""Gavio production core stack — caching, guardrails, governance, audit chain.
 
-Composes the v0.2.0 "Production core" interceptors in one gateway (dev mode, no
+Composes the "Production core" interceptors in one gateway (dev mode, no
 API key). Shows a semantic-cache hit skipping the provider while every other
 guarantee (PII redaction, rate limiting, guardrails, tamper-evident audit) still
 holds.
 
-    pip install "gavio>=0.2.0"
+    pip install "gavio>=0.8.0"
     python stack.py
 """
 

@@ -8,16 +8,12 @@ implemented per SDK, so you can compare the APIs side by side.
 | 01 | **Quickstart** — PII redact + restore, audit, cost (dev mode) | [py](./python/01-quickstart/) | [js](./javascript/01-quickstart/) | [java](./java/01-quickstart/) | no |
 | 02 | **Production gateway** — audit → PII guard → timeout → retry | [py](./python/02-production-gateway/) | [js](./javascript/02-production-gateway/) | [java](./java/02-production-gateway/) | optional |
 | 03 | **Custom scanner** — write a `PiiScanner` + test it | [py](./python/03-custom-scanner/) | [js](./javascript/03-custom-scanner/) | [java](./java/03-custom-scanner/) | no |
+| 04 | **Production core stack** — hash-chain audit → PII → rate limit → guardrails → semantic cache | [py](./python/04-production-stack/) | — | — | no |
+| 05 | **Inspector & multi-agent tracing** — trace waterfall, PII diff, agent DAG, sessions | [py](./python/05-inspector/) | [js](./javascript/05-inspector/) | — | no |
 
-Examples 01 and 03 need **no API key** (dev mode). Example 02 uses a real
-provider if `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is set, and otherwise falls
-back to the mock provider so it always runs.
-
-### v0.2.0
-
-| # | Project | What it shows | Needs a key? |
-|---|---|---|---|
-| 04 | [python/04-production-stack](./python/04-production-stack/) | The **Production core** stack — hash-chain audit → PII → rate limit → guardrails → semantic cache | no |
+Only example 02 needs a key — it uses a real provider if `ANTHROPIC_API_KEY` or
+`OPENAI_API_KEY` is set, and otherwise falls back to the mock provider so it
+always runs. Everything else runs in dev mode with **no API key**.
 
 ## Run them
 
@@ -43,4 +39,4 @@ cd examples/java/01-quickstart
 mvn -q compile exec:java
 ```
 
-All examples are verified to run against the published `0.4.0` packages.
+All examples are verified to run against the published `0.8.0` packages.
