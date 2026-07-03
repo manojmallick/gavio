@@ -4,5 +4,5 @@
   "private": true,
   "type": "module",
   "scripts": { "start": "node custom-scanner.mjs" },
-  "dependencies": { "gavio": "^0.8.0" }
+  "dependencies": { "gavio": "^0.9.0" }
 }

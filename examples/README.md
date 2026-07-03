@@ -39,4 +39,4 @@ cd examples/java/01-quickstart
 mvn -q compile exec:java
 ```
 
-All examples are verified to run against the published `0.8.0` packages.
+All examples are verified to run against the published `0.9.0` packages.

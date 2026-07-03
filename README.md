@@ -44,7 +44,7 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
 
-> **Status:** v0.8.0 (Inspector overhead benchmarks + registry-link fix). Semver
+> **Status:** v0.9.0 (Embedding call guard — F-SEC-10). Semver
 > stability holds since v0.2.0; pre-1.0, some APIs may still change. See the
 > [CHANGELOG](./CHANGELOG.md).
 
@@ -168,7 +168,7 @@ showing `EMAIL` was detected and redacted before the (mock) provider ever saw it
 |---|---|---|
 | **Python** 3.10+ | `pip install gavio` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
 | **JavaScript** (Node 18+) | `npm install gavio` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:0.8.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:0.9.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -215,7 +215,7 @@ Java 17+.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.8.0</version>
+  <version>0.9.0</version>
 </dependency>
 ```
 
@@ -235,7 +235,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | PII Guard — Email, IBAN·mod-97, BSN·11-proef, CreditCard·Luhn, Phone, IP, SSN | `F-SEC-01` | 0.1.0 |
 | Secret scanner — API keys, AWS `AKIA`, GitHub tokens, JWT, PEM, DB URLs | `F-SEC-04` | 0.1.0 |
 | Prompt-injection defense — pattern corpus + optional semantic similarity | `F-SEC-05` | 0.2.0 |
-| Embedding call guard — `gw.embed(texts)` runs the same PII pipeline before embedding APIs | `F-SEC-10` | next |
+| Embedding call guard — `gw.embed(texts)` runs the same PII pipeline before embedding APIs | `F-SEC-10` | 0.9.0 |
 
 ### 🔁 Reliability
 
