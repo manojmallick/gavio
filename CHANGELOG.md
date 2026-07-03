@@ -11,6 +11,17 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.5.1] — 2026-07-03
+
+### Summary
+**Patch release.** Documentation corrections and expanded `F-GOV-06` test
+coverage — no runtime code changes; the published artifacts are functionally
+equivalent to v0.5.0.
+
 ### Added
 - **Cost-optimiser routing test coverage (`F-GOV-06`)** — each SDK's governance
   suite now asserts the decision record `CostRouter` writes to
@@ -441,7 +452,8 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/manojmallick/gavio/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/manojmallick/gavio/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/manojmallick/gavio/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/manojmallick/gavio/compare/v0.2.0...v0.3.0
