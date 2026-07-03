@@ -23,19 +23,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.4.0</version>
+  <version>0.5.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>0.4.0</version>
+  <version>0.5.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:0.4.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:0.4.0")
+implementation("io.github.manojmallick:gavio-core:0.5.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:0.5.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in

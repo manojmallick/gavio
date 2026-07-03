@@ -11,6 +11,19 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.5.0] — 2026-07-03
+
+### Summary
+**Cost-optimiser routing.** The first slice of the roadmap's "Advanced
+features" milestone — `CostRouter` across **Python, Java, and JavaScript**.
+Note this is a partial release against that theme: `F-SEC-09/10`, `F-GOV-07`,
+`F-OBS-10`, `F-QUA-09/10`, and `F-DX-08` remain unstarted. Feature ID
+`F-GOV-06`.
+
 ### Added
 - **Cost-optimiser routing (all SDKs, `F-GOV-06`)** — `CostRouter` reroutes a
   request to a cheaper `simple_model` when a pluggable `ComplexityScorer`
