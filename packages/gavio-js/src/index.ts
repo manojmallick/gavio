@@ -8,7 +8,7 @@
  * See https://gavio.io for documentation. MIT licensed.
  */
 
-export const VERSION = '0.4.0'
+export const VERSION = '0.5.0'
 
 export { Gateway } from './gateway.js'
 export type { GatewayOptions, CompleteOptions } from './gateway.js'
