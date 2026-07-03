@@ -11,7 +11,42 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Agent call graph & session views (all SDKs, `F-OBS-10`)** — `GET /api/dag`
+  (`?root=<trace_id>` or `?session_id=`) builds the multi-agent call graph from
+  `parent_trace_id`/`agent_id` links with per-node and subtree
+  cost/latency/status rollups; `GET /api/sessions` lists sessions with trace
+  counts, errors, agents, total cost and duration. New DAG and Sessions tabs in
+  the bundled Inspector UI. Shared DAG-assembly cases in
+  `test-vectors/inspector/api-cases.json`.
+- **Trace replay & edit-resend (all SDKs, `F-DX-11`)** — `POST /api/replay`
+  re-fires a captured request through the live gateway (full interceptor chain,
+  never bypassed), optionally with edited `messages`/`model`/`options`;
+  returns the new `trace_id`. Available only in `full` capture mode — 403
+  otherwise (gating cases shared in `test-vectors/inspector/api-cases.json`).
+  Replay / Edit & resend actions in the UI trace detail.
+- **Read-only dashboard over the audit store (`F-DX-08`)** — new `gavio`
+  CLI (Python): `gavio inspect --store audit.jsonl` serves the Inspector in
+  `metadata` mode from a persisted audit store with no running gateway. New
+  `JsonlSink` audit sink (`jsonl://<path>`) writes the store. All SDKs gain
+  `GET /api/stats` (RED aggregates — rate, error %, latency p50/p95/p99,
+  tokens, cost, cache hit-rate, PII detections by entity type; `group_by`
+  provider/model/agent_id, `since` filter) and a Stats tab in the UI;
+  `GET /api/chain/verify` walks the `previous_hash` links (`F-OBS-02`
+  surfaced) and reports the first broken record; `/api/traces?q=` looks up
+  traces by trace-id or content-hash prefix.
+- **Export trace as test case (all SDKs, `F-DX-12`)** —
+  `GET /api/traces/{id}/export?format=test-vector|testkit-py|testkit-java|testkit-js`
+  renders a captured trace as a shared `test-vectors/` JSON case or a runnable
+  `GavioTestKit` unit test; detected PII values are replaced with synthetic
+  fixtures before export. 403 in `metadata` mode.
+- **Cost simulator (all SDKs)** — `GET /api/simulate-cost?trace_id=&model=`
+  recosts a trace's token usage under a different model via `PricingProvider`.
+  Trace summaries now carry token usage from `provider.call.end`.
+- **Fleet observability extras** — prebuilt Grafana dashboard over the
+  `F-OBS-08` Prometheus metrics (`docs/grafana/gavio-dashboard.json`) and the
+  canonical InspectorEvent → OpenTelemetry span mapping (`docs/otel-mapping.md`,
+  `F-OBS-07` groundwork).
 
 ---
 

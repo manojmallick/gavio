@@ -123,6 +123,7 @@ public final class GavioBuilder {
         PipelineInfo info = new PipelineInfo(
                 resolved.providerName(), resolvedModel, devMode, dryRun, names);
         Inspector inspector = new Inspector(cfg, cfg.effectiveMode(devMode), info);
+        inspector.setPricing(pricing); // /api/simulate-cost reuses the builder's pricing
         if (cfg.startServer()) {
             inspector.start();
         }

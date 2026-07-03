@@ -20,12 +20,15 @@ Off by default — dev mode alone never starts the inspector.
 
 from __future__ import annotations
 
+from .analytics import build_dag, build_sessions, build_stats
 from .buffer import RingBuffer
 from .bus import InspectorBus
 from .config import InspectorConfig
 from .emitter import TraceEmitter
+from .export import export_trace, sanitize_messages
 from .inspector import Inspector
 from .server import InspectorServer
+from .store import open_store, verify_chain_records
 
 __all__ = [
     "Inspector",
@@ -34,4 +37,11 @@ __all__ = [
     "InspectorServer",
     "RingBuffer",
     "TraceEmitter",
+    "build_dag",
+    "build_sessions",
+    "build_stats",
+    "export_trace",
+    "open_store",
+    "sanitize_messages",
+    "verify_chain_records",
 ]

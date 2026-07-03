@@ -1,0 +1,54 @@
+{
+  "description": "Inspector v0.7.0 API cases shared by all three SDKs. dagCases: feed `summaries` to the SDK's DAG builder (the /api/dag aggregation) with `root` or `sessionId` and assert the expected node/edge counts and the root node's subtree rollup. replayGating: run one full-capture trace through a dev gateway, then POST /api/replay against a server in the given mode and assert the HTTP status (200 = replay succeeded with a new traceId).",
+  "schemaVersion": "1.0",
+  "dagCases": [
+    {
+      "id": "orchestrator-two-workers",
+      "summaries": [
+        { "traceId": "t-root", "parentTraceId": null, "agentId": "orchestrator", "sessionId": "s1", "status": "ok", "latencyMs": 10, "costUsd": 0.001 },
+        { "traceId": "t-a", "parentTraceId": "t-root", "agentId": "worker-a", "sessionId": "s1", "status": "ok", "latencyMs": 20, "costUsd": 0.002 },
+        { "traceId": "t-b", "parentTraceId": "t-root", "agentId": "worker-b", "sessionId": "s1", "status": "error", "latencyMs": 30, "costUsd": 0.003 },
+        { "traceId": "t-other", "parentTraceId": null, "agentId": "bystander", "sessionId": "s2", "status": "ok", "latencyMs": 5, "costUsd": 0.0 }
+      ],
+      "root": "t-root",
+      "expected": {
+        "nodes": 3,
+        "edges": 2,
+        "rootSubtree": { "traces": 3, "errors": 1, "costUsd": 0.006, "latencyMs": 60 }
+      }
+    },
+    {
+      "id": "by-session",
+      "summaries": [
+        { "traceId": "t-root", "parentTraceId": null, "agentId": "orchestrator", "sessionId": "s1", "status": "ok", "latencyMs": 10, "costUsd": 0.001 },
+        { "traceId": "t-a", "parentTraceId": "t-root", "agentId": "worker-a", "sessionId": "s1", "status": "ok", "latencyMs": 20, "costUsd": 0.002 },
+        { "traceId": "t-other", "parentTraceId": null, "agentId": "bystander", "sessionId": "s2", "status": "ok", "latencyMs": 5, "costUsd": 0.0 }
+      ],
+      "sessionId": "s1",
+      "expected": {
+        "nodes": 2,
+        "edges": 1,
+        "rootSubtree": { "traces": 2, "errors": 0, "costUsd": 0.003, "latencyMs": 30 }
+      }
+    },
+    {
+      "id": "grandchild-rollup",
+      "summaries": [
+        { "traceId": "t-1", "parentTraceId": null, "agentId": "a", "sessionId": null, "status": "ok", "latencyMs": 1, "costUsd": 0.0 },
+        { "traceId": "t-2", "parentTraceId": "t-1", "agentId": "b", "sessionId": null, "status": "ok", "latencyMs": 2, "costUsd": 0.0 },
+        { "traceId": "t-3", "parentTraceId": "t-2", "agentId": "c", "sessionId": null, "status": "blocked", "latencyMs": 4, "costUsd": 0.0 }
+      ],
+      "root": "t-1",
+      "expected": {
+        "nodes": 3,
+        "edges": 2,
+        "rootSubtree": { "traces": 3, "errors": 1, "costUsd": 0.0, "latencyMs": 7 }
+      }
+    }
+  ],
+  "replayGating": [
+    { "mode": "full", "expectedStatus": 200 },
+    { "mode": "redacted", "expectedStatus": 403 },
+    { "mode": "metadata", "expectedStatus": 403 }
+  ]
+}

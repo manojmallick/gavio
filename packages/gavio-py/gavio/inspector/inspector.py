@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from typing import Any
 
+from ..pricing import PricingProvider
 from ..request import GavioRequest
+from ..response import GavioResponse
 from .buffer import RingBuffer
 from .bus import InspectorBus
 from .config import InspectorConfig
 from .emitter import TraceEmitter
 from .server import InspectorServer
+
+ReplayHandler = Callable[..., Awaitable[GavioResponse]]
 
 _AUDIT_BEFORE_PII_LINT = "audit registered before pii_guard — audit will hash unredacted prompts"
 _CACHE_BEFORE_PII_LINT = "cache registered before pii_guard — raw PII used as cache key"
@@ -51,6 +56,12 @@ class Inspector:
         self.buffer = RingBuffer(max_traces=config.max_traces)
         self.bus.subscribe(self.buffer.on_event)
         self.server: InspectorServer | None = None
+        # Wired by the Gateway: /api/replay re-fires through the live pipeline.
+        self.replay_handler: ReplayHandler | None = None
+        # Used by /api/simulate-cost; the builder passes its PricingProvider.
+        self.pricing = PricingProvider()
+        # Set in store mode (gavio inspect --store); enables /api/chain/verify.
+        self.audit_records: list[dict[str, Any]] | None = None
 
     def emitter(self, request: GavioRequest) -> TraceEmitter:
         """Create the per-request event emitter."""

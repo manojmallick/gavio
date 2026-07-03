@@ -24,6 +24,11 @@ export interface TraceSummary {
   piiEntityTypes: string[]
   wallTimeUtc: string | null
   interceptorsFired: string[]
+  /** Token usage from provider.call.end — feeds /api/stats and /api/simulate-cost. */
+  usage?: { promptTokens: number; completionTokens: number; totalTokens: number }
+  /** Content hashes (audit-store summaries) — searchable via /api/traces?q=. */
+  promptHash?: string
+  responseHash?: string
 }
 
 export interface TraceRecord {
@@ -57,6 +62,9 @@ export class TraceBuffer {
     }
     if (event.type === 'trace.start') this.applyStart(record.summary, event.data)
     if (event.type === 'trace.end') this.applyEnd(record.summary, event.data)
+    if (event.type === 'provider.call.end' && event.data['usage'] !== undefined) {
+      record.summary.usage = event.data['usage'] as TraceSummary['usage']
+    }
   }
 
   /** Trace summaries in chronological (ascending) order; limit keeps the most recent N. */

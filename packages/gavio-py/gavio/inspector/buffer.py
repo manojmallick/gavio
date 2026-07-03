@@ -68,6 +68,19 @@ class RingBuffer:
             for key in _SUMMARY_END_KEYS:
                 if key in data:
                     summary[key] = data[key]
+        elif event["type"] == "provider.call.end" and "usage" in data:
+            # Token usage feeds /api/stats and /api/simulate-cost.
+            summary["usage"] = data["usage"]
+
+    def seed(self, summary: dict[str, Any], events: list[dict[str, Any]] | None = None) -> None:
+        """Insert a pre-assembled trace — store mode loads audit records this way."""
+        with self._lock:
+            while len(self._traces) >= self._max_traces:
+                self._traces.popitem(last=False)
+            self._traces[summary["traceId"]] = {
+                "summary": dict(summary),
+                "events": list(events or []),
+            }
 
     def count(self) -> int:
         with self._lock:

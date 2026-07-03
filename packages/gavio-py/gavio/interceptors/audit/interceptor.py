@@ -101,5 +101,9 @@ def _resolve_sink(sink: AuditSink | str | None) -> AuditSink:
     if isinstance(sink, str):
         if sink in ("stdout://", "stdout"):
             return StdoutSink()
+        if sink.startswith("jsonl://"):
+            from .sinks.jsonl import JsonlSink
+
+            return JsonlSink(sink.removeprefix("jsonl://"))
         raise ValueError(f"Unknown audit sink: {sink!r}")
     return sink

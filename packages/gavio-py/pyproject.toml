@@ -40,6 +40,9 @@ all = [
     "elasticsearch", "psycopg2", "pgvector",
 ]
 
+[project.scripts]
+gavio = "gavio.cli:main"
+
 [project.urls]
 Homepage = "https://gavio.io"
 Repository = "https://github.com/gavio-ai/gavio"
