@@ -116,7 +116,8 @@ export default defineConfig({
 
     footer: {
       message: 'Released under the MIT License.',
-      copyright: '© the Gavio project contributors',
+      copyright:
+        'MIT © 2026 <a href="https://github.com/manojmallick">Manoj Mallick</a> · Made in Amsterdam 🇳🇱',
     },
   },
 })

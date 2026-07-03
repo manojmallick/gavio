@@ -42,7 +42,56 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Dev mode** — the whole stack runs in-process with a mock provider. No API key, no network.
 - **Audit by default** — every call logged as metadata + SHA-256 content hashes (never raw text).
 
-> **Status:** v0.2.0 (Production core). Pre-1.0, APIs may still change. See the [CHANGELOG](./CHANGELOG.md).
+> **Status:** v0.5.0 (Advanced features — cost-optimiser routing). Semver
+> stability holds since v0.2.0; pre-1.0, some APIs may still change. See the
+> [CHANGELOG](./CHANGELOG.md).
+
+---
+
+## Architecture
+
+Gavio is a thin core (`Gateway` + `InterceptorChain` + the request/response
+model) that everything else plugs into. A request flows through a **pre**
+pipeline, hits a **provider adapter**, then flows back through a **post**
+pipeline in reverse order:
+
+```
+          ┌──────────────────────── Gateway.complete(request) ────────────────────────┐
+          │                                                                            │
+ request  │   PRE  ─▶ PiiGuard ─▶ SecretScanner ─▶ PromptInjectionGuard ─▶ RateLimiter │
+ ───────▶ │           CostControl ─▶ CostRouter ─▶ SemanticCache ──┐                   │
+          │                                                        │ (cache miss)      │
+          │                                             ┌──────────▼──────────┐        │
+          │                                             │  Provider Adapter    │        │
+          │                                             │ OpenAI · Anthropic · │        │
+          │                                             │ Gemini · Azure ·     │        │
+          │                                             │ Ollama · Mock        │        │
+          │                                             └──────────┬──────────┘        │
+          │           Guardrails ◀─ RiskScorer ◀─ PiiRestore ◀─────┘                   │
+ ◀─────── │   POST ◀─ Metrics ◀─ AuditInterceptor (hash-chained record)                │ response
+          │                                                                            │
+          └────────────────────────────────────────────────────────────────────────────┘
+```
+
+- **Interceptors** implement `before()` / `after()` / `onError()`. Order is
+  explicit — PII redaction runs before audit; audit runs last so it records what
+  every other interceptor did. See [docs/architecture.md](./docs/architecture.md).
+- **Executor policies** (cache, retry, circuit breaker, load balancer, fallback)
+  wrap the provider call itself — a cache hit or an open circuit short-circuits
+  the provider entirely.
+- **The audit record is metadata-only.** Prompts and responses are stored as
+  SHA-256 hashes, never raw text; PII entity *types and counts* are logged, never
+  values. Records are hash-chained (`F-OBS-02`) so any tampering is detectable.
+
+**Core data model** — identical fields across all three SDKs, defined once in
+[`spec/`](./spec/) as JSON Schema and enforced by [shared test vectors](./test-vectors/):
+
+| `GavioRequest` | `GavioResponse` | `AuditRecord` |
+|---|---|---|
+| `trace_id` (UUID v7) | `trace_id` | `trace_id` · `parent_trace_id` |
+| `agent_id` · `parent_trace_id` | `content` (PII restored) | `prompt_hash` · `response_hash` |
+| `messages` · `model` · `provider` | `usage` · `cost_usd` · `latency_ms` | `pii_entity_types` · `risk_score` |
+| `options` · `lineage` · `metadata` | `cache_hit` · `cache_type` | `previous_hash` · `lineage` · `schema_version` |
 
 ---
 
@@ -162,7 +211,7 @@ Immutable records + builders, `CompletableFuture` async, Java 17+.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.2.0</version>
+  <version>0.5.0</version>
 </dependency>
 ```
 
@@ -172,33 +221,68 @@ Immutable records + builders, `CompletableFuture` async, Java 17+.
 
 ## What ships
 
-**v0.1.0 — Foundation**
+Every feature below lands in **all three SDKs in lockstep**, at the same version,
+gated by the same [shared test vectors](./test-vectors/).
 
-| Area | Feature | ID |
+### 🔒 Privacy & security
+
+| Feature | ID | Since |
 |---|---|---|
-| **Privacy** | PII Guard (Email, IBAN·mod-97, BSN·11-proef, CreditCard·Luhn, Phone, IP, SSN) | `F-SEC-01` |
-| | Secret scanner (API keys, AWS, GitHub, JWT, PEM, DB URLs) | `F-SEC-04` |
-| **Reliability** | Retry (exp backoff + jitter), Fallback chain, Timeout | `F-REL-01/02/07` |
-| **Cost** | Per-request `cost_usd` tracking | `F-GOV-01` |
-| **Observability** | Audit interceptor + `AuditRecord` (SHA-256 hashes), stdout sink | `F-OBS-01/05` |
-| **DX** | Dev mode, dry-run mode, test kit | `F-DX-01/02` |
-| **Providers** | OpenAI, Anthropic (stdlib HTTP), Mock | — |
+| PII Guard — Email, IBAN·mod-97, BSN·11-proef, CreditCard·Luhn, Phone, IP, SSN | `F-SEC-01` | 0.1.0 |
+| Secret scanner — API keys, AWS `AKIA`, GitHub tokens, JWT, PEM, DB URLs | `F-SEC-04` | 0.1.0 |
+| Prompt-injection defense — pattern corpus + optional semantic similarity | `F-SEC-05` | 0.2.0 |
 
-**v0.2.0 — Production core**
+### 🔁 Reliability
 
-| Area | Feature | ID |
+| Feature | ID | Since |
 |---|---|---|
-| **Caching** | Semantic + exact cache (cosine + SHA-256), in-memory backends | `F-CACHE-01/02/03` |
-| **Reliability** | Circuit breaker, load balancer | `F-REL-03/04` |
-| **Governance** | Budget caps, rate limiting, model RBAC | `F-GOV-02/03/04` |
-| **Quality** | Guardrails — JSON-schema + regex allow/deny | `F-QUA-01/02` |
-| **Security** | Prompt-injection defense | `F-SEC-05` |
-| **Observability** | Hash-chain (tamper-evident) audit, multi-agent DAG trace | `F-OBS-02/03` |
-| **DX** | OpenAI drop-in shim, config loader | `F-DX-04/05` |
-| **Providers** | Gemini, Azure OpenAI, Ollama | — |
+| Retry (exp backoff + jitter), Fallback chain, Timeout | `F-REL-01/02/07` | 0.1.0 |
+| Circuit breaker, Load balancer (weighted round-robin) | `F-REL-03/04` | 0.2.0 |
+| Streaming reliability — buffer response before post-interceptors run | `F-REL-06` | 0.3.0 |
 
-**325 tests** across the three SDKs (Python 102 · JavaScript 115 · Java 108).
-See the [CHANGELOG](./CHANGELOG.md) and [interceptors guide](./docs/interceptors.md).
+### 💰 Cost & governance
+
+| Feature | ID | Since |
+|---|---|---|
+| Per-request `cost_usd` tracking (all providers) | `F-GOV-01` | 0.1.0 |
+| Budget caps (soft/hard), rate limiting, model RBAC | `F-GOV-02/03/04` | 0.2.0 |
+| **Cost-optimiser routing** — reroute simple prompts to a cheaper model | `F-GOV-06` | **0.5.0** |
+
+### ⚡ Caching
+
+| Feature | ID | Since |
+|---|---|---|
+| Semantic + exact cache (cosine + SHA-256), in-memory backends | `F-CACHE-01/02/03` | 0.2.0 |
+| Redis distributed backend (shared hits across processes, zero-dep RESP2) | `F-CACHE-04` | 0.4.0 |
+
+### 📊 Observability & quality
+
+| Feature | ID | Since |
+|---|---|---|
+| Audit interceptor + `AuditRecord` (SHA-256 hashes), stdout sink | `F-OBS-01/05` | 0.1.0 |
+| Hash-chain (tamper-evident) audit, multi-agent DAG trace | `F-OBS-02/03` | 0.2.0 |
+| Prompt lineage (template + variables + RAG sources) | `F-OBS-04` | 0.3.0 |
+| Prometheus metrics (zero-dep text exposition) | `F-OBS-08` | 0.3.0 |
+| Guardrails — JSON-schema + regex allow/deny | `F-QUA-01/02` | 0.2.0 |
+| Composite risk scoring (PII + guardrail + injection signals) | `F-QUA-06` | 0.3.0 |
+
+### 🛠️ Developer experience & providers
+
+| Feature | ID | Since |
+|---|---|---|
+| Dev mode, dry-run mode, `GavioTestKit` | `F-DX-01/02/03` | 0.1.0 |
+| OpenAI drop-in shim, config loader | `F-DX-04/05` | 0.2.0 |
+| **Providers** — OpenAI · Anthropic · Gemini · Azure OpenAI · Ollama · Mock (all stdlib HTTP, no vendor SDKs) | — | 0.1–0.2 |
+
+Conformance-tested across all three SDKs on every push and PR
+([`ci.yml`](./.github/workflows/ci.yml) runs Python 3.10–3.12, Node 18/20/22,
+Java 17/21). Per-release test totals are in the [CHANGELOG](./CHANGELOG.md); see
+the [interceptors guide](./docs/interceptors.md) for every built-in interceptor.
+
+> **Not yet shipped** (roadmap): image PII (`F-SEC-09`), embedding guard
+> (`F-SEC-10`), drift detection (`F-GOV-07`), call-graph replay (`F-OBS-10`),
+> right-to-erasure (`F-QUA-09`), license detection (`F-QUA-10`), web dashboard
+> (`F-DX-08`). See [MASTER_PLAN.md](./MASTER_PLAN.md).
 
 ---
 
@@ -209,6 +293,7 @@ See the [CHANGELOG](./CHANGELOG.md) and [interceptors guide](./docs/interceptors
 - **P3 · Provider-agnostic** — no provider-specific code leaks into your app.
 - **P4 · Zero infra in dev** — `dev_mode` runs everything in-process.
 - **P5 · Audit by default** — opt-out, not opt-in.
+- **P6 · Embeddable library** — runs in-process, no sidecar or proxy required.
 - **P7 · Dry-run first** — log what *would* happen without blocking.
 - **P8 · Typed everywhere** — TS generics, Python hints, Java generics.
 
@@ -254,6 +339,6 @@ gavio/
 
 <div align="center">
 
-MIT © 2026 Manoj Mallick · Made in Amsterdam 🇳🇱
+MIT © 2026 [Manoj Mallick](https://github.com/manojmallick) · Made in Amsterdam 🇳🇱
 
 </div>
