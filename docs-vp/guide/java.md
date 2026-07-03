@@ -27,19 +27,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.8.0</version>
+  <version>0.9.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>0.8.0</version>
+  <version>0.9.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:0.8.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:0.8.0")
+implementation("io.github.manojmallick:gavio-core:0.9.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:0.9.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -165,7 +165,7 @@ Gateway gw = Gateway.builder().devMode(true).inspect(true).build();
 
 ## Embeddings
 
-`gw.embed(List.of(texts...))` (`F-SEC-10`, next release) runs embedding inputs
+`gw.embed(List.of(texts...))` (`F-SEC-10`, since v0.9.0) runs embedding inputs
 through the same interceptor pipeline as completions — PII is scanned and
 redacted before the provider's embedding API is called; one vector per input
 in `response.embeddings()`.

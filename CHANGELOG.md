@@ -11,6 +11,21 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.9.0] — 2026-07-04
+
+### Summary
+**Embedding call guard.** Embedding API calls no longer bypass the PII
+pipeline: `Gateway.embed(texts)` runs every input through the same
+interceptor chain as completions in **Python, Java, and JavaScript**
+(`F-SEC-10`, carried forward from the v0.5.0 milestone). Plus a full refresh
+of every user-facing doc surface. Feature PR #37, docs PR #38.
+
+Tests: Python 175 · JavaScript 188 · Java 16 modules green.
+
 ### Added
 - **Embedding call guard (all SDKs, `F-SEC-10`)** — new `Gateway.embed(texts)`
   entry point runs embedding inputs through the same interceptor pipeline as
@@ -21,6 +36,13 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   implements a deterministic reference); adapters without embedding support
   fail with a clear `ProviderError`. Shared redaction cases in
   `test-vectors/embedding/redaction.json` (#30).
+
+### Changed
+- Documentation refresh (#38): package READMEs rewritten to the current
+  feature set (they described v0.1.0), Inspector + Embeddings sections added
+  to all six per-SDK guides, main-README feature tables corrected, examples
+  re-verified against the published packages, and new `05-inspector`
+  multi-agent examples (Python + JS).
 
 ---
 
@@ -588,7 +610,8 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/manojmallick/gavio/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/manojmallick/gavio/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/manojmallick/gavio/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/manojmallick/gavio/compare/v0.5.1...v0.6.0

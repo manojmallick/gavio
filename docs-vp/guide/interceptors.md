@@ -32,6 +32,10 @@ covers the additions (`F-OBS-10`/`F-DX-11`/`F-DX-08`/`F-DX-12`): agent call
 graphs, session views, trace replay, RED stats, hash-chain verification,
 test-case export, and the `gavio inspect --store` read-only dashboard.
 
+**v0.9.0** — Embedding call guard (`F-SEC-10`): `gw.embed(texts)` runs
+embedding inputs through the same pre-interceptor chain (PII guard included)
+before the provider's embedding API.
+
 ---
 
 ## PII Guard (`F-SEC-01`)

@@ -137,7 +137,7 @@ const gw = new Gateway({ devMode: true, inspect: true })
 
 ## Embeddings
 
-`gw.embed({ texts })` (`F-SEC-10`, next release) runs embedding inputs through
+`gw.embed({ texts })` (`F-SEC-10`, since v0.9.0) runs embedding inputs through
 the same interceptor pipeline as completions — PII is scanned and redacted
 before the provider's embedding API is called; one vector per input in
 `r.embeddings`.

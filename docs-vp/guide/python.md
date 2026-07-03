@@ -143,7 +143,7 @@ gavio inspect --store audit.jsonl
 
 ## Embeddings
 
-`gw.embed(texts)` (`F-SEC-10`, next release) runs embedding inputs through the
+`gw.embed(texts)` (`F-SEC-10`, since v0.9.0) runs embedding inputs through the
 same interceptor pipeline as completions — PII is scanned and redacted before
 the provider's embedding API is called; the response carries one vector per
 input in `resp.embeddings`.
