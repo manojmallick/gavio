@@ -52,11 +52,13 @@ hs_err_pid*
 *.pem
 *.key
 
-# ─── SigMap local artifacts ───────────────────────────────────
-# Generated context (copilot-instructions.md) is committed on purpose;
-# only the local metrics/cache are ignored.
+# ─── SigMap / harness local artifacts ─────────────────────────
+# Generated context and per-machine harness settings churn on every
+# session; keep them out of version control.
 .context/
 .sigmap-cache/
+.github/copilot-instructions.md
+.claude/settings.json
 
 
 # ---docs--- #
