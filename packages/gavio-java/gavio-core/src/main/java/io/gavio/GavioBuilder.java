@@ -1,6 +1,10 @@
 package io.gavio;
 
 import io.gavio.GavioException.ConfigurationException;
+import io.gavio.inspector.CaptureMode;
+import io.gavio.inspector.Inspector;
+import io.gavio.inspector.InspectorConfig;
+import io.gavio.inspector.PipelineInfo;
 import io.gavio.interceptors.Interceptor;
 import io.gavio.providers.MockProvider;
 import io.gavio.providers.ProviderAdapter;
@@ -20,6 +24,7 @@ public final class GavioBuilder {
     private boolean devMode;
     private boolean dryRun;
     private PricingProvider pricing = new PricingProvider();
+    private InspectorConfig inspectorConfig;
 
     public GavioBuilder provider(Provider provider) {
         this.provider = provider;
@@ -61,6 +66,21 @@ public final class GavioBuilder {
         return this;
     }
 
+    /**
+     * Configure the Gavio Inspector (F-DX-09). The inspector is OFF by default
+     * — dev mode does not auto-enable it.
+     */
+    public GavioBuilder inspect(InspectorConfig config) {
+        this.inspectorConfig = config;
+        return this;
+    }
+
+    /** Enable/disable the inspector with default settings (F-DX-09). */
+    public GavioBuilder inspect(boolean enabled) {
+        this.inspectorConfig = InspectorConfig.builder().enabled(enabled).build();
+        return this;
+    }
+
     public Gateway build() {
         ProviderAdapter resolved = resolveAdapter();
         String resolvedModel = model != null ? model : defaultModel(resolved);
@@ -78,7 +98,62 @@ public final class GavioBuilder {
             }
         }
 
-        return new Gateway(resolved, resolvedModel, chain, dryRun);
+        Inspector inspector = buildInspector(resolved, resolvedModel, chain);
+        return new Gateway(resolved, resolvedModel, chain, dryRun, inspector);
+    }
+
+    /**
+     * Create (and optionally start) the inspector (F-DX-09). Returns null when
+     * disabled — the disabled path leaves gateway behaviour completely unchanged.
+     */
+    private Inspector buildInspector(
+            ProviderAdapter resolved, String resolvedModel, List<Interceptor> chain) {
+        InspectorConfig cfg = inspectorConfig;
+        if (cfg == null) {
+            cfg = configFromEnv();
+        }
+        if (cfg == null || !cfg.enabled()) {
+            return null;
+        }
+        cfg.validate(devMode);
+        List<String> names = new ArrayList<>();
+        for (Interceptor i : chain) {
+            names.add(i.name());
+        }
+        PipelineInfo info = new PipelineInfo(
+                resolved.providerName(), resolvedModel, devMode, dryRun, names);
+        Inspector inspector = new Inspector(cfg, cfg.effectiveMode(devMode), info);
+        if (cfg.startServer()) {
+            inspector.start();
+        }
+        return inspector;
+    }
+
+    /** GAVIO_INSPECT=1 enables inspector defaults; PORT/MODE env refine them. */
+    private static InspectorConfig configFromEnv() {
+        String flag = System.getenv("GAVIO_INSPECT");
+        if (!"1".equals(flag) && !"true".equalsIgnoreCase(String.valueOf(flag))) {
+            return null;
+        }
+        InspectorConfig.Builder b = InspectorConfig.builder().enabled(true);
+        String port = System.getenv("GAVIO_INSPECT_PORT");
+        if (port != null && !port.isEmpty()) {
+            try {
+                b.port(Integer.parseInt(port.trim()));
+            } catch (NumberFormatException e) {
+                throw new ConfigurationException("GAVIO_INSPECT_PORT is not a number: " + port);
+            }
+        }
+        String mode = System.getenv("GAVIO_INSPECT_MODE");
+        if (mode != null && !mode.isEmpty()) {
+            try {
+                b.mode(CaptureMode.fromWire(mode));
+            } catch (IllegalArgumentException e) {
+                throw new ConfigurationException(
+                        "GAVIO_INSPECT_MODE must be full|redacted|metadata, got: " + mode);
+            }
+        }
+        return b.build();
     }
 
     private ProviderAdapter resolveAdapter() {

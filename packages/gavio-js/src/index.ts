@@ -8,10 +8,16 @@
  * See https://gavio.io for documentation. MIT licensed.
  */
 
-export const VERSION = '0.5.1'
+export { VERSION } from './version.js'
 
 export { Gateway } from './gateway.js'
 export type { GatewayOptions, CompleteOptions } from './gateway.js'
+
+export { Inspector } from './inspector/inspector.js'
+export { InspectorBus } from './inspector/bus.js'
+export type { InspectorConfig, InspectorMode } from './inspector/config.js'
+export type { InspectorEvent } from './inspector/events.js'
+export type { TraceRecord, TraceSummary } from './inspector/buffer.js'
 
 export { GavioRequest } from './request.js'
 export type { GavioRequestInit } from './request.js'

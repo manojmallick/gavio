@@ -32,12 +32,32 @@ export class InterceptorContext {
   /** Arbitrary inter-interceptor state (e.g. PII replacement map for restore). */
   state: Record<string, unknown> = {}
 
+  /** Pending inspector decision entries; drained per hook by the emitter. */
+  private inspectEntries: Record<string, unknown> = {}
+
   constructor(init: InterceptorContextInit) {
     this.traceId = init.traceId
     this.agentId = init.agentId ?? null
     this.parentTraceId = init.parentTraceId ?? null
     this.sessionId = init.sessionId ?? null
     this.dryRun = init.dryRun ?? false
+  }
+
+  /**
+   * Attach a decision record for the inspector (F-DX-09). Entries recorded
+   * during a hook surface on that hook's `interceptor.*.end` event as `data.
+   * decision`. Harmless no-op accumulation when the inspector is disabled.
+   */
+  inspect(key: string, value: unknown): void {
+    this.inspectEntries[key] = value
+  }
+
+  /** @internal Drain pending {@link inspect} entries (called per hook). */
+  drainInspectEntries(): Record<string, unknown> | undefined {
+    if (Object.keys(this.inspectEntries).length === 0) return undefined
+    const entries = this.inspectEntries
+    this.inspectEntries = {}
+    return entries
   }
 
   markFired(name: string): void {

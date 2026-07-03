@@ -33,6 +33,24 @@ class InterceptorContext:
     # Arbitrary inter-interceptor state (e.g. PII replacement map for restore).
     state: dict[str, Any] = field(default_factory=dict)
 
+    # Decision records attached via inspect(); drained per hook by the
+    # inspector emitter (F-DX-09). Harmless when the inspector is off.
+    inspect_pending: dict[str, Any] = field(default_factory=dict)
+
+    def inspect(self, key: str, value: Any) -> None:
+        """Attach a JSON-safe decision record for the Gavio Inspector.
+
+        Recorded entries surface in the ``decision`` field of the current
+        hook's ``interceptor.*.end`` event. Safe to call unconditionally —
+        with the inspector disabled this is just a dict write.
+        """
+        self.inspect_pending[key] = value
+
+    def drain_inspect(self) -> dict[str, Any]:
+        """Return and clear the pending decision records (emitter-internal)."""
+        pending, self.inspect_pending = self.inspect_pending, {}
+        return pending
+
     def mark_fired(self, name: str) -> None:
         if name not in self.interceptors_fired:
             self.interceptors_fired.append(name)
