@@ -11,7 +11,7 @@
 export { VERSION } from './version.js'
 
 export { Gateway } from './gateway.js'
-export type { GatewayOptions, CompleteOptions } from './gateway.js'
+export type { GatewayOptions, CompleteOptions, EmbedOptions } from './gateway.js'
 
 export { Inspector } from './inspector/inspector.js'
 export { InspectorBus } from './inspector/bus.js'

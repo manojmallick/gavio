@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import time
 from collections.abc import AsyncIterator
 
@@ -37,11 +38,7 @@ class MockProvider(ProviderAdapter):
         if self._response is not None:
             return self._response
         last_user = next(
-            (
-                m.get("content", "")
-                for m in reversed(request.messages)
-                if m.get("role") == "user"
-            ),
+            (m.get("content", "") for m in reversed(request.messages) if m.get("role") == "user"),
             "",
         )
         return f"[mock reply] {last_user}"
@@ -53,9 +50,14 @@ class MockProvider(ProviderAdapter):
             prompt_tokens=estimate_tokens(request.prompt_text()),
             completion_tokens=estimate_tokens(content),
         )
-        return self._build_response(
-            request, content, usage, self._model_version, started
-        )
+        return self._build_response(request, content, usage, self._model_version, started)
+
+    async def embed(self, request: GavioRequest) -> GavioResponse:
+        """Deterministic 8-dim vector per message content (F-SEC-10)."""
+        started = time.monotonic()
+        vectors = [_mock_vector(m.get("content", "")) for m in request.messages]
+        usage = TokenUsage(prompt_tokens=estimate_tokens(request.prompt_text()))
+        return self._build_embed_response(request, vectors, usage, self._model_version, started)
 
     async def stream(self, request: GavioRequest) -> AsyncIterator[str]:
         for token in self._content_for(request).split(" "):
@@ -67,3 +69,9 @@ class MockProvider(ProviderAdapter):
     @property
     def reported_model_version(self) -> str | None:
         return self._model_version
+
+
+def _mock_vector(text: str, dims: int = 8) -> list[float]:
+    """Stable pseudo-embedding: sha256 bytes scaled to [0, 1)."""
+    digest = hashlib.sha256(text.encode("utf-8")).digest()
+    return [digest[i] / 255.0 for i in range(dims)]

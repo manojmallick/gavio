@@ -170,16 +170,53 @@ class Gateway:
         if emitter is None:
             response = await self._chain.execute(request, ctx, buffering_executor)
         else:
-            executor = emitter.wrap_provider_call(
-                self._adapter.provider_name, buffering_executor
-            )
+            executor = emitter.wrap_provider_call(self._adapter.provider_name, buffering_executor)
             response = await self._execute_traced(request, ctx, executor, emitter)
         # Post-interceptors have run on the fully buffered response; emit it now.
         yield response.content
 
-    def complete_sync(
-        self, messages: list[Message], **kwargs: Any
+    async def embed(
+        self,
+        texts: list[str],
+        *,
+        model: str | None = None,
+        agent_id: str | None = None,
+        parent_trace_id: str | None = None,
+        session_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
+        **options: Any,
     ) -> GavioResponse:
+        """Embed texts through the same interceptor pipeline as completions (F-SEC-10).
+
+        Every input runs the full pre-interceptor chain — PII guard included —
+        before the provider's embedding API is called, and the post chain
+        (audit, metrics) runs on the way out. The response carries one vector
+        per input in :attr:`GavioResponse.embeddings` and empty ``content``.
+        """
+        request = GavioRequest(
+            messages=[{"role": "user", "content": text} for text in texts],
+            model=model or self._model,
+            provider=Provider.coerce(self._adapter.provider_name),
+            agent_id=agent_id,
+            parent_trace_id=parent_trace_id,
+            session_id=session_id,
+            options=options,
+            metadata={**(metadata or {}), "call_type": "embedding"},
+        )
+        ctx = InterceptorContext(
+            trace_id=request.trace_id,
+            agent_id=agent_id,
+            parent_trace_id=parent_trace_id,
+            session_id=session_id,
+            dry_run=self._dry_run,
+        )
+        emitter = self._inspector.emitter(request) if self._inspector else None
+        executor = self._build_executor(ctx, emitter, call=self._adapter.embed)
+        if emitter is None:
+            return await self._chain.execute(request, ctx, executor)
+        return await self._execute_traced(request, ctx, executor, emitter)
+
+    def complete_sync(self, messages: list[Message], **kwargs: Any) -> GavioResponse:
         """Synchronous wrapper for non-async callers (scripts, Django views)."""
         try:
             asyncio.get_running_loop()
@@ -194,10 +231,15 @@ class Gateway:
         return await self._adapter.health_check()
 
     def _build_executor(
-        self, ctx: InterceptorContext, emitter: TraceEmitter | None = None
+        self,
+        ctx: InterceptorContext,
+        emitter: TraceEmitter | None = None,
+        call: Executor | None = None,
     ) -> Executor:
+        provider_call = call or self._adapter.complete
+
         async def base(request: GavioRequest) -> GavioResponse:
-            return await self._adapter.complete(request)
+            return await provider_call(request)
 
         executor: Executor = base
         # provider.call.* events wrap the innermost call — one pair per attempt.
@@ -227,9 +269,7 @@ class Gateway:
         return response
 
     @staticmethod
-    def _wrap_policy(
-        policy: ExecutorPolicy, inner: Executor, ctx: InterceptorContext
-    ) -> Executor:
+    def _wrap_policy(policy: ExecutorPolicy, inner: Executor, ctx: InterceptorContext) -> Executor:
         async def wrapped(request: GavioRequest) -> GavioResponse:
             if ctx.dry_run and not policy.dry_run_safe:
                 return await inner(request)
@@ -297,15 +337,11 @@ class GatewayBuilder:
         interceptors = list(self._interceptors)
 
         # Dev mode auto-wires a stdout audit sink if none was added.
-        if self._dev_mode and not any(
-            isinstance(i, AuditInterceptor) for i in interceptors
-        ):
+        if self._dev_mode and not any(isinstance(i, AuditInterceptor) for i in interceptors):
             interceptors.insert(0, AuditInterceptor())
 
         inspector = self._build_inspector(adapter, model, interceptors)
-        return Gateway(
-            adapter, model, interceptors, dry_run=self._dry_run, inspector=inspector
-        )
+        return Gateway(adapter, model, interceptors, dry_run=self._dry_run, inspector=inspector)
 
     def _build_inspector(
         self,
@@ -352,8 +388,7 @@ class GatewayBuilder:
             return MockProvider(pricing=self._pricing)
         if self._provider is None:
             raise ConfigurationError(
-                "No provider configured. Call .provider(...), .adapter(...), "
-                "or .dev_mode(True)."
+                "No provider configured. Call .provider(...), .adapter(...), or .dev_mode(True)."
             )
         return build_adapter(self._provider, pricing=self._pricing)
 

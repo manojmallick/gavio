@@ -4,6 +4,7 @@ import io.gavio.GavioRequest;
 import io.gavio.GavioResponse;
 import io.gavio.PricingProvider;
 import io.gavio.types.TokenUsage;
+import java.util.List;
 
 /** Base adapter sharing a pricing provider and a response builder. */
 public abstract class AbstractProviderAdapter implements ProviderAdapter {
@@ -25,6 +26,20 @@ public abstract class AbstractProviderAdapter implements ProviderAdapter {
                 PricingProvider.estimateTokens(content));
         String mv = reportedModelVersion().orElse(request.model());
         return buildResponse(request, content, usage, mv, startedNanos);
+    }
+
+    /**
+     * Build an embedding response (F-SEC-10) — empty content, one vector per
+     * input message, prompt-only token usage.
+     */
+    protected GavioResponse buildEmbedResponse(
+            GavioRequest request,
+            List<List<Double>> vectors,
+            TokenUsage usage,
+            String modelVersion,
+            long startedNanos) {
+        return buildResponse(request, "", usage, modelVersion, startedNanos)
+                .withEmbeddings(vectors);
     }
 
     protected GavioResponse buildResponse(

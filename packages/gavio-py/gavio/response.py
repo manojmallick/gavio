@@ -28,6 +28,8 @@ class GavioResponse:
     interceptors_fired: list[str] = field(default_factory=list)
     audit: AuditRecord | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    # Set on embedding calls (F-SEC-10): one vector per input text.
+    embeddings: list[list[float]] | None = None
 
     def copy_with_content(self, content: str) -> GavioResponse:
         """Return a copy with replaced content (used by PII restore, guardrails)."""
@@ -45,5 +47,6 @@ class GavioResponse:
             interceptors_fired=list(self.interceptors_fired),
             audit=self.audit,
             metadata=dict(self.metadata),
+            embeddings=self.embeddings,
         )
         return clone

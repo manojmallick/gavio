@@ -194,13 +194,57 @@ public final class Gateway {
                 .build());
     }
 
+    /**
+     * Embed texts through the same interceptor pipeline as completions (F-SEC-10).
+     *
+     * <p>Every input runs the full pre-interceptor chain — PII guard included —
+     * before the provider's embedding API is called, and the post chain (audit,
+     * metrics) runs on the way out. The response carries one vector per input in
+     * {@link GavioResponse#embeddings()} and empty {@code content}.
+     */
+    public CompletableFuture<GavioResponse> embed(List<String> texts) {
+        return embed(texts, null, null, null, null, null);
+    }
+
+    /** Full-argument overload of {@link #embed(List)}; any argument may be null. */
+    public CompletableFuture<GavioResponse> embed(
+            List<String> texts, String embedModel, String agentId,
+            String parentTraceId, String sessionId, Map<String, Object> metadata) {
+        GavioRequest.Builder builder = GavioRequest.builder()
+                .model(embedModel != null ? embedModel : model)
+                .provider(Provider.coerce(adapter.providerName()))
+                .agentId(agentId)
+                .parentTraceId(parentTraceId)
+                .sessionId(sessionId);
+        for (String text : texts) {
+            builder.message("user", text);
+        }
+        if (metadata != null) {
+            metadata.forEach(builder::metadata);
+        }
+        builder.metadata("call_type", "embedding");
+        GavioRequest request = builder.build();
+        InterceptorContext ctx = new InterceptorContext(request.traceId())
+                .agentId(request.agentId())
+                .parentTraceId(request.parentTraceId())
+                .sessionId(request.sessionId())
+                .dryRun(dryRun);
+        Executor executor = buildExecutor(ctx, adapter::embed);
+        return chain.execute(request, ctx, executor, newEmitter());
+    }
+
     public CompletableFuture<Boolean> healthCheck() {
         return adapter.healthCheck();
     }
 
     private Executor buildExecutor(InterceptorContext ctx) {
-        Executor base = adapter::complete;
-        Executor executor = base;
+        return buildExecutor(ctx, adapter::complete);
+    }
+
+    /** Compose the executor policies around a provider call — {@code adapter::complete}
+     * for completions, {@code adapter::embed} for embeddings (F-SEC-10). */
+    private Executor buildExecutor(InterceptorContext ctx, Executor call) {
+        Executor executor = call;
         // Wrap so the first-registered policy ends up outermost.
         for (int i = policies.size() - 1; i >= 0; i--) {
             executor = wrapPolicy(policies.get(i), executor, ctx);

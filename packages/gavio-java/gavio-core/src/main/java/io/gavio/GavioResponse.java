@@ -13,6 +13,9 @@ import java.util.Map;
  * <p>The {@code audit} field is typed as {@link Object} so {@code gavio-core}
  * stays free of a dependency on {@code gavio-interceptor-audit}. Callers cast it
  * to {@code AuditRecord} when the audit interceptor is in the chain.
+ *
+ * <p>{@code embeddings} is set on embedding calls only (F-SEC-10): one vector per
+ * input text, null for completions.
  */
 public record GavioResponse(
         String traceId,
@@ -27,7 +30,8 @@ public record GavioResponse(
         CacheType cacheType,
         List<String> interceptorsFired,
         Object audit,
-        Map<String, Object> metadata) {
+        Map<String, Object> metadata,
+        List<List<Double>> embeddings) {
 
     public GavioResponse {
         if (usage == null) {
@@ -48,21 +52,28 @@ public record GavioResponse(
     public GavioResponse withContent(String newContent) {
         return new GavioResponse(traceId, newContent, model, provider, modelVersion,
                 usage, costUsd, latencyMs, cacheHit, cacheType,
-                interceptorsFired, audit, metadata);
+                interceptorsFired, audit, metadata, embeddings);
     }
 
     /** Return a copy with the interceptor-fired list set. */
     public GavioResponse withInterceptorsFired(List<String> fired) {
         return new GavioResponse(traceId, content, model, provider, modelVersion,
                 usage, costUsd, latencyMs, cacheHit, cacheType,
-                fired, audit, metadata);
+                fired, audit, metadata, embeddings);
     }
 
     /** Return a copy with the audit record attached. */
     public GavioResponse withAudit(Object auditRecord) {
         return new GavioResponse(traceId, content, model, provider, modelVersion,
                 usage, costUsd, latencyMs, cacheHit, cacheType,
-                interceptorsFired, auditRecord, metadata);
+                interceptorsFired, auditRecord, metadata, embeddings);
+    }
+
+    /** Return a copy with embedding vectors attached (F-SEC-10): one per input text. */
+    public GavioResponse withEmbeddings(List<List<Double>> vectors) {
+        return new GavioResponse(traceId, content, model, provider, modelVersion,
+                usage, costUsd, latencyMs, cacheHit, cacheType,
+                interceptorsFired, audit, metadata, vectors);
     }
 
     /** Fluent builder for {@link GavioResponse}. */
@@ -80,6 +91,7 @@ public record GavioResponse(
         private List<String> interceptorsFired = List.of();
         private Object audit;
         private final Map<String, Object> metadata = new HashMap<>();
+        private List<List<Double>> embeddings;
 
         public Builder traceId(String traceId) {
             this.traceId = traceId;
@@ -146,10 +158,15 @@ public record GavioResponse(
             return this;
         }
 
+        public Builder embeddings(List<List<Double>> embeddings) {
+            this.embeddings = embeddings;
+            return this;
+        }
+
         public GavioResponse build() {
             return new GavioResponse(traceId, content, model, provider, modelVersion,
                     usage, costUsd, latencyMs, cacheHit, cacheType,
-                    interceptorsFired, audit, metadata);
+                    interceptorsFired, audit, metadata, embeddings);
         }
     }
 }
