@@ -11,7 +11,13 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Inspector overhead benchmarks (`F-DX-09`)** — `benchmarks/inspector/`
+  harnesses in all three SDKs measure per-request latency with the inspector
+  disabled / metadata / full against a delay-padded mock provider, enforcing
+  the INSPECTOR_PLAN §13 performance budget with CI thresholds (metadata p50
+  overhead < 10% of the simulated call, full < 25%); new `benchmarks` CI job
+  runs all three on every PR (#34).
 
 ---
 

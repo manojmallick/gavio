@@ -98,3 +98,30 @@ jobs:
           cache: maven
       - name: Test (maven, incl. shared vectors + Redis backend, F-CACHE-04)
         run: mvn -B test
+
+  benchmarks:
+    name: Inspector overhead benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Python harness (thresholds enforced, INSPECTOR_PLAN §13)
+        run: python3 benchmarks/inspector/bench.py
+      - name: Build JS SDK
+        working-directory: packages/gavio-js
+        run: npm ci && npm run build
+      - name: JavaScript harness
+        run: node benchmarks/inspector/bench.mjs
+      - name: Java harness
+        working-directory: packages/gavio-java
+        run: mvn -B -q -pl gavio-core test -Dtest=InspectorOverheadBench
