@@ -27,6 +27,11 @@ write your own.
 (`F-DX-09`/`F-DX-10`): not an interceptor itself, but it instruments every
 interceptor in the chain with live span events and a local web UI.
 
+**v0.7.0 (Inspector: agentic & production mode)** — the [Inspector page](./inspector.md)
+covers the additions (`F-OBS-10`/`F-DX-11`/`F-DX-08`/`F-DX-12`): agent call
+graphs, session views, trace replay, RED stats, hash-chain verification,
+test-case export, and the `gavio inspect --store` read-only dashboard.
+
 ---
 
 ## PII Guard (`F-SEC-01`)

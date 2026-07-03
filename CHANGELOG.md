@@ -11,6 +11,23 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.7.0] — 2026-07-04
+
+### Summary
+**Inspector: agentic & production mode.** The v0.7.0 milestone completes the
+Inspector across **Python, Java, and JavaScript**: multi-agent call graphs and
+session views, trace replay & edit-resend, RED stats, hash-chain verification,
+PII-sanitized test-case export, a cost simulator, and the read-only
+production dashboard over a persisted audit store (`gavio inspect --store`).
+Feature IDs `F-OBS-10`, `F-DX-11`, `F-DX-08`, `F-DX-12`. Feature PR #27,
+plus repo hygiene in #25.
+
+Tests: Python 168 · JavaScript 181 · Java 16 modules green.
+
 ### Added
 - **Agent call graph & session views (all SDKs, `F-OBS-10`)** — `GET /api/dag`
   (`?root=<trace_id>` or `?session_id=`) builds the multi-agent call graph from
@@ -47,6 +64,10 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   `F-OBS-08` Prometheus metrics (`docs/grafana/gavio-dashboard.json`) and the
   canonical InspectorEvent → OpenTelemetry span mapping (`docs/otel-mapping.md`,
   `F-OBS-07` groundwork).
+
+### Changed
+- Repo hygiene: harness-generated files (`.github/copilot-instructions.md`,
+  `.claude/settings.json`) are untracked and gitignored (#25).
 
 ---
 
@@ -528,7 +549,8 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/manojmallick/gavio/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/manojmallick/gavio/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/manojmallick/gavio/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/manojmallick/gavio/compare/v0.4.0...v0.5.0
