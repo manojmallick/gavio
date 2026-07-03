@@ -6,11 +6,13 @@ from __future__ import annotations
 import pytest
 
 from gavio import Gateway
+from gavio.context import InterceptorContext
 from gavio.exceptions import (
     BudgetExceededError,
     ModelNotAllowedError,
     RateLimitExceededError,
 )
+from gavio.interceptors.base import Interceptor
 from gavio.interceptors.governance import (
     CostControl,
     CostRouter,
@@ -20,6 +22,7 @@ from gavio.interceptors.governance import (
 )
 from gavio.pricing import PricingProvider
 from gavio.providers.mock import MockProvider
+from gavio.request import GavioRequest
 
 
 def _gw(*interceptors, pricing=None):
@@ -126,3 +129,48 @@ def test_heuristic_complexity_scorer():
     assert 0.0 <= simple <= 1.0
     assert 0.0 <= complex_ <= 1.0
     assert simple < complex_
+
+
+class _CaptureCostRouterDecision(Interceptor):
+    """Reads the decision record CostRouter writes to ``ctx.state``."""
+
+    def __init__(self) -> None:
+        self.decision: dict = {}
+
+    @property
+    def name(self) -> str:
+        return "_capture_cost_router"
+
+    async def before(
+        self, request: GavioRequest, ctx: InterceptorContext
+    ) -> GavioRequest:
+        self.decision = dict(ctx.state.get("cost_router", {}))
+        return request
+
+
+async def test_cost_router_records_decision():
+    # CostRouter runs before the capture interceptor, so the decision record is
+    # visible on the context by the time the capture reads it.
+    capture = _CaptureCostRouterDecision()
+    gw = _gw(CostRouter(simple_model="mock-mini"), capture)
+    r = await gw.complete(messages=[{"role": "user", "content": "hi"}])
+    assert r.model == "mock-mini"
+    assert capture.decision["rerouted"] is True
+    assert capture.decision["original_model"] == "mock"
+    assert capture.decision["complexity_score"] < 0.35
+
+
+async def test_cost_router_threshold_boundary_does_not_reroute():
+    class AtThreshold:
+        def score(self, text: str) -> float:
+            return 0.35
+
+    gw = _gw(
+        CostRouter(
+            simple_model="mock-mini",
+            complexity_threshold=0.35,
+            scorer=AtThreshold(),
+        )
+    )
+    r = await gw.complete(messages=[{"role": "user", "content": "hi"}])
+    assert r.model == "mock"  # score == threshold is not < threshold → no reroute

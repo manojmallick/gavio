@@ -97,6 +97,35 @@ describe('costRouter (F-GOV-06)', () => {
     const r = await g.complete({ messages: [{ role: 'user', content: 'What is 2+2?' }] })
     expect(r.model).toBe('mock')
   })
+
+  it('records the routing decision in ctx.state', async () => {
+    // costRouter runs before the capture interceptor, so the decision record is
+    // visible on the context by the time the capture reads it.
+    const decision: Record<string, unknown> = {}
+    const capture: Interceptor = {
+      name: '_capture_cost_router',
+      before(req, ctx) {
+        Object.assign(decision, (ctx.state['cost_router'] as Record<string, unknown>) ?? {})
+        return req
+      },
+    }
+    const g = gw('x', undefined, costRouter({ simpleModel: 'mock-mini' }), capture)
+    const r = await g.complete({ messages: [{ role: 'user', content: 'hi' }] })
+    expect(r.model).toBe('mock-mini')
+    expect(decision.rerouted).toBe(true)
+    expect(decision.originalModel).toBe('mock')
+    expect(decision.complexityScore as number).toBeLessThan(0.35)
+  })
+
+  it('does not reroute when the score is exactly at the threshold', async () => {
+    const g = gw(
+      'x',
+      undefined,
+      costRouter({ simpleModel: 'mock-mini', complexityThreshold: 0.35, scorer: { score: () => 0.35 } }),
+    )
+    const r = await g.complete({ messages: [{ role: 'user', content: 'hi' }] })
+    expect(r.model).toBe('mock') // score === threshold is not < threshold → no reroute
+  })
 })
 
 describe('heuristicComplexityScorer', () => {
