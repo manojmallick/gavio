@@ -11,7 +11,32 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Inspector core (all SDKs, `F-DX-09`)** — embedded, zero-dependency dev-time
+  visualizer plumbing: an in-process `InspectorBus` emits span events
+  (`trace.start`, per-interceptor `before`/`after` start+end with duration,
+  mutation flag and decision records, `provider.call.*`, `trace.error`,
+  `trace.end`) while a request moves through the chain; a bounded ring buffer
+  assembles them into traces; an embedded localhost HTTP server (stdlib only)
+  serves a JSON API — `/api/health`, `/api/pipeline` (chain composition +
+  ordering lints), `/api/traces`, `/api/traces/{id}`, `/api/stream` (SSE).
+  Canonical event contract in `spec/InspectorEvent.schema.json`; shared
+  `test-vectors/inspector/event-sequences.json` cases run in all three suites.
+- **Inspector UI (all SDKs, `F-DX-10`)** — single self-contained HTML file
+  (source: `inspector-ui/index.html`, vendored into each package) served at
+  `/`: live trace list over SSE, per-trace waterfall with span timings,
+  mutation diff / PII redaction pane, decision records, pipeline view with
+  ordering lints. Works fully offline; no external resources.
+- **Capture modes** — `full` / `redacted` / `metadata` with *structural*
+  content gating: `metadata` events carry no message/response content by
+  construction; `full` refuses to start outside dev mode without an explicit
+  acknowledgement; secret values are masked in every mode. Inspector is off
+  by default; enable via the gateway builder (`inspect(...)`) or
+  `GAVIO_INSPECT=1` (`GAVIO_INSPECT_PORT`, `GAVIO_INSPECT_MODE`). Server binds
+  `127.0.0.1` by default; non-loopback binds require an auth token.
+- **`InterceptorContext.inspect(key, value)`** — custom interceptors can attach
+  decision records to their span events; interceptor state entries keyed by
+  interceptor name (e.g. `cost_router`) surface automatically.
 
 ---
 

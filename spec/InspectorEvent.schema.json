@@ -1,0 +1,168 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/InspectorEvent.v1.json",
+  "title": "InspectorEvent",
+  "description": "One span event emitted by the gateway's InspectorBus while a request moves through the interceptor chain. Events sharing a traceId assemble into a trace. Content-bearing fields (messages, content, diff.from) exist ONLY in 'full' or 'redacted' capture modes — in 'metadata' mode the emitters have no content parameters at all.",
+  "type": "object",
+  "required": ["schemaVersion", "eventId", "traceId", "type", "tNs", "seq", "data"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "eventId": { "type": "string", "description": "UUID v7, unique per event." },
+    "traceId": { "type": "string", "description": "UUID v7, same as GavioRequest.traceId." },
+    "type": {
+      "type": "string",
+      "enum": [
+        "trace.start",
+        "interceptor.before.start",
+        "interceptor.before.end",
+        "provider.call.start",
+        "provider.call.end",
+        "interceptor.after.start",
+        "interceptor.after.end",
+        "trace.end",
+        "trace.error",
+        "cache.decision",
+        "reliability.event",
+        "governance.event",
+        "stream.first_token",
+        "stream.chunk"
+      ],
+      "description": "cache.decision, reliability.event, governance.event, stream.* are reserved for later slices; v0.6.0 emitters surface those decisions via the 'decision' field on interceptor.*.end events."
+    },
+    "tNs": { "type": "integer", "minimum": 0, "description": "Monotonic nanoseconds since trace.start." },
+    "seq": { "type": "integer", "minimum": 0, "description": "Per-trace ordering tiebreaker, starts at 0." },
+    "data": { "type": "object" }
+  },
+  "$defs": {
+    "traceStartData": {
+      "type": "object",
+      "required": ["provider", "model", "wallTimeUtc", "mode"],
+      "properties": {
+        "parentTraceId": { "type": ["string", "null"] },
+        "agentId": { "type": ["string", "null"] },
+        "sessionId": { "type": ["string", "null"] },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "wallTimeUtc": { "type": "string", "format": "date-time" },
+        "mode": { "type": "string", "enum": ["full", "redacted", "metadata"] },
+        "messages": {
+          "type": "array",
+          "description": "full/redacted modes only; absent in metadata mode.",
+          "items": {
+            "type": "object",
+            "required": ["role", "content"],
+            "properties": { "role": { "type": "string" }, "content": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "interceptorStartData": {
+      "type": "object",
+      "required": ["name"],
+      "properties": { "name": { "type": "string" } }
+    },
+    "interceptorEndData": {
+      "type": "object",
+      "required": ["name", "durationUs", "mutated"],
+      "properties": {
+        "name": { "type": "string" },
+        "durationUs": { "type": "integer", "minimum": 0 },
+        "mutated": { "type": "boolean" },
+        "aborted": { "type": "boolean" },
+        "abortReason": { "type": "string" },
+        "decision": {
+          "type": "object",
+          "description": "Decision record(s) the interceptor attached via ctx.inspect(key, value) during this hook. Keys are interceptor-chosen; values are JSON-safe."
+        },
+        "diff": {
+          "type": "object",
+          "description": "Request/response mutation diff. full mode: from+to; redacted mode: to only; absent in metadata mode.",
+          "properties": {
+            "messages": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["index"],
+                "properties": {
+                  "index": { "type": "integer", "minimum": 0 },
+                  "from": { "type": "string", "description": "full mode only" },
+                  "to": { "type": "string" }
+                }
+              }
+            },
+            "model": {
+              "type": "object",
+              "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
+            },
+            "content": {
+              "type": "object",
+              "description": "Response-content change made by a post-interceptor.",
+              "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "providerCallStartData": {
+      "type": "object",
+      "required": ["provider", "model", "attempt"],
+      "properties": {
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "attempt": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "providerCallEndData": {
+      "type": "object",
+      "required": ["durationUs", "status"],
+      "properties": {
+        "durationUs": { "type": "integer", "minimum": 0 },
+        "status": { "type": "string", "enum": ["ok", "error"] },
+        "errorType": { "type": "string" },
+        "modelVersion": { "type": "string" },
+        "usage": {
+          "type": "object",
+          "properties": {
+            "promptTokens": { "type": "integer", "minimum": 0 },
+            "completionTokens": { "type": "integer", "minimum": 0 },
+            "totalTokens": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "traceEndData": {
+      "type": "object",
+      "required": ["status", "latencyMs", "interceptorsFired"],
+      "properties": {
+        "status": { "type": "string", "enum": ["ok", "error", "blocked"] },
+        "latencyMs": { "type": "integer", "minimum": 0 },
+        "costUsd": { "type": "number", "minimum": 0 },
+        "cacheHit": { "type": "boolean" },
+        "cacheType": { "type": ["string", "null"] },
+        "interceptorsFired": { "type": "array", "items": { "type": "string" } },
+        "piiEntityTypes": { "type": "array", "items": { "type": "string" } },
+        "content": { "type": "string", "description": "full/redacted modes only; absent in metadata mode." }
+      }
+    },
+    "traceErrorData": {
+      "type": "object",
+      "required": ["origin", "errorType", "message", "handled"],
+      "properties": {
+        "origin": { "type": "string", "enum": ["interceptor", "provider", "chain"] },
+        "interceptorName": { "type": "string" },
+        "errorType": { "type": "string" },
+        "message": { "type": "string" },
+        "handled": { "type": "boolean" }
+      }
+    }
+  },
+  "allOf": [
+    { "if": { "properties": { "type": { "const": "trace.start" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/traceStartData" } } } },
+    { "if": { "properties": { "type": { "enum": ["interceptor.before.start", "interceptor.after.start"] } } }, "then": { "properties": { "data": { "$ref": "#/$defs/interceptorStartData" } } } },
+    { "if": { "properties": { "type": { "enum": ["interceptor.before.end", "interceptor.after.end"] } } }, "then": { "properties": { "data": { "$ref": "#/$defs/interceptorEndData" } } } },
+    { "if": { "properties": { "type": { "const": "provider.call.start" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/providerCallStartData" } } } },
+    { "if": { "properties": { "type": { "const": "provider.call.end" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/providerCallEndData" } } } },
+    { "if": { "properties": { "type": { "const": "trace.end" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/traceEndData" } } } },
+    { "if": { "properties": { "type": { "const": "trace.error" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/traceErrorData" } } } }
+  ]
+}

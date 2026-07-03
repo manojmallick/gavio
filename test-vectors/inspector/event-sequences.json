@@ -1,0 +1,85 @@
+{
+  "description": "Inspector event-sequence cases: build a dev-mode Gateway with the listed built-in interceptors (default config) and the inspector enabled in the given capture mode, run `request` through it (mock provider), then assert the ordered event stream matches `expectedEvents` (type, and interceptor name where given). `forbiddenDataKeys` asserts those keys are absent from every event's data (structural content gating). `requireError` means the mock provider must throw; the SDK uses its own failing mock. Timing fields (tNs, durationUs) are asserted present and non-negative, never exact.",
+  "schemaVersion": "1.0",
+  "cases": [
+    {
+      "id": "bare-pipeline",
+      "mode": "full",
+      "interceptors": [],
+      "request": { "messages": [{ "role": "user", "content": "hello inspector" }] },
+      "expectedEvents": [
+        { "type": "trace.start" },
+        { "type": "provider.call.start" },
+        { "type": "provider.call.end", "status": "ok" },
+        { "type": "trace.end", "status": "ok" }
+      ]
+    },
+    {
+      "id": "two-interceptors-order",
+      "mode": "full",
+      "interceptors": ["pii_guard", "audit"],
+      "request": { "messages": [{ "role": "user", "content": "plain text, no pii" }] },
+      "expectedEvents": [
+        { "type": "trace.start" },
+        { "type": "interceptor.before.start", "name": "pii_guard" },
+        { "type": "interceptor.before.end", "name": "pii_guard" },
+        { "type": "interceptor.before.start", "name": "audit" },
+        { "type": "interceptor.before.end", "name": "audit" },
+        { "type": "provider.call.start" },
+        { "type": "provider.call.end", "status": "ok" },
+        { "type": "interceptor.after.start", "name": "audit" },
+        { "type": "interceptor.after.end", "name": "audit" },
+        { "type": "interceptor.after.start", "name": "pii_guard" },
+        { "type": "interceptor.after.end", "name": "pii_guard" },
+        { "type": "trace.end", "status": "ok" }
+      ]
+    },
+    {
+      "id": "pii-mutation-flagged",
+      "mode": "full",
+      "interceptors": ["pii_guard"],
+      "request": { "messages": [{ "role": "user", "content": "mail jan@example.com please" }] },
+      "expectedEvents": [
+        { "type": "trace.start" },
+        { "type": "interceptor.before.start", "name": "pii_guard" },
+        { "type": "interceptor.before.end", "name": "pii_guard", "mutated": true },
+        { "type": "provider.call.start" },
+        { "type": "provider.call.end", "status": "ok" },
+        { "type": "interceptor.after.start", "name": "pii_guard" },
+        { "type": "interceptor.after.end", "name": "pii_guard" },
+        { "type": "trace.end", "status": "ok" }
+      ]
+    },
+    {
+      "id": "metadata-mode-no-content",
+      "mode": "metadata",
+      "interceptors": ["pii_guard"],
+      "request": { "messages": [{ "role": "user", "content": "mail jan@example.com please" }] },
+      "forbiddenDataKeys": ["messages", "content", "diff"],
+      "expectedEvents": [
+        { "type": "trace.start" },
+        { "type": "interceptor.before.start", "name": "pii_guard" },
+        { "type": "interceptor.before.end", "name": "pii_guard", "mutated": true },
+        { "type": "provider.call.start" },
+        { "type": "provider.call.end", "status": "ok" },
+        { "type": "interceptor.after.start", "name": "pii_guard" },
+        { "type": "interceptor.after.end", "name": "pii_guard" },
+        { "type": "trace.end", "status": "ok" }
+      ]
+    },
+    {
+      "id": "provider-error",
+      "mode": "full",
+      "interceptors": [],
+      "requireError": true,
+      "request": { "messages": [{ "role": "user", "content": "this call fails" }] },
+      "expectedEvents": [
+        { "type": "trace.start" },
+        { "type": "provider.call.start" },
+        { "type": "provider.call.end", "status": "error" },
+        { "type": "trace.error" },
+        { "type": "trace.end", "status": "error" }
+      ]
+    }
+  ]
+}

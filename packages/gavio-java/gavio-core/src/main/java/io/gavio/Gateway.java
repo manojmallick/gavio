@@ -1,5 +1,7 @@
 package io.gavio;
 
+import io.gavio.inspector.Inspector;
+import io.gavio.inspector.TraceEmitter;
 import io.gavio.interceptors.Executor;
 import io.gavio.interceptors.ExecutorPolicy;
 import io.gavio.interceptors.Interceptor;
@@ -33,11 +35,18 @@ public final class Gateway {
     private final boolean dryRun;
     private final List<ExecutorPolicy> policies;
     private final InterceptorChain chain;
+    private final Inspector inspector;
 
     Gateway(ProviderAdapter adapter, String model, List<Interceptor> interceptors, boolean dryRun) {
+        this(adapter, model, interceptors, dryRun, null);
+    }
+
+    Gateway(ProviderAdapter adapter, String model, List<Interceptor> interceptors,
+            boolean dryRun, Inspector inspector) {
         this.adapter = adapter;
         this.model = model;
         this.dryRun = dryRun;
+        this.inspector = inspector;
         this.policies = new ArrayList<>();
         List<Interceptor> regular = new ArrayList<>();
         for (Interceptor i : interceptors) {
@@ -62,6 +71,15 @@ public final class Gateway {
         return adapter.providerName();
     }
 
+    /** The inspector wired at build time, or null when inspection is disabled (F-DX-09). */
+    public Inspector inspector() {
+        return inspector;
+    }
+
+    private TraceEmitter newEmitter() {
+        return inspector == null ? null : inspector.newEmitter();
+    }
+
     public CompletableFuture<GavioResponse> complete(GavioRequest request) {
         InterceptorContext ctx = new InterceptorContext(request.traceId())
                 .agentId(request.agentId())
@@ -69,7 +87,7 @@ public final class Gateway {
                 .sessionId(request.sessionId())
                 .dryRun(dryRun);
         Executor executor = buildExecutor(ctx);
-        return chain.execute(request, ctx, executor);
+        return chain.execute(request, ctx, executor, newEmitter());
     }
 
     /** Convenience overload matching the Python {@code complete(messages, ...)}. */
@@ -113,7 +131,11 @@ public final class Gateway {
         long started = System.nanoTime();
         Executor bufferingExecutor = req -> StreamBuffer.collect(adapter.stream(req))
                 .thenApply(buffer -> adapter.buildStreamResponse(req, buffer.text(), started));
-        CompletableFuture<GavioResponse> responseFuture = chain.execute(request, ctx, bufferingExecutor);
+        // The streaming path shares chain.execute, so it emits the same span
+        // events as complete(): trace.start, interceptor.*, provider.call.*,
+        // trace.end (F-DX-09).
+        CompletableFuture<GavioResponse> responseFuture =
+                chain.execute(request, ctx, bufferingExecutor, newEmitter());
 
         return subscriber -> subscriber.onSubscribe(new Flow.Subscription() {
             private boolean served = false;

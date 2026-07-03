@@ -4,12 +4,17 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import time
 from collections.abc import AsyncIterator
+from dataclasses import replace
 from typing import Any
 
 from .context import InterceptorContext
 from .exceptions import ConfigurationError
+from .inspector import Inspector, InspectorConfig
+from .inspector.emitter import TraceEmitter
+from .inspector.inspector import compute_lints
 from .interceptors.audit import AuditInterceptor
 from .interceptors.base import Interceptor
 from .interceptors.chain import Executor, InterceptorChain
@@ -40,10 +45,12 @@ class Gateway:
         interceptors: list[Interceptor],
         *,
         dry_run: bool = False,
+        inspector: Inspector | None = None,
     ) -> None:
         self._adapter = adapter
         self._model = model
         self._dry_run = dry_run
+        self._inspector = inspector
         # Separate plain pre/post interceptors from executor-wrapping policies.
         self._policies: list[ExecutorPolicy] = [
             i for i in interceptors if isinstance(i, ExecutorPolicy)
@@ -70,6 +77,11 @@ class Gateway:
     @property
     def provider_name(self) -> str:
         return self._adapter.provider_name
+
+    @property
+    def inspector(self) -> Inspector | None:
+        """The Gavio Inspector, or None when inspection is disabled (default)."""
+        return self._inspector
 
     async def complete(
         self,
@@ -101,8 +113,11 @@ class Gateway:
             session_id=session_id,
             dry_run=self._dry_run,
         )
-        executor = self._build_executor(ctx)
-        return await self._chain.execute(request, ctx, executor)
+        emitter = self._inspector.emitter(request) if self._inspector else None
+        executor = self._build_executor(ctx, emitter)
+        if emitter is None:
+            return await self._chain.execute(request, ctx, executor)
+        return await self._execute_traced(request, ctx, executor, emitter)
 
     async def stream(
         self,
@@ -148,7 +163,14 @@ class Gateway:
                 buffer.append(chunk)
             return self._adapter.build_stream_response(req, buffer.text(), started)
 
-        response = await self._chain.execute(request, ctx, buffering_executor)
+        emitter = self._inspector.emitter(request) if self._inspector else None
+        if emitter is None:
+            response = await self._chain.execute(request, ctx, buffering_executor)
+        else:
+            executor = emitter.wrap_provider_call(
+                self._adapter.provider_name, buffering_executor
+            )
+            response = await self._execute_traced(request, ctx, executor, emitter)
         # Post-interceptors have run on the fully buffered response; emit it now.
         yield response.content
 
@@ -168,15 +190,38 @@ class Gateway:
     async def health_check(self) -> bool:
         return await self._adapter.health_check()
 
-    def _build_executor(self, ctx: InterceptorContext) -> Executor:
+    def _build_executor(
+        self, ctx: InterceptorContext, emitter: TraceEmitter | None = None
+    ) -> Executor:
         async def base(request: GavioRequest) -> GavioResponse:
             return await self._adapter.complete(request)
 
         executor: Executor = base
+        # provider.call.* events wrap the innermost call — one pair per attempt.
+        if emitter is not None:
+            executor = emitter.wrap_provider_call(self._adapter.provider_name, executor)
         # Wrap so the first-registered policy ends up outermost.
         for policy in reversed(self._policies):
             executor = self._wrap_policy(policy, executor, ctx)
         return executor
+
+    async def _execute_traced(
+        self,
+        request: GavioRequest,
+        ctx: InterceptorContext,
+        executor: Executor,
+        emitter: TraceEmitter,
+    ) -> GavioResponse:
+        """Run the chain bracketed by trace.start / trace.error / trace.end."""
+        emitter.trace_start(request)
+        try:
+            response = await self._chain.execute(request, ctx, executor, emitter=emitter)
+        except Exception as error:  # noqa: BLE001 - re-raised unchanged
+            emitter.trace_error(error)
+            emitter.trace_end_error(ctx)
+            raise
+        emitter.trace_end(response, ctx)
+        return response
 
     @staticmethod
     def _wrap_policy(
@@ -201,6 +246,7 @@ class GatewayBuilder:
         self._dev_mode = False
         self._dry_run = False
         self._pricing = PricingProvider()
+        self._inspect: InspectorConfig | None = None
 
     def provider(self, provider: Provider | str) -> GatewayBuilder:
         self._provider = Provider.coerce(provider)
@@ -230,6 +276,18 @@ class GatewayBuilder:
         self._dry_run = enabled
         return self
 
+    def inspect(self, value: bool | InspectorConfig = True) -> GatewayBuilder:
+        """Enable the Gavio Inspector (F-DX-09) — off by default.
+
+        Pass True for defaults or an :class:`~gavio.inspector.InspectorConfig`
+        for explicit settings. Dev mode never enables this implicitly.
+        """
+        if isinstance(value, InspectorConfig):
+            self._inspect = replace(value, enabled=True)
+        else:
+            self._inspect = InspectorConfig(enabled=True) if value else None
+        return self
+
     def build(self) -> Gateway:
         adapter = self._resolve_adapter()
         model = self._model or _default_model(adapter)
@@ -241,7 +299,47 @@ class GatewayBuilder:
         ):
             interceptors.insert(0, AuditInterceptor())
 
-        return Gateway(adapter, model, interceptors, dry_run=self._dry_run)
+        inspector = self._build_inspector(adapter, model, interceptors)
+        return Gateway(
+            adapter, model, interceptors, dry_run=self._dry_run, inspector=inspector
+        )
+
+    def _build_inspector(
+        self,
+        adapter: ProviderAdapter,
+        model: str,
+        interceptors: list[Interceptor],
+    ) -> Inspector | None:
+        config = self._resolve_inspector_config()
+        if config is None or not config.enabled:
+            return None
+        config.validate(dev_mode=self._dev_mode)
+        names = [i.name for i in interceptors]
+        pipeline = {
+            "provider": adapter.provider_name,
+            "model": model,
+            "devMode": self._dev_mode,
+            "dryRun": self._dry_run,
+            "interceptors": [{"name": name} for name in names],
+            "lints": compute_lints(names),
+        }
+        inspector = Inspector(config, pipeline, dev_mode=self._dev_mode)
+        if config.start_server:
+            inspector.start_server()
+        return inspector
+
+    def _resolve_inspector_config(self) -> InspectorConfig | None:
+        """Merge the builder setting with GAVIO_INSPECT* environment variables."""
+        config = self._inspect
+        if config is None and os.environ.get("GAVIO_INSPECT", "").lower() in ("1", "true"):
+            config = InspectorConfig(enabled=True)
+        if config is None:
+            return None
+        if port := os.environ.get("GAVIO_INSPECT_PORT"):
+            config = replace(config, port=int(port))
+        if mode := os.environ.get("GAVIO_INSPECT_MODE"):
+            config = replace(config, mode=mode)
+        return config
 
     def _resolve_adapter(self) -> ProviderAdapter:
         if self._adapter is not None:

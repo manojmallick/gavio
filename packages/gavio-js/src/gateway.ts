@@ -6,6 +6,11 @@ import { auditInterceptor, isAuditInterceptor } from './interceptors/audit/index
 import { isExecutorPolicy } from './interceptors/base.js'
 import type { Executor, ExecutorPolicy, Interceptor } from './interceptors/base.js'
 import { InterceptorChain } from './interceptors/chain.js'
+import { envInspectEnabled, resolveInspectorConfig } from './inspector/config.js'
+import type { InspectorConfig } from './inspector/config.js'
+import { Inspector } from './inspector/inspector.js'
+import { pipelineLints } from './inspector/server.js'
+import type { PipelineInfo } from './inspector/server.js'
 import { StreamBuffer } from './interceptors/reliability/stream-buffer.js'
 import { PricingProvider } from './pricing.js'
 import { buildAdapter } from './providers/index.js'
@@ -23,6 +28,13 @@ export interface GatewayOptions {
   devMode?: boolean
   dryRun?: boolean
   pricing?: PricingProvider
+  /**
+   * Gavio Inspector (F-DX-09). Off by default — dev mode does NOT auto-enable
+   * it. `true` enables with defaults; pass an {@link InspectorConfig} to tune
+   * mode/port/etc. `GAVIO_INSPECT=1` enables it via the environment (with
+   * `GAVIO_INSPECT_PORT` / `GAVIO_INSPECT_MODE` as defaults).
+   */
+  inspect?: boolean | InspectorConfig
 }
 
 export interface CompleteOptions {
@@ -59,6 +71,7 @@ export class Gateway {
   private readonly dryRunMode: boolean
   private readonly pricing: PricingProvider
   private readonly interceptors: Interceptor[] = []
+  private readonly inspectorInstance: Inspector | null
 
   constructor(options: GatewayOptions = {}) {
     this.providerHint = options.provider ? coerceProvider(options.provider) : undefined
@@ -67,6 +80,53 @@ export class Gateway {
     this.devMode = options.devMode ?? false
     this.dryRunMode = options.dryRun ?? false
     this.pricing = options.pricing ?? new PricingProvider()
+    this.inspectorInstance = this.buildInspector(options.inspect)
+  }
+
+  /**
+   * Resolve the `inspect` option (or GAVIO_INSPECT=1) into an Inspector.
+   * Strictly opt-in: with no option and no env var this returns null and the
+   * request path is completely untouched.
+   */
+  private buildInspector(inspect: boolean | InspectorConfig | undefined): Inspector | null {
+    const option: boolean | InspectorConfig | undefined =
+      inspect ?? (envInspectEnabled() ? true : undefined)
+    if (option === undefined || option === false) return null
+    const overrides: InspectorConfig = typeof option === 'object' ? option : {}
+    const resolved = resolveInspectorConfig(
+      { ...overrides, enabled: overrides.enabled ?? true },
+      this.devMode,
+    )
+    if (!resolved.enabled) return null
+    return new Inspector(resolved, () => this.pipelineInfo())
+  }
+
+  /** The Inspector attached to this gateway, or null when disabled. */
+  get inspector(): Inspector | null {
+    return this.inspectorInstance
+  }
+
+  /** Pipeline snapshot for the inspector's /api/pipeline endpoint (F-DX-10). */
+  private pipelineInfo(): PipelineInfo {
+    let provider: string
+    let model: string
+    try {
+      const adapter = this.resolveAdapter()
+      provider = adapter.providerName
+      model = this.modelHint ?? this.resolveModel(adapter)
+    } catch {
+      provider = this.providerHint ?? 'unconfigured'
+      model = this.modelHint ?? ''
+    }
+    const names = this.interceptors.map((i) => i.name)
+    return {
+      provider,
+      model,
+      devMode: this.devMode,
+      dryRun: this.dryRunMode,
+      interceptors: names.map((name) => ({ name })),
+      lints: pipelineLints(names),
+    }
   }
 
   /**
@@ -123,7 +183,22 @@ export class Gateway {
     })
 
     const { chain, executor } = this.buildPipeline(adapter, ctx)
-    return chain.execute(request, ctx, executor)
+    if (this.inspectorInstance === null) {
+      return chain.execute(request, ctx, executor)
+    }
+
+    const emitter = this.inspectorInstance.beginTrace(request)
+    const startedAt = performance.now()
+    emitter.traceStart(request)
+    try {
+      const response = await chain.execute(request, ctx, executor, emitter)
+      emitter.traceEndOk(response, ctx, Math.round(performance.now() - startedAt))
+      return response
+    } catch (error) {
+      // trace.error was already emitted by the chain; close the trace and rethrow.
+      emitter.traceEndError(ctx, Math.round(performance.now() - startedAt))
+      throw error
+    }
   }
 
   /**
@@ -168,8 +243,25 @@ export class Gateway {
       return adapter.buildStreamResponse!(req, buffer.text(), startedAt)
     }
 
-    const response = await chain.execute(request, ctx, bufferingExecutor)
-    // Post-interceptors have run on the fully buffered response; emit it now.
+    if (this.inspectorInstance === null) {
+      const response = await chain.execute(request, ctx, bufferingExecutor)
+      // Post-interceptors have run on the fully buffered response; emit it now.
+      yield response.content
+      return
+    }
+
+    // Streaming is buffered (F-REL-06), so the inspector sees the same event
+    // shape as complete(): trace.start → provider.call.* → trace.end.
+    const emitter = this.inspectorInstance.beginTrace(request)
+    emitter.traceStart(request)
+    let response: GavioResponse
+    try {
+      response = await chain.execute(request, ctx, bufferingExecutor, emitter)
+      emitter.traceEndOk(response, ctx, Math.round(performance.now() - startedAt))
+    } catch (error) {
+      emitter.traceEndError(ctx, Math.round(performance.now() - startedAt))
+      throw error
+    }
     yield response.content
   }
 

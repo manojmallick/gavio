@@ -90,6 +90,11 @@
       "import": "./dist/esm/interceptors/quality/index.js",
       "require": "./dist/cjs/interceptors/quality/index.js"
     },
+    "./inspector": {
+      "types": "./dist/esm/inspector/index.d.ts",
+      "import": "./dist/esm/inspector/index.js",
+      "require": "./dist/cjs/inspector/index.js"
+    },
     "./shim/openai": {
       "types": "./dist/esm/shim/openai.d.ts",
       "import": "./dist/esm/shim/openai.js",
