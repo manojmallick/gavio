@@ -11,7 +11,7 @@
 
   <name>Gavio Java SDK (parent)</name>
   <description>Local-first AI gateway with PII guard, audit, reliability and pluggable providers.</description>
-  <url>https://gavio.io</url>
+  <url>https://manojmallick.github.io/gavio</url>
 
   <licenses>
     <license>

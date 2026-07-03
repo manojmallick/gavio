@@ -44,9 +44,10 @@ all = [
 gavio = "gavio.cli:main"
 
 [project.urls]
-Homepage = "https://gavio.io"
-Repository = "https://github.com/gavio-ai/gavio"
-Changelog = "https://github.com/gavio-ai/gavio/blob/main/CHANGELOG.md"
+Homepage = "https://manojmallick.github.io/gavio"
+Repository = "https://github.com/manojmallick/gavio"
+Changelog = "https://github.com/manojmallick/gavio/blob/main/CHANGELOG.md"
+Issues = "https://github.com/manojmallick/gavio/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["gavio"]
