@@ -1,15 +1,18 @@
 # Gavio — JavaScript / TypeScript SDK
 
 > The open standard AI gateway for production systems. PII protection, audit
-> trails, reliability, and cost control as composable interceptors.
+> trails, reliability, cost control, and an embedded inspector as composable
+> interceptors.
 
 `gavio` sits between your application and any LLM provider. The same request
-passes through a pre/post interceptor chain — PII redaction, retries, cost
-tracking, audit logging — before and after the provider call.
+passes through a pre/post interceptor chain — PII redaction, retries, caching,
+budgets, audit logging — before and after the provider call. Same API in
+[Python, Java, and JavaScript](https://github.com/manojmallick/gavio), enforced
+by shared cross-SDK test vectors.
 
-Part of the [Gavio](https://gavio.io) project. MIT licensed. Written in
-TypeScript, ships full type definitions, ESM. Node.js 18+ (native `fetch`,
-`node:crypto`).
+Part of the [Gavio](https://manojmallick.github.io/gavio) project. MIT licensed.
+Written in TypeScript, ships full type definitions and dual ESM + CJS builds.
+Node.js 18+ (native `fetch`, `node:crypto`).
 
 ## Install
 
@@ -23,7 +26,8 @@ npm install gavio        # zero runtime dependencies
 import { Gateway } from 'gavio'
 import { piiGuard } from 'gavio/interceptors/pii'
 
-const gw = new Gateway({ devMode: true }).use(piiGuard())
+const gw = new Gateway({ devMode: true })   // MockProvider + stdout audit
+  .use(piiGuard())                          // redact PII before it leaves the process
 
 const r = await gw.complete({
   messages: [{ role: 'user', content: 'Email jan@example.com re NL91ABNA0417164300' }],
@@ -32,7 +36,7 @@ const r = await gw.complete({
 
 console.log(r.content)               // PII restored in the reply
 console.log(`cost=$${r.costUsd.toFixed(6)} latency=${r.latencyMs}ms`)
-console.log('pii types:', r.audit.piiEntityTypes)
+console.log('pii types:', r.audit?.piiEntityTypes)
 ```
 
 ## Real providers
@@ -46,50 +50,107 @@ import { retryInterceptor, timeoutPolicy } from 'gavio/interceptors/reliability'
 const gw = new Gateway({ provider: 'anthropic', model: 'claude-sonnet-4-6' }) // reads ANTHROPIC_API_KEY
   .use(piiGuard({ sensitivity: 'strict' }))
   .use(auditInterceptor({ sink: 'stdout' }))
-  .use(timeoutPolicy({ timeoutMs: 30_000 }))
+  .use(timeoutPolicy({ timeoutSeconds: 30 }))
   .use(retryInterceptor({ maxAttempts: 3 }))
 
 const r = await gw.complete({ messages: [{ role: 'user', content: 'Hi' }] })
 ```
 
-`OPENAI_API_KEY` / `provider: 'openai'` work the same way.
+OpenAI, Gemini, Azure OpenAI, and Ollama adapters work the same way
+(`provider: 'openai' | 'gemini' | 'azure_openai' | 'ollama'`) — switching
+providers is a config change, never an application change.
+
+Streaming buffers the provider stream so post-interceptors (guardrails, PII
+restore, audit) run on the complete response before any chunk reaches you:
+
+```typescript
+for await (const chunk of gw.stream({ messages: [{ role: 'user', content: 'Hi' }] })) {
+  process.stdout.write(chunk)
+}
+```
+
+Embeddings run through the same pipeline — inputs are PII-scanned before the
+provider's embedding API is called:
+
+```typescript
+const r = await gw.embed({ texts: ['index this: contact jan@example.com'] })
+console.log(r.embeddings?.length)    // one vector per input, PII never left
+```
 
 ## Sub-path imports (tree-shaking)
 
 ```typescript
-import { Gateway }          from 'gavio'
-import { piiGuard }         from 'gavio/interceptors/pii'
-import { auditInterceptor } from 'gavio/interceptors/audit'
-import { retryInterceptor } from 'gavio/interceptors/reliability'
-import { anthropicAdapter } from 'gavio/providers/anthropic'
-import { GavioTestKit }     from 'gavio/testing'
+import { Gateway }           from 'gavio'
+import { piiGuard }          from 'gavio/interceptors/pii'
+import { auditInterceptor }  from 'gavio/interceptors/audit'
+import { retryInterceptor }  from 'gavio/interceptors/reliability'
+import { semanticCache }     from 'gavio/interceptors/cache'
+import { costControl }       from 'gavio/interceptors/governance'
+import { guardrails }        from 'gavio/interceptors/guardrails'
+import { anthropicAdapter }  from 'gavio/providers/anthropic'
+import { GavioOpenAI }       from 'gavio/shim/openai'
+import { GavioTestKit }      from 'gavio/testing'
 ```
 
-## What ships in v0.1.0
+## The Inspector
 
-- **Core** — `Gateway` (object config + `.use()` / `.withAdapter()`),
-  `InterceptorChain` (onion pre/post model), `GavioRequest` / `GavioResponse`
-  (camelCase), monotonic UUID v7 `traceId`, `agentId` / `parentTraceId`.
-- **PII Guard (F-SEC-01)** — Email, IBAN (mod-97), BSN (11-proef),
-  CreditCard (Luhn), Phone, IP (v4/v6), SSN scanners; redact / mask / tag /
-  block; restore-on-response; overlap resolution.
-- **Secret Scanner (F-SEC-04)** — API keys, JWTs, PEM keys, DB URLs.
-- **Reliability** — `retryInterceptor` (F-REL-01), `fallbackChain` (F-REL-02),
-  `timeoutPolicy` (F-REL-07).
-- **Cost tracking (F-GOV-01)** — `costUsd` on every response.
-- **Audit (F-OBS-01)** — `AuditRecord` (SHA-256 hashes, metadata only) +
-  `stdoutSink` (F-OBS-05).
-- **Dev mode (F-DX-01)** and **dry-run mode (F-DX-02)**.
-- **Providers** — OpenAI, Anthropic (native `fetch`), Mock.
-- **Testing** — `GavioTestKit`, `mockProvider`.
+An embedded, zero-dependency visualizer for the pipeline: live traces,
+per-interceptor waterfalls, PII redaction diffs, multi-agent call graphs,
+replay, RED stats, and a read-only production dashboard.
 
-See the [JavaScript guide](../../docs/packages/javascript.md) and [CHANGELOG.md](../../CHANGELOG.md).
+```typescript
+const gw = new Gateway({ devMode: true, inspect: true })
+// open http://127.0.0.1:7411 and send a request
+```
+
+`GAVIO_INSPECT=1` enables it via the environment. Capture modes: `full`
+(dev-mode default), `redacted`, and `metadata` (default outside dev mode —
+no content, no replay). The `gavio inspect --store` CLI for JSONL audit files
+is Python-only; the JS inspector serves the same dashboard endpoints from its
+embedded server.
+
+## What's inside
+
+Every feature is an interceptor you compose explicitly — no hidden magic.
+
+- **Privacy & security** — `piiGuard()` with Email, IBAN (mod-97), BSN
+  (11-proef), CreditCard (Luhn), Phone, IP, SSN scanners and
+  redact/mask/tag/block + restore (`F-SEC-01`); secret/credential scanner
+  (`F-SEC-04`); `promptInjectionGuard()` (`F-SEC-05`); embedding call guard
+  (`F-SEC-10`).
+- **Reliability** — `retryInterceptor()` (`F-REL-01`), `fallbackChain()`
+  (`F-REL-02`), `circuitBreaker()` (`F-REL-03`), `loadBalancer()` (`F-REL-04`),
+  buffered streaming (`F-REL-06`), `timeoutPolicy()` (`F-REL-07`).
+- **Caching** — `semanticCache()`: SHA-256 exact + semantic (cosine) cache with
+  in-memory and Redis backends (`F-CACHE-01/02/03/04`).
+- **Cost & governance** — per-request cost tracking (`F-GOV-01`),
+  `costControl()` budget caps (`F-GOV-02`), `rateLimiter()` (`F-GOV-03`),
+  `modelPolicy()` (`F-GOV-04`), `costRouter()` (`F-GOV-06`).
+- **Observability** — `auditInterceptor()` with SHA-256 content hashes, never
+  raw text (`F-OBS-01`), tamper-evident hash chain (`F-OBS-02`), multi-agent
+  DAG tracing via `agentId`/`parentTraceId` (`F-OBS-03`), prompt lineage
+  (`F-OBS-04`), Prometheus metrics (`F-OBS-08`), stdout sink.
+- **Quality** — `guardrails()` with JSON-schema and regex validators
+  (`F-QUA-01/02`), composite `riskScorer()` (`F-QUA-06`).
+- **Inspector** — dev-time visualizer (`F-DX-09/10`), agent call graphs and
+  session views (`F-OBS-10`), trace replay (`F-DX-11`), PII-sanitized
+  test-case export (`F-DX-12`), read-only production dashboard (`F-DX-08`).
+- **Developer experience** — dev mode (`F-DX-01`), dry-run (`F-DX-02`),
+  `GavioTestKit` + `mockProvider` via `gavio/testing` (`F-DX-03`),
+  `GavioOpenAI` drop-in shim via `gavio/shim/openai` (`F-DX-04`),
+  `Gateway.fromConfig()` construction (`F-DX-05`).
+- **Providers** — OpenAI, Anthropic, Gemini, Azure OpenAI, Ollama, Mock.
+
+See the [documentation site](https://manojmallick.github.io/gavio), the
+[JavaScript guide](../../docs/packages/javascript.md), the runnable
+[examples](../../examples/), and the [CHANGELOG](../../CHANGELOG.md) for
+version-by-version detail.
 
 ## Scripts
 
 ```bash
 npm run typecheck    # tsc --noEmit (strict)
-npm test             # vitest run  (59 unit tests)
+npm test             # vitest run
 npm run smoke        # build + dev-mode end-to-end check
-npm run build        # compile to dist/
+npm run build        # compile ESM + CJS to dist/
 ```

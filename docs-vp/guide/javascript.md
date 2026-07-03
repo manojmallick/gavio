@@ -125,6 +125,25 @@ Adapters use native `fetch` — no `node-fetch` or vendor SDK.
 
 ---
 
+## Inspector
+
+Enable the embedded pipeline visualizer (`F-DX-09/10`, off by default) and open
+`http://127.0.0.1:7411` — live traces, waterfalls, PII diffs, agent call
+graphs, replay, stats. Full guide: [Inspector](./inspector.md).
+
+```typescript
+const gw = new Gateway({ devMode: true, inspect: true })
+```
+
+## Embeddings
+
+`gw.embed({ texts })` (`F-SEC-10`, next release) runs embedding inputs through
+the same interceptor pipeline as completions — PII is scanned and redacted
+before the provider's embedding API is called; one vector per input in
+`r.embeddings`.
+
+---
+
 ## Testing
 
 `GavioTestKit` + `mockProvider` (works with any runner; examples use vitest):

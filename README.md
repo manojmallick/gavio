@@ -204,10 +204,12 @@ npm install gavio
 
 ### ☕ Java — `io.github.manojmallick:gavio-*` (Maven Central)
 
-Multi-artifact Maven project (`gavio-core`, `gavio-interceptor-pii`,
-`gavio-interceptor-audit`, `gavio-interceptor-reliability`,
-`gavio-provider-openai`, `gavio-provider-anthropic`, `gavio-testing`).
-Immutable records + builders, `CompletableFuture` async, Java 17+.
+Multi-artifact Maven project: `gavio-core` plus one artifact per interceptor
+family (`gavio-interceptor-pii`, `-audit`, `-reliability`, `-cache`,
+`-governance`, `-guardrails`, `-metrics`, `-quality`), one per provider
+(`gavio-provider-openai`, `-anthropic`, `-gemini`, `-azure`, `-ollama`), and
+`gavio-testing`. Immutable records + builders, `CompletableFuture` async,
+Java 17+.
 
 ```xml
 <dependency>
@@ -233,6 +235,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | PII Guard — Email, IBAN·mod-97, BSN·11-proef, CreditCard·Luhn, Phone, IP, SSN | `F-SEC-01` | 0.1.0 |
 | Secret scanner — API keys, AWS `AKIA`, GitHub tokens, JWT, PEM, DB URLs | `F-SEC-04` | 0.1.0 |
 | Prompt-injection defense — pattern corpus + optional semantic similarity | `F-SEC-05` | 0.2.0 |
+| Embedding call guard — `gw.embed(texts)` runs the same PII pipeline before embedding APIs | `F-SEC-10` | next |
 
 ### 🔁 Reliability
 
@@ -267,6 +270,18 @@ gated by the same [shared test vectors](./test-vectors/).
 | Prometheus metrics (zero-dep text exposition) | `F-OBS-08` | 0.3.0 |
 | Guardrails — JSON-schema + regex allow/deny | `F-QUA-01/02` | 0.2.0 |
 | Composite risk scoring (PII + guardrail + injection signals) | `F-QUA-06` | 0.3.0 |
+| JSONL audit sink (`jsonl://<path>`) — the store the production dashboard reads | `F-DX-08` | 0.7.0 |
+
+### 🔬 Inspector
+
+| Feature | ID | Since |
+|---|---|---|
+| Dev-time visualizer — live traces (SSE), waterfalls, PII diffs, pipeline lints, embedded UI | `F-DX-09/10` | 0.6.0 |
+| Agent call graphs + session views (`/api/dag`, `/api/sessions`) | `F-OBS-10` | 0.7.0 |
+| Trace replay & edit-resend (full capture mode only) | `F-DX-11` | 0.7.0 |
+| Read-only production dashboard — RED stats, hash-chain verifier, `gavio inspect --store` | `F-DX-08` | 0.7.0 |
+| Export any trace as a PII-sanitized `GavioTestKit` test / test vector | `F-DX-12` | 0.7.0 |
+| Overhead benchmarks with CI-enforced budget (<1% metadata / <5% full p50) | `F-DX-09` | 0.8.0 |
 
 ### 🛠️ Developer experience & providers
 
@@ -281,10 +296,13 @@ Conformance-tested across all three SDKs on every push and PR
 Java 17/21). Per-release test totals are in the [CHANGELOG](./CHANGELOG.md); see
 the [interceptors guide](./docs/interceptors.md) for every built-in interceptor.
 
-> **Not yet shipped** (roadmap): image PII (`F-SEC-09`), embedding guard
-> (`F-SEC-10`), drift detection (`F-GOV-07`), call-graph replay (`F-OBS-10`),
-> right-to-erasure (`F-QUA-09`), license detection (`F-QUA-10`), web dashboard
-> (`F-DX-08`). See [MASTER_PLAN.md](./MASTER_PLAN.md).
+> **Not yet shipped** (tracked on the roadmap): image PII
+> ([#29](https://github.com/manojmallick/gavio/issues/29), `F-SEC-09`), drift
+> detection ([#31](https://github.com/manojmallick/gavio/issues/31),
+> `F-GOV-07`), right-to-erasure
+> ([#32](https://github.com/manojmallick/gavio/issues/32), `F-QUA-09`), license
+> detection ([#33](https://github.com/manojmallick/gavio/issues/33),
+> `F-QUA-10`).
 
 ---
 
@@ -308,8 +326,10 @@ the [interceptors guide](./docs/interceptors.md) for every built-in interceptor.
 | [docs/getting-started.md](./docs/getting-started.md) | 5-minute quickstart, all three languages |
 | [docs/architecture.md](./docs/architecture.md) | Request lifecycle, the interceptor chain, data model |
 | [docs/interceptors.md](./docs/interceptors.md) | Every built-in interceptor + writing your own |
+| [docs/inspector.md](./docs/inspector.md) | The Inspector: dev visualizer, agent DAGs, replay, production dashboard |
+| [docs/otel-mapping.md](./docs/otel-mapping.md) | InspectorEvent → OpenTelemetry spans · [Grafana dashboard](./docs/grafana/gavio-dashboard.json) |
 | [docs/packages/](./docs/packages/) | Deep guide per SDK |
-| [examples/](./examples/) | Runnable example projects (Python) |
+| [examples/](./examples/) | Runnable example projects in all three languages |
 | [spec/](./spec/) | Canonical JSON Schema data model |
 | [test-vectors/](./test-vectors/) | Shared cross-SDK conformance cases |
 | [RELEASING.md](./RELEASING.md) | How releases are cut (PyPI + Maven Central + npm) |

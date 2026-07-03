@@ -1,8 +1,8 @@
 {
-  "name": "gavio-example-custom-scanner",
+  "name": "gavio-example-inspector",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "scripts": { "start": "node custom-scanner.mjs" },
+  "scripts": { "start": "node inspector.mjs" },
   "dependencies": { "gavio": "^0.8.0" }
 }

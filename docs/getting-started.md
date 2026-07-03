@@ -150,6 +150,11 @@ See [architecture.md](./architecture.md) for the full lifecycle.
 
 ## Next steps
 
+- **See the pipeline live** — add `.inspect(True)` / `inspect: true` to the
+  builder and open `http://127.0.0.1:7411`: the [Inspector](./inspector.md)
+  shows every interceptor's span, the PII redaction diff, and (with
+  `agent_id`/`parent_trace_id`) the multi-agent call graph.
 - [Architecture](./architecture.md) — the interceptor chain and data model
 - [Interceptors](./interceptors.md) — every built-in + writing your own
 - Per-language deep guides: [Python](./packages/python.md) · [JavaScript](./packages/javascript.md) · [Java](./packages/java.md)
+- [Runnable examples](../examples/) — the same scenarios in all three languages
