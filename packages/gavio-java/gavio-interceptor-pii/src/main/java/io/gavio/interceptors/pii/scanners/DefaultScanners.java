@@ -20,4 +20,12 @@ public final class DefaultScanners {
                 new PhoneScanner(),
                 new IpAddressScanner());
     }
+
+    /**
+     * FinTech domain policy pack — SWIFT/BIC and US ABA routing numbers. Compose
+     * with {@link #defaults()}. (IBAN is already in the default set.)
+     */
+    public static List<PiiScanner> fintech() {
+        return List.of(new SwiftBicScanner(), new RoutingNumberScanner());
+    }
 }

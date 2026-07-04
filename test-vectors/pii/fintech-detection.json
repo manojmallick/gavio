@@ -1,0 +1,14 @@
+{
+  "description": "FinTech policy pack (F-SEC-01): run a PiiGuard configured with ONLY fintechScanners() over `text`, collect the unique entity types, sort, and compare to `expectedTypes`. Exercises SWIFT/BIC (context-gated) and US ABA routing numbers (mod-10 checksum). Synthetic data only.",
+  "schemaVersion": "1.0",
+  "cases": [
+    { "id": "swift-labelled-11", "text": "SWIFT: DEUTDEFF500 for the wire", "expectedTypes": ["SWIFT_BIC"] },
+    { "id": "bic-labelled-8", "text": "BIC code BOFAUS3N", "expectedTypes": ["SWIFT_BIC"] },
+    { "id": "swift-lowercase-keyword", "text": "swift DEUTDEFF", "expectedTypes": ["SWIFT_BIC"] },
+    { "id": "bic-unlabelled-word", "text": "the DATABASE was updated overnight", "expectedTypes": [] },
+    { "id": "routing-valid", "text": "wire routing 021000021 today", "expectedTypes": ["ROUTING_NUMBER"] },
+    { "id": "routing-bad-checksum", "text": "bad routing 123456789 here", "expectedTypes": [] },
+    { "id": "swift-and-routing", "text": "SWIFT DEUTDEFF500 and routing 111000025", "expectedTypes": ["ROUTING_NUMBER", "SWIFT_BIC"] },
+    { "id": "none", "text": "just a normal sentence with nothing sensitive", "expectedTypes": [] }
+  ]
+}
