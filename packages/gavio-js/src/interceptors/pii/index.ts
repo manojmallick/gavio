@@ -7,6 +7,13 @@ export { ScannerRegistry, scannerTier } from './scanner.js'
 export type { PiiScanner } from './scanner.js'
 export { makeMatch, matchLength } from './match.js'
 export type { PiiMatch } from './match.js'
+export { modalityGuard, ocrModalityScanner } from './modality.js'
+export type {
+  ModalityScanner,
+  ModalityScanResult,
+  ModalityGuardOptions,
+  ModalityAction,
+} from './modality.js'
 export { PiiMode, Sensitivity } from '../../types.js'
 export {
   bsnScanner,

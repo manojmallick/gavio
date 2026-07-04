@@ -26,6 +26,8 @@ class GavioRequest:
     session_id: str | None = None
     options: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    # Binary image inputs, scanned for PII before a provider call (F-SEC-09).
+    images: list[bytes] = field(default_factory=list)
     lineage: PromptLineage | None = None
 
     def __post_init__(self) -> None:
@@ -55,5 +57,6 @@ class GavioRequest:
             session_id=self.session_id,
             options=dict(self.options),
             metadata=dict(self.metadata),
+            images=self.images,
             lineage=self.lineage,
         )

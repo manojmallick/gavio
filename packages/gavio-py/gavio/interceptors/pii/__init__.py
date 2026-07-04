@@ -6,6 +6,12 @@ from ...types import PiiMode, Sensitivity
 from .context import ScanContext
 from .guard import PiiGuard
 from .match import PiiMatch
+from .modality import (
+    ModalityGuard,
+    ModalityScanner,
+    ModalityScanResult,
+    OcrModalityScanner,
+)
 from .scanner import PiiScanner, ScannerRegistry
 from .scanners import (
     BsnScanner,
@@ -36,4 +42,8 @@ __all__ = [
     "SsnScanner",
     "SecretScanner",
     "default_scanners",
+    "ModalityGuard",
+    "ModalityScanner",
+    "ModalityScanResult",
+    "OcrModalityScanner",
 ]

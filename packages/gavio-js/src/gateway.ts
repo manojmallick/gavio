@@ -44,6 +44,8 @@ export interface CompleteOptions {
   parentTraceId?: string | null
   sessionId?: string | null
   metadata?: Record<string, unknown>
+  /** Binary image inputs, scanned for PII before the provider call (F-SEC-09). */
+  images?: Uint8Array[]
   /** Provider sampling options (temperature, maxTokens, etc.). */
   options?: Record<string, unknown>
   /** Prompt provenance (F-OBS-04): template, variables, and RAG chunk sources. */
@@ -188,6 +190,7 @@ export class Gateway {
       sessionId: opts.sessionId ?? null,
       options: opts.options ?? {},
       metadata: opts.metadata ?? {},
+      images: opts.images ?? [],
       lineage: opts.lineage ?? null,
     })
     const ctx = new InterceptorContext({

@@ -14,6 +14,8 @@ export interface GavioRequestInit {
   sessionId?: string | null
   options?: Record<string, unknown>
   metadata?: Record<string, unknown>
+  /** Binary image inputs, scanned for PII before a provider call (F-SEC-09). */
+  images?: Uint8Array[]
   lineage?: PromptLineage | PromptLineageInit | null
 }
 
@@ -32,6 +34,7 @@ export class GavioRequest {
   sessionId: string | null
   options: Record<string, unknown>
   metadata: Record<string, unknown>
+  images: Uint8Array[]
   lineage: PromptLineage | null
 
   constructor(init: GavioRequestInit) {
@@ -44,6 +47,7 @@ export class GavioRequest {
     this.sessionId = init.sessionId ?? null
     this.options = init.options ?? {}
     this.metadata = init.metadata ?? {}
+    this.images = init.images ?? []
     this.lineage = init.lineage != null ? PromptLineage.from(init.lineage) : null
   }
 
@@ -74,6 +78,7 @@ export class GavioRequest {
       sessionId: this.sessionId,
       options: { ...this.options },
       metadata: { ...this.metadata },
+      images: this.images,
       lineage: this.lineage,
     })
   }
