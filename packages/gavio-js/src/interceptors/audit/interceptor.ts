@@ -11,6 +11,7 @@ import { stdoutSink } from './sinks/stdout.js'
 
 const PROMPT_HASH_KEY = 'audit_prompt_hash'
 const LINEAGE_KEY = 'audit_lineage'
+const SUBJECT_ID_KEY = 'audit_subject_id'
 
 export const AUDIT_NAME = 'audit'
 
@@ -44,6 +45,8 @@ class AuditInterceptor implements Interceptor {
   async before(request: GavioRequest, ctx: InterceptorContext): Promise<GavioRequest> {
     ctx.state[PROMPT_HASH_KEY] = AuditRecord.hashText(request.promptText())
     if (request.lineage != null) ctx.state[LINEAGE_KEY] = request.lineage
+    const subjectId = request.metadata['subject_id']
+    if (subjectId != null) ctx.state[SUBJECT_ID_KEY] = String(subjectId)
     return request
   }
 
@@ -56,6 +59,7 @@ class AuditInterceptor implements Interceptor {
       parentTraceId: ctx.parentTraceId,
       agentId: ctx.agentId,
       sessionId: ctx.sessionId,
+      subjectId: (ctx.state[SUBJECT_ID_KEY] as string | undefined) ?? null,
       timestampUtc: AuditRecord.nowUtc(),
       provider: response.provider,
       model: response.model,

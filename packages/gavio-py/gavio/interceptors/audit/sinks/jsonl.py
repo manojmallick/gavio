@@ -7,6 +7,7 @@ from, and the input :func:`gavio.inspector.store.verify_chain_records` walks.
 
 from __future__ import annotations
 
+import json
 import threading
 from pathlib import Path
 
@@ -26,3 +27,30 @@ class JsonlSink(AuditSink):
         line = record.to_json() + "\n"
         with self._lock, self.path.open("a", encoding="utf-8") as f:
             f.write(line)
+
+    async def purge(self, subject_id: str) -> int:
+        """Drop every line whose ``subject_id`` matches; return the count removed.
+
+        Rewrites the file atomically via a temp file + replace. Malformed lines
+        are preserved untouched. A missing file yields 0.
+        """
+        with self._lock:
+            if not self.path.exists():
+                return 0
+            kept: list[str] = []
+            removed = 0
+            for line in self.path.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    if json.loads(line).get("subject_id") == subject_id:
+                        removed += 1
+                        continue
+                except (json.JSONDecodeError, ValueError):
+                    pass  # preserve non-JSON lines untouched
+                kept.append(line)
+            if removed:
+                tmp = self.path.with_suffix(self.path.suffix + ".tmp")
+                tmp.write_text("".join(f"{line}\n" for line in kept), encoding="utf-8")
+                tmp.replace(self.path)
+            return removed

@@ -13,6 +13,7 @@
     "parentTraceId": { "type": ["string", "null"] },
     "agentId": { "type": ["string", "null"] },
     "sessionId": { "type": ["string", "null"] },
+    "subjectId": { "type": ["string", "null"], "description": "Data-subject identifier (from request metadata) for GDPR Art. 17 right-to-erasure (F-QUA-09). Null when not supplied." },
     "timestampUtc": { "type": "string", "format": "date-time" },
     "provider": { "type": "string" },
     "model": { "type": "string" },
