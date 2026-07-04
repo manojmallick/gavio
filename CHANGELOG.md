@@ -11,6 +11,22 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.10.0] — 2026-07-04
+
+### Summary
+**Compliance & governance depth.** The four v0.5.0 carried-forward features land
+across **Python, Java, and JavaScript** — license/copyright detection
+(`F-QUA-10`), GDPR Art. 17 right-to-erasure (`F-QUA-09`), drift detection
+(`F-GOV-07`), and image PII detection (`F-SEC-09`) — plus the first
+**domain-aware policy pack** (FinTech identifiers). Feature PRs #40, #41, #43,
+#45, #47.
+
+Tests: Python 229 · JavaScript 243 · Java modules green.
+
 ### Added
 - **License / copyright detection (all SDKs, `F-QUA-10`)** — new `licenseDetector`
   output validator flags known open-source license text (MIT, Apache-2.0,
@@ -44,12 +60,17 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   optional dependency (Python `[ocr]` extra, JS `tesseract.js` peer dep, Java
   tess4j via reflection). Shared cases in `test-vectors/pii/image-detection.json`.
   PR #45 (#29).
-
-Tests: Python 217 · JavaScript 229 · Java modules green.
+- **FinTech domain policy pack (all SDKs)** — first domain-aware policy pack:
+  a context-gated SWIFT/BIC scanner (`SWIFT_BIC`) and a US ABA routing-number
+  scanner (`ROUTING_NUMBER`, mod-10 checksum), exposed as a
+  `fintechScanners()` / `fintech_scanners()` / `DefaultScanners.fintech()`
+  factory composed with the defaults. Shared cases in
+  `test-vectors/pii/fintech-detection.json`. PR #47.
 
 This completes the four v0.5.0 carried-forward features (F-QUA-10, F-QUA-09,
-F-GOV-07, F-SEC-09); what remains for v1.0.0 is the release gate (API-stability
-guarantee, docs site, published benchmarks, security audit, LTS).
+F-GOV-07, F-SEC-09) and adds the first domain policy pack; what remains for
+v1.0.0 is the release gate (API-stability guarantee, docs site, published
+benchmarks, security audit, LTS).
 
 ---
 

@@ -396,3 +396,82 @@ async for chunk in gw.stream(messages=[{"role": "user", "content": "hi"}]):
 
 Executor policies (retry, circuit breaker, cache) are not applied to the
 streaming path in this release.
+
+## v0.10.0 — Compliance & policy packs
+
+### License / copyright detection (`F-QUA-10`)
+
+`licenseDetector` is a guardrails `OutputValidator` that flags known open-source
+license text (MIT, Apache-2.0, GPL-2.0/3.0, BSD-3-Clause, MPL-2.0) in a model
+response before it lands in user code. It matches a shipped corpus of hashed
+8-word shingles — only hashes ship, never license text — and drops shingles
+shared by more than one license so a hit is discriminative (GPL-2.0 and GPL-3.0
+don't cross-fire). Detections surface in the guardrail outcome and audit record.
+
+```python
+from gavio.interceptors.guardrails import GuardrailsInterceptor, LicenseDetectorValidator
+
+GuardrailsInterceptor([LicenseDetectorValidator()], on_failure="warn")
+```
+
+### Right to erasure — GDPR Art. 17 (`F-QUA-09`)
+
+Pass a `subject_id` in request metadata and it is persisted on every
+`AuditRecord`. Persistent sinks expose `purge(subject_id)`, which removes every
+matching record and returns the count erased — a no-op for non-persistent sinks
+(stdout), a real implementation on the built-in `JsonlSink` (now shipped in all
+three SDKs).
+
+```python
+await gateway.complete(messages=[...], metadata={"subject_id": "user-123"})
+removed = await sink.purge("user-123")   # -> int records erased
+```
+
+Scope: erasure covers records in a persistent, purgeable sink; caches and
+downstream copies (log shippers, SIEMs, backups) are out of scope this release.
+
+### Drift detection (`F-GOV-07`)
+
+`DriftMonitor` watches a provider's response distribution and alerts when a
+signal (latency, tokens, cost, risk) shifts away from its recent baseline. The
+default `StatisticalDriftDetector` keeps a rolling window per metric and flags a
+sample beyond a z-score threshold; supply your own `DriftDetector` to change the
+algorithm. Alerts are observe-only — each surfaces as a `governance.event`
+inspector event and is counted in `driftAlerts` on `/api/stats`.
+
+```python
+from gavio.interceptors.governance import DriftMonitor
+
+DriftMonitor(metrics=["latency_ms", "total_tokens"], window_size=50, threshold=3.0)
+```
+
+### Image PII detection (`F-SEC-09`)
+
+`ModalityGuard` extends the PII pipeline to image inputs passed on the
+side-channel `images` request field. Each `ModalityScanner` extracts text (OCR)
+and/or direct detections (e.g. faces); the extracted text runs through the
+standard text scanners, and detections land in the `AuditRecord`'s
+`pii_entity_types` like text PII. Ships a reference `OcrModalityScanner` behind
+an optional dependency (Python `[ocr]` extra, JS `tesseract.js`, Java tess4j).
+
+```python
+from gavio.interceptors.pii import ModalityGuard, OcrModalityScanner
+
+ModalityGuard(scanners=[OcrModalityScanner()], on_detect="tag")  # or "block"
+await gateway.complete(messages=[...], images=[png_bytes])
+```
+
+### Domain policy packs — FinTech
+
+Policy packs are scanner sets for an industry, composed with the default set.
+The **FinTech** pack adds financial identifiers beyond the core `IBAN` scanner:
+a context-gated **SWIFT/BIC** scanner (`SWIFT_BIC`) and a US ABA **routing
+number** scanner (`ROUTING_NUMBER`, mod-10 checksum).
+
+```python
+from gavio.interceptors.pii import PiiGuard, default_scanners, fintech_scanners
+
+PiiGuard(scanners=[*default_scanners(), *fintech_scanners()])
+```
+
+(JS: `fintechScanners()`; Java: `DefaultScanners.fintech()`.)
