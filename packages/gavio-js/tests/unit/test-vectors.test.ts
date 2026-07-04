@@ -20,9 +20,15 @@ import {
   ssnScanner,
 } from '../../src/interceptors/pii/scanners/index.js'
 import { GavioTestKit } from '../../src/testing/index.js'
+import { detectLicenses } from '../../src/interceptors/guardrails/index.js'
 
 function load(name: string): { cases: Record<string, unknown>[] } {
   const url = new URL(`../../../../test-vectors/pii/${name}`, import.meta.url)
+  return JSON.parse(readFileSync(fileURLToPath(url), 'utf8'))
+}
+
+function loadCategory(category: string, name: string): { cases: Record<string, unknown>[] } {
+  const url = new URL(`../../../../test-vectors/${category}/${name}`, import.meta.url)
   return JSON.parse(readFileSync(fileURLToPath(url), 'utf8'))
 }
 
@@ -68,6 +74,19 @@ describe('shared test-vectors — pii/detection.json', () => {
       const result = await kit.run({ messages: [{ role: 'user', content: text }] })
       const detected = KNOWN_TYPES.filter((t) => result.piiDetected(t))
       expect(detected).toEqual(expectedTypes)
+    })
+  }
+})
+
+describe('shared test-vectors — license/detection.json', () => {
+  for (const c of loadCategory('license', 'detection.json').cases) {
+    const { id, text, expectedLicenses } = c as {
+      id: string
+      text: string
+      expectedLicenses: string[]
+    }
+    it(`${id}`, () => {
+      expect(detectLicenses(text)).toEqual(expectedLicenses)
     })
   }
 })

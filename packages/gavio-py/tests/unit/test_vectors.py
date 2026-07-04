@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from gavio.context import InterceptorContext
+from gavio.interceptors.guardrails import detect_licenses
 from gavio.interceptors.pii import PiiGuard
 from gavio.interceptors.pii.context import ScanContext
 from gavio.interceptors.pii.scanners import (
@@ -46,6 +47,10 @@ def _load(name: str) -> list[dict]:
     return json.loads((_VECTORS / "pii" / name).read_text())["cases"]
 
 
+def _load_category(category: str, name: str) -> list[dict]:
+    return json.loads((_VECTORS / category / name).read_text())["cases"]
+
+
 @pytest.mark.parametrize("case", _load("checksums.json"), ids=lambda c: c["id"])
 def test_checksum_vectors(case: dict) -> None:
     scanner = _SCANNERS[case["scanner"]]()
@@ -69,4 +74,12 @@ async def test_detection_vectors(case: dict) -> None:
     detected = sorted(set(ctx.pii_entity_types))
     assert detected == case["expectedTypes"], (
         f"{case['id']}: expected {case['expectedTypes']}, got {detected}"
+    )
+
+
+@pytest.mark.parametrize("case", _load_category("license", "detection.json"), ids=lambda c: c["id"])
+def test_license_detection_vectors(case: dict) -> None:
+    detected = detect_licenses(case["text"])
+    assert detected == case["expectedLicenses"], (
+        f"{case['id']}: expected {case['expectedLicenses']}, got {detected}"
     )

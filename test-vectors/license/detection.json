@@ -1,0 +1,71 @@
+{
+  "description": "License detection cases (F-QUA-10): run the default license detector over `text`, collect the sorted SPDX ids, and compare to `expectedLicenses`. Snippets are synthetic license text; the shipped corpus contains only hashes. Values verified against the reference implementation.",
+  "schemaVersion": "1.0",
+  "cases": [
+    {
+      "id": "mit-header",
+      "text": "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software.",
+      "expectedLicenses": [
+        "MIT"
+      ]
+    },
+    {
+      "id": "apache-2.0-header",
+      "text": "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0",
+      "expectedLicenses": [
+        "Apache-2.0"
+      ]
+    },
+    {
+      "id": "gpl-3.0-header",
+      "text": "This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.",
+      "expectedLicenses": [
+        "GPL-3.0"
+      ]
+    },
+    {
+      "id": "gpl-2.0-header",
+      "text": "This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.",
+      "expectedLicenses": [
+        "GPL-2.0"
+      ]
+    },
+    {
+      "id": "bsd-3-clause-header",
+      "text": "Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.",
+      "expectedLicenses": [
+        "BSD-3-Clause"
+      ]
+    },
+    {
+      "id": "mpl-2.0-header",
+      "text": "This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0. If a copy of the MPL was not distributed with this file, You can obtain one at http://mozilla.org/MPL/2.0/.",
+      "expectedLicenses": [
+        "MPL-2.0"
+      ]
+    },
+    {
+      "id": "clean-code",
+      "text": "function add(a, b) { return a + b } // simple helper used across the project to sum two numbers together",
+      "expectedLicenses": []
+    },
+    {
+      "id": "clean-prose",
+      "text": "The quick brown fox jumps over the lazy dog while the sun rises slowly over the eastern hills every single morning.",
+      "expectedLicenses": []
+    },
+    {
+      "id": "mit-and-apache",
+      "text": "Some files are MIT: Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files. Others: Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use this file except in compliance with the License.",
+      "expectedLicenses": [
+        "Apache-2.0",
+        "MIT"
+      ]
+    },
+    {
+      "id": "mentions-mit-word-only",
+      "text": "This project is released under the MIT license, see the LICENSE file for the full text and details.",
+      "expectedLicenses": []
+    }
+  ]
+}

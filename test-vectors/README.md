@@ -13,6 +13,7 @@ offending SDK's test-vector run goes red.
 |---|---|
 | [`pii/checksums.json`](./pii/checksums.json) | Single-scanner cases — regex + checksum logic (IBAN mod-97, BSN 11-proef, Luhn, IP validation). Each case: run the named scanner over `text`, assert `matchCount > 0 === shouldMatch`. |
 | [`pii/detection.json`](./pii/detection.json) | Full-pipeline cases — run the default `PiiGuard` over `text`, collect unique entity types, sort, compare to `expectedTypes`. Exercises the whole scanner set plus overlap resolution. |
+| [`license/detection.json`](./license/detection.json) | License detection cases (F-QUA-10) — run the default license detector over `text`, collect the sorted SPDX ids, compare to `expectedLicenses`. Snippets are synthetic license text; the shipped corpus contains only shingle hashes. |
 
 ## Case formats
 
@@ -21,7 +22,7 @@ offending SDK's test-vector run goes red.
 { "id": "iban-valid", "scanner": "IBAN", "text": "...NL91ABNA0417164300...", "shouldMatch": true }
 ```
 
-`detection.json`:
+`detection.json` (PII):
 ```json
 { "id": "email-and-iban", "text": "...", "expectedTypes": ["EMAIL", "IBAN"] }
 ```
@@ -29,13 +30,21 @@ offending SDK's test-vector run goes red.
 `scanner` / entity-type names are the canonical uppercase identifiers:
 `EMAIL, IBAN, BSN, CREDIT_CARD, PHONE, IP_ADDRESS, SSN, SECRET`.
 
+`license/detection.json`:
+```json
+{ "id": "mit-header", "text": "...", "expectedLicenses": ["MIT"] }
+```
+
+`expectedLicenses` are SPDX ids sorted ascending:
+`Apache-2.0, BSD-3-Clause, GPL-2.0, GPL-3.0, MIT, MPL-2.0`.
+
 ## Runners (one per SDK)
 
 | SDK | Test that consumes these vectors |
 |---|---|
 | Python | `packages/gavio-py/tests/unit/test_vectors.py` |
 | JavaScript | `packages/gavio-js/tests/unit/test-vectors.test.ts` |
-| Java | `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/TestVectorsTest.java` |
+| Java | `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/TestVectorsTest.java` (PII) · `packages/gavio-java/gavio-interceptor-guardrails/src/test/java/io/gavio/vectors/LicenseVectorsTest.java` (license) |
 
 ## Ground truth
 
