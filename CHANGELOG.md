@@ -11,7 +11,24 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **License / copyright detection (all SDKs, `F-QUA-10`)** — new `licenseDetector`
+  output validator flags known open-source license text (MIT, Apache-2.0,
+  GPL-2.0/3.0, BSD-3-Clause, MPL-2.0) in model responses before it lands in user
+  code. Matches a shipped corpus of hashed 8-word shingles — hashes only, no
+  license text is bundled — and drops shingles shared by more than one license so
+  a hit is discriminative (GPL-2.0 vs GPL-3.0 don't cross-fire). Detections
+  surface in the guardrail outcome and audit record. Shared cases in
+  `test-vectors/license/detection.json`. PR #40 (#33).
+- **Right-to-erasure API — GDPR Art. 17 (all SDKs, `F-QUA-09`)** — a `subject_id`
+  passed in request metadata is now persisted on every `AuditRecord` (new field,
+  added to `spec/AuditRecord.schema.json`). Audit sinks gain
+  `purge(subject_id) -> count`: a no-op for non-persistent sinks (stdout) and a
+  real implementation on the built-in `JsonlSink`, which is now shipped in all
+  three SDKs so erasure is testable everywhere. Scope and limits documented in
+  `docs/interceptors.md`. PR #41 (#32).
+
+Tests: Python 200 · JavaScript 212 · Java modules green.
 
 ---
 
