@@ -26,6 +26,7 @@ public final class AuditInterceptor implements Interceptor {
     private static final Logger LOG = Logger.getLogger("gavio.audit");
     private static final String PROMPT_HASH_KEY = "audit_prompt_hash";
     private static final String LINEAGE_KEY = "audit_lineage";
+    private static final String SUBJECT_ID_KEY = "audit_subject_id";
 
     private final AuditSink sink;
     private final boolean hashChain;
@@ -60,6 +61,10 @@ public final class AuditInterceptor implements Interceptor {
         if (request.lineage() != null) {
             ctx.state().put(LINEAGE_KEY, request.lineage());
         }
+        Object subjectId = request.metadata().get("subject_id");
+        if (subjectId != null) {
+            ctx.state().put(SUBJECT_ID_KEY, subjectId.toString());
+        }
         return CompletableFuture.completedFuture(request);
     }
 
@@ -67,6 +72,7 @@ public final class AuditInterceptor implements Interceptor {
     public CompletableFuture<GavioResponse> after(GavioResponse response, InterceptorContext ctx) {
         Object promptHash = ctx.state().get(PROMPT_HASH_KEY);
         Object lineage = ctx.state().get(LINEAGE_KEY);
+        Object subjectId = ctx.state().get(SUBJECT_ID_KEY);
         CacheType ct = response.cacheType();
         String prev;
         synchronized (this) {
@@ -78,6 +84,7 @@ public final class AuditInterceptor implements Interceptor {
                 .parentTraceId(ctx.parentTraceId())
                 .agentId(ctx.agentId())
                 .sessionId(ctx.sessionId())
+                .subjectId(subjectId != null ? subjectId.toString() : null)
                 .timestampUtc(AuditRecord.nowUtc())
                 .provider(response.provider())
                 .model(response.model())

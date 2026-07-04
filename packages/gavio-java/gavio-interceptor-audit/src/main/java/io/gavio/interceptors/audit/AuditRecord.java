@@ -28,6 +28,7 @@ public record AuditRecord(
         String parentTraceId,
         String agentId,
         String sessionId,
+        String subjectId,
         String modelVersion,
         String promptHash,
         String responseHash,
@@ -99,6 +100,7 @@ public record AuditRecord(
         data.put("parent_trace_id", parentTraceId);
         data.put("agent_id", agentId);
         data.put("session_id", sessionId);
+        data.put("subject_id", subjectId);
         data.put("model_version", modelVersion);
         data.put("prompt_hash", promptHash);
         data.put("response_hash", responseHash);
@@ -144,6 +146,7 @@ public record AuditRecord(
         private String parentTraceId;
         private String agentId;
         private String sessionId;
+        private String subjectId;
         private String modelVersion = "";
         private String promptHash = "";
         private String responseHash = "";
@@ -192,6 +195,11 @@ public record AuditRecord(
 
         public Builder sessionId(String v) {
             this.sessionId = v;
+            return this;
+        }
+
+        public Builder subjectId(String v) {
+            this.subjectId = v;
             return this;
         }
 
@@ -272,10 +280,10 @@ public record AuditRecord(
 
         public AuditRecord build() {
             return new AuditRecord(traceId, provider, model, timestampUtc, parentTraceId,
-                    agentId, sessionId, modelVersion, promptHash, responseHash, tokenUsage,
-                    costUsd, latencyMs, piiEntityTypes, piiEntityCounts, interceptorsFired,
-                    cacheHit, cacheType, guardrailOutcome, riskScore, lineage, previousHash,
-                    SCHEMA_VERSION);
+                    agentId, sessionId, subjectId, modelVersion, promptHash, responseHash,
+                    tokenUsage, costUsd, latencyMs, piiEntityTypes, piiEntityCounts,
+                    interceptorsFired, cacheHit, cacheType, guardrailOutcome, riskScore, lineage,
+                    previousHash, SCHEMA_VERSION);
         }
     }
 }

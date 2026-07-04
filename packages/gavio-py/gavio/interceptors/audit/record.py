@@ -32,6 +32,7 @@ class AuditRecord:
     parent_trace_id: str | None = None
     agent_id: str | None = None
     session_id: str | None = None
+    subject_id: str | None = None
     model_version: str = ""
     prompt_hash: str = ""
     response_hash: str = ""

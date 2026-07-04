@@ -116,6 +116,32 @@ the response — never raw text) and writes it to a sink. v0.1.0 ships
               latency=0ms cache=miss pii=EMAIL,IBAN interceptors=[audit,pii_guard]
 ```
 
+### Right to erasure — GDPR Art. 17 (`F-QUA-09`)
+
+Pass a `subject_id` in the request metadata and it is persisted on every
+`AuditRecord`, so records can later be erased on a data-subject request:
+
+```python
+await gateway.complete(messages=[...], metadata={"subject_id": "user-123"})
+```
+
+Persistent sinks expose `purge(subject_id)`, which removes every matching
+record and returns the count erased. The built-in `JsonlSink` (Python, Java,
+and JavaScript) implements it by rewriting the file atomically:
+
+```python
+sink = JsonlSink("~/.gavio/audit.jsonl")
+removed = await sink.purge("user-123")   # -> int records erased
+```
+
+**Scope.** Erasure covers records written to a **persistent, purgeable sink**
+(the built-in `JsonlSink`). `StdoutSink` and any custom sink that does not
+override `purge` return `0` — non-persistent or write-only destinations cannot
+be purged, and downstream copies (log shippers, SIEMs, backups) are out of
+scope and must be erased in those systems. Cached responses are **not** purged
+by `subject_id` in this release. Tagging a record requires a `subject_id` on the
+originating request; records written without one cannot be selected for erasure.
+
 ---
 
 ## Writing a custom scanner

@@ -28,6 +28,7 @@ export interface AuditRecordInit {
   parentTraceId?: string | null
   agentId?: string | null
   sessionId?: string | null
+  subjectId?: string | null
   modelVersion?: string
   promptHash?: string
   responseHash?: string
@@ -61,6 +62,7 @@ export class AuditRecord {
   parentTraceId: string | null
   agentId: string | null
   sessionId: string | null
+  subjectId: string | null
   modelVersion: string
   promptHash: string
   responseHash: string
@@ -86,6 +88,7 @@ export class AuditRecord {
     this.parentTraceId = init.parentTraceId ?? null
     this.agentId = init.agentId ?? null
     this.sessionId = init.sessionId ?? null
+    this.subjectId = init.subjectId ?? null
     this.modelVersion = init.modelVersion ?? ''
     this.promptHash = init.promptHash ?? ''
     this.responseHash = init.responseHash ?? ''
@@ -118,6 +121,7 @@ export class AuditRecord {
       parentTraceId: this.parentTraceId,
       agentId: this.agentId,
       sessionId: this.sessionId,
+      subjectId: this.subjectId,
       provider: this.provider,
       model: this.model,
       modelVersion: this.modelVersion,

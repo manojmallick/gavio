@@ -17,6 +17,7 @@ logger = logging.getLogger("gavio.audit")
 
 _PROMPT_HASH_KEY = "audit_prompt_hash"
 _LINEAGE_KEY = "audit_lineage"
+_SUBJECT_ID_KEY = "audit_subject_id"
 
 
 class AuditInterceptor(Interceptor):
@@ -32,9 +33,7 @@ class AuditInterceptor(Interceptor):
     :func:`gavio.interceptors.audit.verify_chain` can validate.
     """
 
-    def __init__(
-        self, sink: AuditSink | str | None = None, hash_chain: bool = False
-    ) -> None:
+    def __init__(self, sink: AuditSink | str | None = None, hash_chain: bool = False) -> None:
         self.sink = _resolve_sink(sink)
         self.hash_chain = hash_chain
         self._last_hash = ""
@@ -49,22 +48,22 @@ class AuditInterceptor(Interceptor):
         # Auditing is observation-only, so it always runs.
         return True
 
-    async def before(
-        self, request: GavioRequest, ctx: InterceptorContext
-    ) -> GavioRequest:
+    async def before(self, request: GavioRequest, ctx: InterceptorContext) -> GavioRequest:
         ctx.state[_PROMPT_HASH_KEY] = AuditRecord.hash_text(request.prompt_text())
         if request.lineage is not None:
             ctx.state[_LINEAGE_KEY] = request.lineage
+        subject_id = request.metadata.get("subject_id")
+        if subject_id is not None:
+            ctx.state[_SUBJECT_ID_KEY] = str(subject_id)
         return request
 
-    async def after(
-        self, response: GavioResponse, ctx: InterceptorContext
-    ) -> GavioResponse:
+    async def after(self, response: GavioResponse, ctx: InterceptorContext) -> GavioResponse:
         record = AuditRecord(
             trace_id=response.trace_id,
             parent_trace_id=ctx.parent_trace_id,
             agent_id=ctx.agent_id,
             session_id=ctx.session_id,
+            subject_id=ctx.state.get(_SUBJECT_ID_KEY),
             timestamp_utc=AuditRecord.now_utc(),
             provider=response.provider,
             model=response.model,
