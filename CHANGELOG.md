@@ -27,8 +27,15 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   real implementation on the built-in `JsonlSink`, which is now shipped in all
   three SDKs so erasure is testable everywhere. Scope and limits documented in
   `docs/interceptors.md`. PR #41 (#32).
+- **Drift detection (all SDKs, `F-GOV-07`)** — new `DriftMonitor` interceptor
+  with a pluggable `DriftDetector` interface and a default
+  `StatisticalDriftDetector` (rolling-window baseline per metric, z-score
+  threshold). Watches response-distribution signals (latency, tokens, cost,
+  risk) and, when one drifts, emits a standalone `governance.event` inspector
+  event — the reserved type is now wired in `spec/InspectorEvent.schema.json` —
+  and counts it in `driftAlerts` on `/api/stats`. Observe-only. PR #43 (#31).
 
-Tests: Python 200 · JavaScript 212 · Java modules green.
+Tests: Python 206 · JavaScript 218 · Java modules green.
 
 ---
 
