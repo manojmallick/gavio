@@ -32,6 +32,11 @@
       "additionalProperties": true
     },
     "metadata": { "type": "object", "additionalProperties": true },
+    "images": {
+      "type": "array",
+      "description": "Binary image inputs (raw bytes), scanned for PII by the modality guard before any provider call (F-SEC-09). Not serialized onto the provider wire.",
+      "items": { "type": "string", "contentEncoding": "base64" }
+    },
     "lineage": {
       "anyOf": [{ "$ref": "#/$defs/promptLineage" }, { "type": "null" }],
       "description": "Prompt provenance (F-OBS-04): template, variable bindings, and RAG chunk sources. Copied into the AuditRecord."

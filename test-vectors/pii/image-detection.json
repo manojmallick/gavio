@@ -1,0 +1,11 @@
+{
+  "description": "Image PII detection (F-SEC-09): a ModalityScanner yields `ocrText` (OCR output) and `entityTypes` (direct detections, e.g. FACE) for a synthetic image; the modality guard runs the default text PII scanners over the extracted text, unions the direct detections, and the sorted unique entity types recorded on the context are compared to `expectedTypes`. Image bytes are stubbed to `ocrText` so the contract is deterministic across SDKs — real OCR is exercised by per-SDK smoke tests. Synthetic data only.",
+  "schemaVersion": "1.0",
+  "cases": [
+    { "id": "email-in-image", "ocrText": "contact jan.devries@example.com please", "entityTypes": [], "expectedTypes": ["EMAIL"] },
+    { "id": "iban-in-image", "ocrText": "transfer to NL91ABNA0417164300", "entityTypes": [], "expectedTypes": ["IBAN"] },
+    { "id": "face-detected", "ocrText": "", "entityTypes": ["FACE"], "expectedTypes": ["FACE"] },
+    { "id": "email-and-face", "ocrText": "mail a@b.com", "entityTypes": ["FACE"], "expectedTypes": ["EMAIL", "FACE"] },
+    { "id": "clean-image", "ocrText": "a photo of a sunset over the mountains", "entityTypes": [], "expectedTypes": [] }
+  ]
+}

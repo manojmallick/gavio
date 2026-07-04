@@ -26,12 +26,14 @@ public record GavioRequest(
         String sessionId,
         Map<String, Object> options,
         Map<String, Object> metadata,
+        List<byte[]> images,
         PromptLineage lineage) {
 
     public GavioRequest {
         messages = List.copyOf(messages);
         options = Map.copyOf(options == null ? Map.of() : options);
         metadata = Map.copyOf(metadata == null ? Map.of() : metadata);
+        images = images == null ? List.of() : List.copyOf(images);
         if (traceId == null) {
             traceId = Ids.newTraceId();
         }
@@ -66,21 +68,21 @@ public record GavioRequest(
     public GavioRequest withMessages(List<Message> newMessages) {
         return new GavioRequest(
                 newMessages, model, provider, traceId, agentId,
-                parentTraceId, sessionId, options, metadata, lineage);
+                parentTraceId, sessionId, options, metadata, images, lineage);
     }
 
     /** Return a copy with a different provider (used by fallback rerouting). */
     public GavioRequest withProvider(Provider newProvider) {
         return new GavioRequest(
                 messages, model, newProvider, traceId, agentId,
-                parentTraceId, sessionId, options, metadata, lineage);
+                parentTraceId, sessionId, options, metadata, images, lineage);
     }
 
     /** Return a copy with a different model (used by cost-optimiser rerouting). */
     public GavioRequest withModel(String newModel) {
         return new GavioRequest(
                 messages, newModel, provider, traceId, agentId,
-                parentTraceId, sessionId, options, metadata, lineage);
+                parentTraceId, sessionId, options, metadata, images, lineage);
     }
 
     public static Builder builder() {
@@ -98,6 +100,7 @@ public record GavioRequest(
         private String sessionId;
         private final Map<String, Object> options = new LinkedHashMap<>();
         private final Map<String, Object> metadata = new LinkedHashMap<>();
+        private final List<byte[]> images = new ArrayList<>();
         private PromptLineage lineage;
 
         public Builder messages(List<Message> messages) {
@@ -156,6 +159,17 @@ public record GavioRequest(
             return this;
         }
 
+        public Builder images(List<byte[]> images) {
+            this.images.clear();
+            this.images.addAll(images);
+            return this;
+        }
+
+        public Builder image(byte[] image) {
+            this.images.add(image);
+            return this;
+        }
+
         public Builder lineage(PromptLineage lineage) {
             this.lineage = lineage;
             return this;
@@ -165,7 +179,8 @@ public record GavioRequest(
             return new GavioRequest(
                     new ArrayList<>(messages), model, provider, traceId,
                     agentId, parentTraceId, sessionId,
-                    new HashMap<>(options), new HashMap<>(metadata), lineage);
+                    new HashMap<>(options), new HashMap<>(metadata),
+                    new ArrayList<>(images), lineage);
         }
     }
 }

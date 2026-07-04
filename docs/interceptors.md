@@ -76,6 +76,29 @@ PiiGuard(
 )
 ```
 
+### Image PII (`F-SEC-09`)
+
+`ModalityGuard` extends the PII pipeline to **image inputs** passed on the
+side-channel `images` field of a request. Each `ModalityScanner` extracts text
+(OCR) and/or direct detections (e.g. faces); the extracted text is run through
+the standard text PII scanners, and every detected entity type is recorded on
+the context — so image detections appear in the `AuditRecord`'s
+`pii_entity_types` exactly like text PII. Scanning happens in the `before` hook,
+before any provider call.
+
+```python
+from gavio.interceptors.pii import ModalityGuard, OcrModalityScanner
+
+# OcrModalityScanner needs the optional 'ocr' extra: pip install 'gavio[ocr]'
+ModalityGuard(scanners=[OcrModalityScanner()], on_detect="tag")  # or "block"
+
+await gateway.complete(messages=[...], images=[png_bytes])
+```
+
+`ModalityScanner` is the extension point — implement it for a custom OCR or
+face-detection backend. `on_detect="block"` raises `PiiBlockedError` on any
+detection; the default `"tag"` records detections without blocking.
+
 ---
 
 ## Secret scanner (`F-SEC-04`)

@@ -33,11 +33,12 @@ redis = ["redis"]
 otel = ["opentelemetry-sdk", "opentelemetry-exporter-otlp"]
 elasticsearch = ["elasticsearch"]
 pgvector = ["psycopg2", "pgvector"]
+ocr = ["pytesseract", "pillow"]
 dev = ["pytest>=7.0", "pytest-asyncio>=0.21", "ruff>=0.4", "mypy>=1.8"]
 all = [
     "presidio-analyzer", "spacy", "redis",
     "opentelemetry-sdk", "opentelemetry-exporter-otlp",
-    "elasticsearch", "psycopg2", "pgvector",
+    "elasticsearch", "psycopg2", "pgvector", "pytesseract", "pillow",
 ]
 
 [project.scripts]
