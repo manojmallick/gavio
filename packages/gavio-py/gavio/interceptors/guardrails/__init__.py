@@ -6,8 +6,10 @@ from .interceptor import GuardrailsInterceptor
 from .validator import OutputValidator, ValidationResult
 from .validators import (
     JsonSchemaValidator,
+    LicenseDetectorValidator,
     RegexAllowlistValidator,
     RegexDenylistValidator,
+    detect_licenses,
 )
 
 __all__ = [
@@ -17,4 +19,6 @@ __all__ = [
     "JsonSchemaValidator",
     "RegexDenylistValidator",
     "RegexAllowlistValidator",
+    "LicenseDetectorValidator",
+    "detect_licenses",
 ]
