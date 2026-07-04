@@ -43,6 +43,7 @@ export interface SummaryLike {
   usage?: UsageJson | null
   promptHash?: string | null
   responseHash?: string | null
+  driftAlerts?: string[] | null
 }
 
 export interface SessionAggregate {
@@ -93,6 +94,7 @@ export interface StatsAggregate {
   cacheHits: number
   cacheHitRate: number
   piiDetections: Record<string, number>
+  driftAlerts: Record<string, number>
 }
 
 export interface Stats {
@@ -289,6 +291,12 @@ function aggregate(summaries: SummaryLike[]): StatsAggregate {
       pii[entityType] = (pii[entityType] ?? 0) + 1
     }
   }
+  const drift: Record<string, number> = {}
+  for (const s of summaries) {
+    for (const metric of s.driftAlerts ?? []) {
+      drift[metric] = (drift[metric] ?? 0) + 1
+    }
+  }
   const n = summaries.length
   return {
     requests: n,
@@ -307,6 +315,7 @@ function aggregate(summaries: SummaryLike[]): StatsAggregate {
     cacheHits,
     cacheHitRate: n > 0 ? round(cacheHits / n, 4) : 0,
     piiDetections: pii,
+    driftAlerts: drift,
   }
 }
 

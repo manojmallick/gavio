@@ -53,6 +53,7 @@ export class InterceptorChain {
             req,
             decisionFor(ctx, interceptor.name, emitter),
           )
+          emitGovernanceEvents(ctx, emitter)
           phase = { kind: 'chain' }
         }
         ctx.markFired(interceptor.name)
@@ -87,6 +88,7 @@ export class InterceptorChain {
             response,
             decisionFor(ctx, interceptor.name, emitter),
           )
+          emitGovernanceEvents(ctx, emitter)
           phase = { kind: 'chain' }
         }
       }
@@ -121,6 +123,12 @@ export class InterceptorChain {
  * recorded via `ctx.inspect(...)` during the hook; falls back to a state entry
  * keyed by the interceptor's own name (e.g. `ctx.state['cost_router']`).
  */
+/** Drain governance events an interceptor recorded this hook and emit each. */
+function emitGovernanceEvents(ctx: InterceptorContext, emitter: TraceEmitter | undefined): void {
+  if (emitter === undefined) return
+  for (const data of ctx.drainGovernanceEvents()) emitter.governanceEvent(data)
+}
+
 function decisionFor(
   ctx: InterceptorContext,
   name: string,

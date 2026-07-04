@@ -35,6 +35,9 @@ export class InterceptorContext {
   /** Pending inspector decision entries; drained per hook by the emitter. */
   private inspectEntries: Record<string, unknown> = {}
 
+  /** Pending governance events (e.g. drift alerts); drained per hook by the chain. */
+  private governanceEvents: Record<string, unknown>[] = []
+
   constructor(init: InterceptorContextInit) {
     this.traceId = init.traceId
     this.agentId = init.agentId ?? null
@@ -58,6 +61,22 @@ export class InterceptorContext {
     const entries = this.inspectEntries
     this.inspectEntries = {}
     return entries
+  }
+
+  /**
+   * Record a governance event (e.g. a drift alert) to surface on the inspector
+   * as a standalone `governance.event`. The chain drains these after each hook.
+   */
+  recordGovernanceEvent(data: Record<string, unknown>): void {
+    this.governanceEvents.push(data)
+  }
+
+  /** @internal Drain pending {@link recordGovernanceEvent} entries (per hook). */
+  drainGovernanceEvents(): Record<string, unknown>[] {
+    if (this.governanceEvents.length === 0) return []
+    const events = this.governanceEvents
+    this.governanceEvents = []
+    return events
   }
 
   markFired(name: string): void {

@@ -133,6 +133,7 @@ class TraceEmitter:
                 )
             data = events.interceptor_end_data_with_diff(name, duration_us, mutated, decision, diff)
         self._emit("interceptor.before.end", data)
+        self._emit_governance(ctx)
 
     def interceptor_after_end(
         self,
@@ -155,6 +156,12 @@ class TraceEmitter:
                 )
             data = events.interceptor_end_data_with_diff(name, duration_us, mutated, decision, diff)
         self._emit("interceptor.after.end", data)
+        self._emit_governance(ctx)
+
+    def _emit_governance(self, ctx: InterceptorContext) -> None:
+        """Emit a standalone governance.event for each queued alert (F-GOV-07)."""
+        for data in ctx.drain_governance():
+            self._emit("governance.event", data)
 
     @staticmethod
     def _drain_decision(name: str, ctx: InterceptorContext) -> dict[str, Any] | None:

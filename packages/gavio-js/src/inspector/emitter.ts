@@ -132,6 +132,11 @@ export class TraceEmitter {
     )
   }
 
+  /** Standalone governance signal (drift detection, F-GOV-07). Metadata only. */
+  governanceEvent(data: Record<string, unknown>): void {
+    this.emit('governance.event', data)
+  }
+
   traceError(origin: ErrorOrigin, error: unknown, interceptorName?: string): void {
     const meta = {
       origin,

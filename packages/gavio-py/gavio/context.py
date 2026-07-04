@@ -37,6 +37,10 @@ class InterceptorContext:
     # inspector emitter (F-DX-09). Harmless when the inspector is off.
     inspect_pending: dict[str, Any] = field(default_factory=dict)
 
+    # Governance events (e.g. drift alerts, F-GOV-07) to surface as standalone
+    # governance.event inspector events; drained per hook by the emitter.
+    governance_pending: list[dict[str, Any]] = field(default_factory=list)
+
     def inspect(self, key: str, value: Any) -> None:
         """Attach a JSON-safe decision record for the Gavio Inspector.
 
@@ -49,6 +53,19 @@ class InterceptorContext:
     def drain_inspect(self) -> dict[str, Any]:
         """Return and clear the pending decision records (emitter-internal)."""
         pending, self.inspect_pending = self.inspect_pending, {}
+        return pending
+
+    def record_governance_event(self, data: dict[str, Any]) -> None:
+        """Queue a governance event (e.g. a drift alert) for the inspector.
+
+        Surfaces as a standalone ``governance.event``. Safe to call
+        unconditionally — with the inspector disabled it is just a list append.
+        """
+        self.governance_pending.append(data)
+
+    def drain_governance(self) -> list[dict[str, Any]]:
+        """Return and clear the pending governance events (emitter-internal)."""
+        pending, self.governance_pending = self.governance_pending, []
         return pending
 
     def mark_fired(self, name: str) -> None:

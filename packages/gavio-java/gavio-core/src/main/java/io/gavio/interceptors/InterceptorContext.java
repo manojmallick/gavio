@@ -35,6 +35,9 @@ public final class InterceptorContext {
     /** Pending inspector decision records; drained per hook by the TraceEmitter (F-DX-09). */
     private final Map<String, Object> inspectPending = new LinkedHashMap<>();
 
+    /** Pending governance events (e.g. drift alerts, F-GOV-07); drained per hook by the emitter. */
+    private final List<Map<String, Object>> governancePending = new ArrayList<>();
+
     public InterceptorContext(String traceId) {
         this.traceId = traceId;
     }
@@ -143,6 +146,25 @@ public final class InterceptorContext {
         }
         Map<String, Object> out = new LinkedHashMap<>(inspectPending);
         inspectPending.clear();
+        return out;
+    }
+
+    /**
+     * Queue a governance event (e.g. a drift alert, F-GOV-07) to surface on the
+     * inspector as a standalone {@code governance.event}. A harmless no-op when
+     * the inspector is disabled — the emitter drains these per hook.
+     */
+    public void recordGovernanceEvent(Map<String, Object> data) {
+        governancePending.add(data);
+    }
+
+    /** Drain (return and clear) the pending governance events. */
+    public List<Map<String, Object>> drainGovernance() {
+        if (governancePending.isEmpty()) {
+            return List.of();
+        }
+        List<Map<String, Object>> out = new ArrayList<>(governancePending);
+        governancePending.clear();
         return out;
     }
 
