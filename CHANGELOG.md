@@ -34,8 +34,22 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   risk) and, when one drifts, emits a standalone `governance.event` inspector
   event — the reserved type is now wired in `spec/InspectorEvent.schema.json` —
   and counts it in `driftAlerts` on `/api/stats`. Observe-only. PR #43 (#31).
+- **Image PII detection (all SDKs, `F-SEC-09`)** — new `ModalityScanner`
+  interface + `ModalityGuard` interceptor extend the PII pipeline to image
+  inputs passed on a side-channel `images` request field (added to
+  `spec/GavioRequest.schema.json`). Each image's OCR text runs through the
+  tier-1 text scanners and direct detections (e.g. `FACE`) are unioned in;
+  detections land in the `AuditRecord`'s `pii_entity_types` like text PII, with
+  `onDetect='block'` optional. Ships a reference `OcrModalityScanner` behind an
+  optional dependency (Python `[ocr]` extra, JS `tesseract.js` peer dep, Java
+  tess4j via reflection). Shared cases in `test-vectors/pii/image-detection.json`.
+  PR #45 (#29).
 
-Tests: Python 206 · JavaScript 218 · Java modules green.
+Tests: Python 217 · JavaScript 229 · Java modules green.
+
+This completes the four v0.5.0 carried-forward features (F-QUA-10, F-QUA-09,
+F-GOV-07, F-SEC-09); what remains for v1.0.0 is the release gate (API-stability
+guarantee, docs site, published benchmarks, security audit, LTS).
 
 ---
 
