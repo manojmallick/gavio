@@ -167,6 +167,10 @@ def _aggregate(summaries: list[dict[str, Any]]) -> dict[str, Any]:
     for s in summaries:
         for entity_type in s.get("piiEntityTypes") or []:
             pii[entity_type] = pii.get(entity_type, 0) + 1
+    drift: dict[str, int] = {}
+    for s in summaries:
+        for metric in s.get("driftAlerts") or []:
+            drift[metric] = drift.get(metric, 0) + 1
     n = len(summaries)
     return {
         "requests": n,
@@ -182,6 +186,7 @@ def _aggregate(summaries: list[dict[str, Any]]) -> dict[str, Any]:
         "cacheHits": cache_hits,
         "cacheHitRate": round(cache_hits / n, 4) if n else 0.0,
         "piiDetections": pii,
+        "driftAlerts": drift,
     }
 
 

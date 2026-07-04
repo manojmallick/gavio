@@ -290,6 +290,24 @@ from gavio.interceptors.governance import CostRouter
 CostRouter(simple_model="gpt-4o-mini", complexity_threshold=0.35)
 ```
 
+#### Drift detection (`F-GOV-07`)
+
+`DriftMonitor` watches a provider's response distribution and alerts when a
+signal (latency, tokens, …) shifts away from its recent baseline. The default
+`StatisticalDriftDetector` keeps a rolling window per metric and flags a sample
+that deviates beyond a z-score `threshold`; supply your own `DriftDetector` to
+change the algorithm.
+
+```python
+from gavio.interceptors.governance import DriftMonitor
+
+DriftMonitor(metrics=["latency_ms", "total_tokens"], window_size=50, threshold=3.0)
+```
+
+Alerts are observe-only: each surfaces as a `governance.event` inspector event
+and is counted in `driftAlerts` on `/api/stats`, and is logged. Nothing is
+blocked or rerouted.
+
 Register it early, before caching, so a rerouted request's cache key reflects
 the model it actually ran on. Records its decision (`rerouted`,
 `original_model`, `complexity_score`) in `ctx.state["cost_router"]` — the

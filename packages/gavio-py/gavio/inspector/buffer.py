@@ -71,6 +71,10 @@ class RingBuffer:
         elif event["type"] == "provider.call.end" and "usage" in data:
             # Token usage feeds /api/stats and /api/simulate-cost.
             summary["usage"] = data["usage"]
+        elif event["type"] == "governance.event" and data.get("kind") == "drift":
+            metric = data.get("metric")
+            if isinstance(metric, str):
+                summary.setdefault("driftAlerts", []).append(metric)
 
     def seed(self, summary: dict[str, Any], events: list[dict[str, Any]] | None = None) -> None:
         """Insert a pre-assembled trace — store mode loads audit records this way."""

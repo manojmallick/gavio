@@ -27,7 +27,7 @@
         "stream.first_token",
         "stream.chunk"
       ],
-      "description": "cache.decision, reliability.event, governance.event, stream.* are reserved for later slices; v0.6.0 emitters surface those decisions via the 'decision' field on interceptor.*.end events."
+      "description": "governance.event carries a mid-trace governance signal (drift detection, F-GOV-07). cache.decision, reliability.event, stream.* are reserved for later slices; those decisions surface via the 'decision' field on interceptor.*.end events."
     },
     "tNs": { "type": "integer", "minimum": 0, "description": "Monotonic nanoseconds since trace.start." },
     "seq": { "type": "integer", "minimum": 0, "description": "Per-trace ordering tiebreaker, starts at 0." },
@@ -154,6 +154,27 @@
         "message": { "type": "string" },
         "handled": { "type": "boolean" }
       }
+    },
+    "governanceEventData": {
+      "type": "object",
+      "description": "A governance signal raised mid-trace. Metadata only — no request/response content. `kind` distinguishes the signal; drift detection (F-GOV-07) uses kind='drift'.",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "description": "Governance signal kind, e.g. 'drift'." },
+        "detector": { "type": "string", "description": "Name of the detector that raised it." },
+        "metric": { "type": "string", "description": "The signal that drifted (e.g. latency_ms, total_tokens)." },
+        "value": { "type": "number", "description": "The current sample value that triggered the alert." },
+        "baseline": {
+          "type": "object",
+          "properties": {
+            "mean": { "type": "number" },
+            "std": { "type": "number", "minimum": 0 },
+            "n": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "z": { "type": ["number", "null"], "description": "Standard scores from the baseline mean; null when the baseline had zero variance." },
+        "threshold": { "type": "number", "description": "Sensitivity threshold the deviation exceeded." }
+      }
     }
   },
   "allOf": [
@@ -163,6 +184,7 @@
     { "if": { "properties": { "type": { "const": "provider.call.start" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/providerCallStartData" } } } },
     { "if": { "properties": { "type": { "const": "provider.call.end" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/providerCallEndData" } } } },
     { "if": { "properties": { "type": { "const": "trace.end" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/traceEndData" } } } },
-    { "if": { "properties": { "type": { "const": "trace.error" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/traceErrorData" } } } }
+    { "if": { "properties": { "type": { "const": "trace.error" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/traceErrorData" } } } },
+    { "if": { "properties": { "type": { "const": "governance.event" } } }, "then": { "properties": { "data": { "$ref": "#/$defs/governanceEventData" } } } }
   ]
 }

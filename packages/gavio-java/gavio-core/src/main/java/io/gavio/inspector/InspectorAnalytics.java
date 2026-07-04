@@ -239,6 +239,7 @@ public final class InspectorAnalytics {
         long completion = 0;
         double costUsd = 0.0;
         Map<String, Long> pii = new LinkedHashMap<>();
+        Map<String, Long> drift = new LinkedHashMap<>();
         for (Map<String, Object> s : summaries) {
             if (s.get("latencyMs") instanceof Number latency) {
                 latencies.add(latency.longValue());
@@ -256,6 +257,11 @@ public final class InspectorAnalytics {
             if (s.get("piiEntityTypes") instanceof List<?> types) {
                 for (Object type : types) {
                     pii.merge(String.valueOf(type), 1L, Long::sum);
+                }
+            }
+            if (s.get("driftAlerts") instanceof List<?> metrics) {
+                for (Object metric : metrics) {
+                    drift.merge(String.valueOf(metric), 1L, Long::sum);
                 }
             }
             costUsd += asDouble(s.get("costUsd"));
@@ -283,6 +289,7 @@ public final class InspectorAnalytics {
         out.put("cacheHits", cacheHits);
         out.put("cacheHitRate", n == 0 ? 0.0 : round4(cacheHits / (double) n));
         out.put("piiDetections", pii);
+        out.put("driftAlerts", drift);
         return out;
     }
 

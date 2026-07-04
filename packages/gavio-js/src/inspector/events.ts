@@ -27,6 +27,7 @@ export type InspectorEventType =
   | 'interceptor.after.end'
   | 'trace.end'
   | 'trace.error'
+  | 'governance.event'
 
 /** One span event on the inspector bus. */
 export interface InspectorEvent {
@@ -221,5 +222,35 @@ export function traceErrorData(meta: TraceErrorMeta): Record<string, unknown> {
     handled: meta.handled,
   }
   if (meta.interceptorName !== undefined) data['interceptorName'] = meta.interceptorName
+  return data
+}
+
+// ── governance.event ─────────────────────────────────────────────────────────
+
+export interface DriftBaseline {
+  mean: number
+  std: number
+  n: number
+}
+
+export interface GovernanceEventMeta {
+  kind: string
+  detector?: string
+  metric?: string
+  value?: number
+  baseline?: DriftBaseline
+  z?: number | null
+  threshold?: number
+}
+
+/** Governance signal (drift detection, F-GOV-07). Metadata only — no content. */
+export function governanceEventData(meta: GovernanceEventMeta): Record<string, unknown> {
+  const data: Record<string, unknown> = { kind: meta.kind }
+  if (meta.detector !== undefined) data['detector'] = meta.detector
+  if (meta.metric !== undefined) data['metric'] = meta.metric
+  if (meta.value !== undefined) data['value'] = meta.value
+  if (meta.baseline !== undefined) data['baseline'] = meta.baseline
+  if (meta.z !== undefined) data['z'] = meta.z
+  if (meta.threshold !== undefined) data['threshold'] = meta.threshold
   return data
 }

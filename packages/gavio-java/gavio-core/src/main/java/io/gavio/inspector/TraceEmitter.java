@@ -131,6 +131,7 @@ public final class TraceEmitter {
                 || !Objects.equals(before.model(), after.model());
         Map<String, Object> diff = mutated && captureContent() ? requestDiff(before, after) : null;
         emit("interceptor.before.end", hookEnd(name, durationNs, mutated, diff, ctx));
+        emitGovernance(ctx);
     }
 
     public void interceptorAfterStart(String name) {
@@ -151,6 +152,14 @@ public final class TraceEmitter {
             diff.put("content", content);
         }
         emit("interceptor.after.end", hookEnd(name, durationNs, mutated, diff, ctx));
+        emitGovernance(ctx);
+    }
+
+    /** Emit a standalone governance.event for each queued alert (F-GOV-07). */
+    private void emitGovernance(InterceptorContext ctx) {
+        for (Map<String, Object> data : ctx.drainGovernance()) {
+            emit("governance.event", data);
+        }
     }
 
     private Map<String, Object> hookEnd(

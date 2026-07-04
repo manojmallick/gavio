@@ -78,6 +78,15 @@ public final class RingBuffer implements Consumer<InspectorEvent> {
                     summary.put("usage", data.get("usage"));
                 }
             }
+            case "governance.event" -> {
+                // Drift alerts (F-GOV-07) feed /api/stats.
+                if ("drift".equals(data.get("kind")) && data.get("metric") instanceof String metric) {
+                    @SuppressWarnings("unchecked")
+                    List<String> alerts = (List<String>)
+                            summary.computeIfAbsent("driftAlerts", k -> new ArrayList<String>());
+                    alerts.add(metric);
+                }
+            }
             default -> {
                 // Other event types only contribute to the event list.
             }

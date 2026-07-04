@@ -278,3 +278,33 @@ def trace_error_data(
     if interceptor_name:
         data["interceptorName"] = interceptor_name
     return data
+
+
+# ---- governance.event --------------------------------------------------------
+
+
+def governance_event_data(
+    *,
+    kind: str,
+    detector: str | None = None,
+    metric: str | None = None,
+    value: float | None = None,
+    baseline: dict[str, Any] | None = None,
+    z: float | None = None,
+    threshold: float | None = None,
+) -> dict[str, Any]:
+    """Governance signal (drift detection, F-GOV-07). Metadata only — no content."""
+    data: dict[str, Any] = {"kind": kind}
+    if detector is not None:
+        data["detector"] = detector
+    if metric is not None:
+        data["metric"] = metric
+    if value is not None:
+        data["value"] = value
+    if baseline is not None:
+        data["baseline"] = baseline
+    if z is not None:
+        data["z"] = z
+    if threshold is not None:
+        data["threshold"] = threshold
+    return data

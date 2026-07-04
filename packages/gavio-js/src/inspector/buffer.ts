@@ -29,6 +29,8 @@ export interface TraceSummary {
   /** Content hashes (audit-store summaries) — searchable via /api/traces?q=. */
   promptHash?: string
   responseHash?: string
+  /** Metrics that drifted on this trace (F-GOV-07), from governance.event events. */
+  driftAlerts?: string[]
 }
 
 export interface TraceRecord {
@@ -64,6 +66,12 @@ export class TraceBuffer {
     if (event.type === 'trace.end') this.applyEnd(record.summary, event.data)
     if (event.type === 'provider.call.end' && event.data['usage'] !== undefined) {
       record.summary.usage = event.data['usage'] as TraceSummary['usage']
+    }
+    if (event.type === 'governance.event' && event.data['kind'] === 'drift') {
+      const metric = event.data['metric']
+      if (typeof metric === 'string') {
+        ;(record.summary.driftAlerts ??= []).push(metric)
+      }
     }
   }
 
