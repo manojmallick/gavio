@@ -20,9 +20,12 @@ from .scanners import (
     IbanScanner,
     IpAddressScanner,
     PhoneScanner,
+    RoutingNumberScanner,
     SecretScanner,
     SsnScanner,
+    SwiftBicScanner,
     default_scanners,
+    fintech_scanners,
 )
 
 __all__ = [
@@ -41,7 +44,10 @@ __all__ = [
     "IpAddressScanner",
     "SsnScanner",
     "SecretScanner",
+    "SwiftBicScanner",
+    "RoutingNumberScanner",
     "default_scanners",
+    "fintech_scanners",
     "ModalityGuard",
     "ModalityScanner",
     "ModalityScanResult",

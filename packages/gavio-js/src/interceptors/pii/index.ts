@@ -24,5 +24,8 @@ export {
   phoneScanner,
   secretScanner,
   ssnScanner,
+  swiftBicScanner,
+  routingNumberScanner,
   defaultScanners,
+  fintechScanners,
 } from './scanners/index.js'

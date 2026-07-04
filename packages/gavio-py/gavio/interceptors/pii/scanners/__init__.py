@@ -8,8 +8,10 @@ from .email import EmailScanner
 from .iban import IbanScanner
 from .ip_address import IpAddressScanner
 from .phone import PhoneScanner
+from .routing_number import RoutingNumberScanner
 from .secret import SecretScanner
 from .ssn import SsnScanner
+from .swift_bic import SwiftBicScanner
 
 __all__ = [
     "BsnScanner",
@@ -20,6 +22,8 @@ __all__ = [
     "PhoneScanner",
     "SecretScanner",
     "SsnScanner",
+    "SwiftBicScanner",
+    "RoutingNumberScanner",
 ]
 
 
@@ -35,3 +39,13 @@ def default_scanners() -> list:
         PhoneScanner(),
         IpAddressScanner(),
     ]
+
+
+def fintech_scanners() -> list:
+    """FinTech domain policy pack — SWIFT/BIC and US ABA routing numbers.
+
+    Compose with the defaults:
+    ``PiiGuard(scanners=[*default_scanners(), *fintech_scanners()])``.
+    (IBAN is already in the default set.)
+    """
+    return [SwiftBicScanner(), RoutingNumberScanner()]

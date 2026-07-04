@@ -99,6 +99,27 @@ await gateway.complete(messages=[...], images=[png_bytes])
 face-detection backend. `on_detect="block"` raises `PiiBlockedError` on any
 detection; the default `"tag"` records detections without blocking.
 
+### Domain policy packs — FinTech
+
+Generic PII detection misses domain-specific identifiers. **Policy packs** are
+scanner sets for an industry; compose them with the default set. The **FinTech**
+pack adds financial identifiers beyond the core `IBAN` scanner:
+
+| Scanner | Entity | Validation |
+|---|---|---|
+| SWIFT/BIC | `SWIFT_BIC` | Context-gated — requires a `SWIFT`/`BIC` label (no false positives on ordinary words) |
+| Routing number | `ROUTING_NUMBER` | US ABA mod-10 checksum |
+
+```python
+from gavio.interceptors.pii import PiiGuard, default_scanners, fintech_scanners
+
+PiiGuard(scanners=[*default_scanners(), *fintech_scanners()])
+```
+
+Per-scanner `confidence` combined with `PiiGuard` sensitivity thresholds gives
+the flag-vs-redact behaviour policy packs need. (JS: `fintechScanners()`; Java:
+`DefaultScanners.fintech()`.)
+
 ---
 
 ## Secret scanner (`F-SEC-04`)
