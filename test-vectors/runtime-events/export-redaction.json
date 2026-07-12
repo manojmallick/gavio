@@ -1,0 +1,37 @@
+{
+  "description": "Runtime exporter privacy contract: metadata-only export strips content-bearing data fields while preserving trace, timing, and decision metadata.",
+  "contentKeys": ["messages", "content", "diff"],
+  "event": {
+    "schemaVersion": "1.0",
+    "eventId": "evt_test",
+    "traceId": "trace_test",
+    "type": "interceptor.before.end",
+    "tNs": 42,
+    "seq": 1,
+    "data": {
+      "name": "pii_guard",
+      "durationUs": 3,
+      "mutated": true,
+      "decision": {
+        "entityTypes": ["EMAIL"]
+      },
+      "diff": {
+        "messages": [
+          {
+            "index": 0,
+            "from": "mail jan@example.com",
+            "to": "mail <EMAIL_1>"
+          }
+        ]
+      }
+    }
+  },
+  "expectedData": {
+    "name": "pii_guard",
+    "durationUs": 3,
+    "mutated": true,
+    "decision": {
+      "entityTypes": ["EMAIL"]
+    }
+  }
+}

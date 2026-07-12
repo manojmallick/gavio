@@ -1,12 +1,12 @@
 # Gavio — Java SDK
 
 > AI request runtime and inspector for production systems. PII protection,
-> audit trails, reliability, cost intelligence, policy packs, and provider
+> audit trails, runtime events, reliability, cost intelligence, policy packs, and provider
 > adapters as composable interceptors.
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
-budgets, audit logging, tool runtime, runtime context — before and after the provider call. Same API in
+budgets, audit logging, tool runtime, runtime events, runtime context — before and after the provider call. Same API in
 [Python, Java, and JavaScript](https://github.com/manojmallick/gavio), enforced
 by shared cross-SDK test vectors.
 
@@ -21,22 +21,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 
@@ -150,6 +150,21 @@ outside dev mode — no content, no replay). The `gavio inspect --store` CLI
 for JSONL audit files is Python-only; the Java inspector serves the same
 dashboard endpoints from its embedded server.
 
+## Runtime export
+
+```java
+import io.gavio.exporters.JsonlRuntimeExporter;
+
+Gateway gw = Gateway.builder()
+    .devMode(true)
+    .exporter(new JsonlRuntimeExporter(Path.of("runtime-events.jsonl")))
+    .build();
+```
+
+Runtime export (v1.1.0) writes metadata-safe JSONL events for integrations. The
+exporter strips `messages`, `content`, and `diff` by default, even when the
+local Inspector is in full capture mode.
+
 ## What's inside
 
 Every feature is an interceptor you compose explicitly — no hidden magic.
@@ -173,6 +188,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   tracing via `agentId`/`parentTraceId` (`F-OBS-03`), prompt lineage
   (`F-OBS-04`), `MetricsInterceptor` Prometheus metrics (`F-OBS-08`),
   `StdoutSink`.
+- **Runtime export** — metadata-safe JSONL runtime events for gateway,
+  observability, and eval integrations (`F-EXP-01`).
 - **Quality** — `GuardrailsInterceptor` with `JsonSchemaValidator` and regex
   validators (`F-QUA-01/02`), composite `RiskScorer` (`F-QUA-06`).
 - **Inspector** — dev-time visualizer (`F-DX-09/10`), agent call graphs and
@@ -197,7 +214,7 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `1.0.0`.
+All artifacts share the `io.github.manojmallick` group id and version `1.1.0`.
 
 | Artifact | Contains |
 |---|---|

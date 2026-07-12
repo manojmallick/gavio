@@ -11,6 +11,7 @@ pull only what you need.
 - [Gateway API](#gateway-api)
 - [Interceptors](#interceptors)
 - [Providers](#providers)
+- [Runtime export](#runtime-export)
 - [Testing](#testing)
 - [Notes](#notes)
 
@@ -23,19 +24,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:1.0.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:1.0.0")
+implementation("io.github.manojmallick:gavio-core:1.1.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:1.1.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -100,7 +101,7 @@ r.audit();              // AuditRecord
 ```
 
 **Builder options:** `.provider()`, `.model()`, `.adapter(custom)`, `.use(...)`,
-`.devMode(true)`, `.dryRun(true)`.
+`.devMode(true)`, `.dryRun(true)`, `.exporter(new JsonlRuntimeExporter(...))`.
 
 ---
 
@@ -256,6 +257,25 @@ Gateway gw = Gateway.builder().devMode(true).inspect(true).build();
 The embedded server exposes the same JSON API in every SDK (`/api/traces`,
 `/api/dag`, `/api/stats`, …); the store-backed `gavio inspect --store` CLI is
 Python-only.
+
+## Runtime export
+
+Runtime export (v1.1.0, `F-EXP-01`) writes the Inspector event envelope as
+metadata-safe JSONL. Adding an exporter enables metadata-mode events without
+starting the Inspector HTTP server.
+
+```java
+import io.gavio.exporters.JsonlRuntimeExporter;
+
+Gateway gw = Gateway.builder()
+    .devMode(true)
+    .exporter(new JsonlRuntimeExporter(Path.of("runtime-events.jsonl")))
+    .build();
+```
+
+The JSONL exporter strips `messages`, `content`, and `diff` by default, even if
+the local Inspector runs in `FULL` mode. See [runtime events](../runtime-events.md)
+and [integrations](../integrations.md).
 
 ## Embeddings
 

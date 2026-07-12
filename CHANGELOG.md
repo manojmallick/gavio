@@ -15,6 +15,42 @@ Nothing yet.
 
 ---
 
+## [1.1.0] — 2026-07-12
+
+### Summary
+**Positioning + Integration Foundation.** v1.1.0 establishes the runtime
+event/export contract that later integrations can build on. It reuses the
+Inspector event envelope as the public `GavioRuntimeEvent`, adds metadata-safe
+JSONL runtime exporters across Python, JavaScript, and Java, documents how
+Gavio fits beside gateway/observability/eval tools, and adds runnable runtime
+export examples. Feature ID `F-EXP-01`. Feature PR #63.
+
+Tests: targeted runtime exporter tests across Python, JavaScript, and Java;
+stable release gate green.
+
+### Added
+- **Runtime event/export contract (`F-EXP-01`)** — added
+  `spec/GavioRuntimeEvent.schema.json`, shared runtime-event privacy vectors,
+  and metadata-safe export helpers that strip `messages`, `content`, and
+  `diff` before export by default.
+- **JSONL runtime exporters (all SDKs)** — Python exposes
+  `JsonlRuntimeExporter`, JavaScript exposes `jsonlRuntimeExporter`, and Java
+  exposes `JsonlRuntimeExporter`. Adding an exporter enables metadata-mode
+  runtime events without starting the Inspector HTTP server.
+- **Integration documentation** — added guides for using Gavio beside LiteLLM,
+  Portkey, Helicone, Langfuse, OpenLIT, and promptfoo while keeping Gavio's
+  role focused on embedded runtime governance.
+- **Runtime export examples** — added `08-runtime-export` examples for Python,
+  JavaScript, and Java.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, docs-site nav, package
+  guides, examples, and release metadata to the `1.1.0` release line.
+- **Java Inspector version** — synced the Inspector SDK version constant with
+  the release version.
+
+---
+
 ## [1.0.0] — 2026-07-12
 
 ### Summary
@@ -786,7 +822,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/manojmallick/gavio/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/manojmallick/gavio/compare/v0.14.0...v1.0.0
 [0.14.0]: https://github.com/manojmallick/gavio/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/manojmallick/gavio/compare/v0.12.0...v0.13.0

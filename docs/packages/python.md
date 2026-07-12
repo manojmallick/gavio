@@ -9,6 +9,7 @@ The Python SDK is the **reference implementation**. Source:
 - [Gateway API](#gateway-api)
 - [Interceptors](#interceptors)
 - [Providers](#providers)
+- [Runtime export](#runtime-export)
 - [Testing](#testing)
 - [Version support](#version-support)
 
@@ -59,7 +60,8 @@ resp.audit              # AuditRecord
 ```
 
 **Builder options:** `.provider()`, `.model()`, `.adapter(custom)`, `.use(...)`,
-`.dev_mode(True)`, `.dry_run(True)`, `.pricing(PricingProvider)`.
+`.dev_mode(True)`, `.dry_run(True)`, `.pricing(PricingProvider)`,
+`.exporter(JsonlRuntimeExporter(...))`.
 
 - **dev mode** → `MockProvider` + stdout audit auto-wired; no network/key.
 - **dry-run** → interceptors log but never modify or block.
@@ -227,6 +229,27 @@ await gw.complete(
 
 Those labels can be used with `/api/stats?group_by=tenant` and
 `/api/cost-report?group_by=feature`.
+
+## Runtime export
+
+Runtime export (v1.1.0, `F-EXP-01`) writes the Inspector event envelope as
+metadata-safe JSONL. Adding an exporter enables metadata-mode events without
+starting the Inspector HTTP server.
+
+```python
+from gavio import Gateway, JsonlRuntimeExporter
+
+gw = (
+    Gateway.builder()
+    .dev_mode(True)
+    .exporter(JsonlRuntimeExporter("runtime-events.jsonl"))
+    .build()
+)
+```
+
+The JSONL exporter strips `messages`, `content`, and `diff` by default, even if
+the local Inspector runs in `full` mode. See [runtime events](../runtime-events.md)
+and [integrations](../integrations.md).
 
 ## Embeddings
 

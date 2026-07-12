@@ -1,7 +1,7 @@
 {
   "name": "gavio",
-  "version": "1.0.0",
-  "description": "AI request runtime and inspector for production systems — PII guarding, audit, reliability, cost intelligence, policy packs, and tool runtime checks.",
+  "version": "1.1.0",
+  "description": "AI request runtime and inspector for production systems — PII guarding, audit, runtime events, reliability, cost intelligence, policy packs, and tool runtime checks.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -99,6 +99,11 @@
       "types": "./dist/esm/inspector/index.d.ts",
       "import": "./dist/esm/inspector/index.js",
       "require": "./dist/cjs/inspector/index.js"
+    },
+    "./exporters": {
+      "types": "./dist/esm/exporters/index.d.ts",
+      "import": "./dist/esm/exporters/index.js",
+      "require": "./dist/cjs/exporters/index.js"
     },
     "./shim/openai": {
       "types": "./dist/esm/shim/openai.d.ts",
