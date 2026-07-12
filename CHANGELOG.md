@@ -15,6 +15,55 @@ Nothing yet.
 
 ---
 
+## [1.7.0] — 2026-07-12
+
+### Summary
+**Self-hosted Control Plane.** v1.7.0 adds an optional local/private control
+plane for runtime projects, environments, hashed runtime keys, policy rollout,
+budget config, event/audit search, and config snapshots. Python, JavaScript,
+and Java can now fetch runtime config from that control plane, cache the last
+successful config, and fail open or closed during outages. Feature PR #77
+(#76).
+
+Tests: Python 288 · JavaScript 293 · Java modules green · control-plane app
+tests green · docs build green · stable release gate green · full GitHub CI
+matrix green · Inspector benchmarks green (Python 4.62%/3.87%, JavaScript
+2.41%/1.34%, Java 2.06%/1.61% metadata/full p50 overhead).
+
+### Added
+- **Self-hosted control-plane app** — added `apps/control-plane`, a
+  dependency-light Node service with the `gavio-control-plane` command, a local
+  admin UI, hashed runtime keys, role-gated admin mutations, metadata-first
+  event/audit storage, and state persisted under `.gavio-control-plane/`.
+- **Control-plane REST API** — added `/api/runtime/config`, `/api/projects`,
+  `/api/environments`, `/api/keys`, `/api/teams`, `/api/policies`,
+  `/api/policy-rollouts`, `/api/budgets`, `/api/events`,
+  `/api/audit-records`, and `/api/config-snapshots`.
+- **Runtime config clients (all SDKs)** — Python exposes
+  `ControlPlaneClient`, `ControlPlaneError`, and `load_control_plane_config`;
+  JavaScript exposes `ControlPlaneClient`, `ControlPlaneError`, and
+  `loadControlPlaneConfig`; Java exposes `ControlPlaneClient`,
+  `ControlPlaneOptions`, and `ControlPlaneException`.
+- **Gateway config integration** — Python builders now accept
+  `.control_plane(...)`, JavaScript `Gateway.fromConfig(...)` accepts
+  `control_plane`, and Java builders accept `.controlPlane(...)` for loading
+  runtime config before traffic starts.
+- **Control-plane contracts and vectors** — added
+  `spec/ControlPlaneRuntimeConfig.schema.json`,
+  `spec/ControlPlaneEvent.schema.json`, and
+  `test-vectors/control-plane/runtime-config.json`.
+- **Control-plane docs and examples** — added `docs/control-plane.md`, the
+  docs-site control-plane guide, and `13-control-plane` examples for Python,
+  JavaScript, and Java.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, and package/runtime versions to
+  the `1.7.0` release line while keeping historical feature "since" labels
+  intact.
+
+---
+
 ## [1.6.0] — 2026-07-12
 
 ### Summary
@@ -1034,7 +1083,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/manojmallick/gavio/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/manojmallick/gavio/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/manojmallick/gavio/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/manojmallick/gavio/compare/v1.3.0...v1.4.0

@@ -43,11 +43,12 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Dev mode** — the whole stack runs in-process with a mock provider. No API key, no network.
 - **Audit by default** — every call logged as metadata + SHA-256 content hashes (never raw text).
 - **Runtime event export** — metadata-safe JSONL events for integrations with gateways, observability, and eval workflows.
+- **Self-hosted Control Plane** — optional local/private server for runtime config, policy rollout, budget config, audit search, and cached SDK fallback.
 - **OTel bridge** — runtime events map to OpenTelemetry-style spans for production APM pipelines.
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
 
-> **Status:** v1.6.0 is the current stable package line. Gavio has an API
+> **Status:** v1.7.0 is the current stable package line. Gavio has an API
 > stability guarantee, a 24-month 1.x LTS policy, and release automation that
 > checks lockstep SDK versions before publishing. See
 > [STABILITY.md](./STABILITY.md) and the [CHANGELOG](./CHANGELOG.md).
@@ -72,6 +73,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `1.4.0` | Prompt Registry + Evals | Versioned prompt templates, metadata-only lineage, deterministic eval suites and privacy-safe reports |
 | `1.5.0` | Tool Runtime v2 | Registry-backed permissions, approval gates, replay records, MCP metadata capture |
 | `1.6.0` | Policy Pack Catalog | Signed domain policy-pack manifests, catalog loaders, overrides, suppression rules, and domain examples |
+| `1.7.0` | Self-hosted Control Plane | Local/private runtime config, policy rollout, budget config, audit search, snapshots, and SDK cache fallback |
 
 ---
 
@@ -131,6 +133,7 @@ pipeline in reverse order:
 - **Domain-aware Policy Packs** — signed catalog manifests for core, finance, healthcare, legal, HR, support, code security, and regional identifiers, plus custom regex-rule packs with overrides and false-positive suppression.
 - **Tool Runtime** — validate tool inputs/outputs, freshness, conflicts, permissions, approvals, replay records, and MCP provenance before tool results re-enter model context.
 - **Runtime context** — interceptors can now read first-class `tenant`, `feature`, `cost`, `retry`, `tools`, and `policy` fields derived from request metadata.
+- **Self-hosted Control Plane** — runtime projects, environments, hashed keys, policy rollout, budget config, audit/event search, and config snapshots for local/private deployments.
 
 ---
 
@@ -219,9 +222,9 @@ The Java snippet uses `gavio-core`, `gavio-interceptor-pii`, and
 
 | Language | Command | Docs |
 |---|---|---|
-| **Python** 3.10+ | `pip install gavio==1.6.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
-| **JavaScript** (Node 18+) | `npm install gavio@1.6.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:1.6.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Python** 3.10+ | `pip install gavio==1.7.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
+| **JavaScript** (Node 18+) | `npm install gavio@1.7.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:1.7.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -243,6 +246,7 @@ compared side by side.
 | 08 | Runtime Export — metadata-safe runtime events and JSONL export | [py](./examples/python/08-runtime-export/) | [js](./examples/javascript/08-runtime-export/) | [java](./examples/java/08-runtime-export/) | no |
 | 09 | Prompt Registry + Evals — versioned templates and metadata-safe reports | [py](./examples/python/09-prompt-registry-evals/) | [js](./examples/javascript/09-prompt-registry-evals/) | [java](./examples/java/09-prompt-registry-evals/) | no |
 | 12 | Domain Policy Pack Catalog — signed packs, overrides, suppression | [py](./examples/python/12-domain-policy-packs/) | [js](./examples/javascript/12-domain-policy-packs/) | [java](./examples/java/12-domain-policy-packs/) | no |
+| 13 | Self-hosted Control Plane — runtime config, policy source, cached fallback | [py](./examples/python/13-control-plane/) | [js](./examples/javascript/13-control-plane/) | [java](./examples/java/13-control-plane/) | no |
 
 Example 02 uses a real provider if `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is
 set; otherwise it falls back to the mock provider. All other examples run with
@@ -263,7 +267,7 @@ optional extras include `gavio[redis]`, `gavio[presidio]`, `gavio[otel]`,
 `gavio[elasticsearch]`, `gavio[pgvector]`, and `gavio[ocr]`.
 
 ```bash
-pip install gavio==1.6.0
+pip install gavio==1.7.0
 ```
 
 → **[Full Python guide](./docs/packages/python.md)** · [package README](./packages/gavio-py/README.md)
@@ -275,7 +279,7 @@ with per-subpath `exports` for tree-shaking. Native `fetch`, `node:crypto`.
 Node 18+, Deno, Bun.
 
 ```bash
-npm install gavio@1.6.0
+npm install gavio@1.7.0
 ```
 
 → **[Full JavaScript guide](./docs/packages/javascript.md)** · [package README](./packages/gavio-js/README.md)
@@ -295,17 +299,17 @@ Quickstart stack:
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.6.0</version>
+  <version>1.7.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.6.0</version>
+  <version>1.7.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>1.6.0</version>
+  <version>1.7.0</version>
 </dependency>
 ```
 
@@ -390,6 +394,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | AI Request Runtime / Inspector positioning | `F-DOC-V4` | 0.13.0 |
 | Tool Runtime — schema validation, freshness, conflict detection, provenance | `F-TOOL-01/02/03/04` | 0.14.0 |
 | Tool Runtime v2 — registry-backed permissions, approval gates, replay, MCP metadata | `F-TOOL-05/06/07/08` | 1.5.0 |
+| Self-hosted Control Plane — runtime config, policy rollout, budget config, audit search, snapshots | — | 1.7.0 |
 | Stable release gate — lockstep version checks, release hygiene, API stability and LTS policy | — | 1.0.0 |
 | Runtime event/export contract — metadata-safe JSONL exporters and integration recipes | `F-EXP-01` | 1.1.0 |
 | Cost Governance v2 CLI — `gavio cost report` over JSONL records and budget policies | `F-COST-05` | 1.2.0 |
@@ -427,6 +432,7 @@ the [interceptors guide](./docs/interceptors.md) for every built-in interceptor.
 | [docs/inspector.md](./docs/inspector.md) | The Inspector: dev visualizer, agent DAGs, replay, production dashboard |
 | [docs/runtime-events.md](./docs/runtime-events.md) | Runtime event/export contract and JSONL exporter |
 | [docs/prompt-registry-evals.md](./docs/prompt-registry-evals.md) | Prompt Registry templates and metadata-safe eval reports |
+| [docs/control-plane.md](./docs/control-plane.md) | Self-hosted Control Plane runtime config, policy rollout, budget config, and audit search |
 | [docs/integrations.md](./docs/integrations.md) | How Gavio fits beside gateway, observability, and eval tools |
 | [docs/otel-mapping.md](./docs/otel-mapping.md) | InspectorEvent → OpenTelemetry spans · [Grafana dashboard](./docs/grafana/gavio-dashboard.json) |
 | [docs/packages/](./docs/packages/) | Deep guide per SDK |

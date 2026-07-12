@@ -29,6 +29,7 @@ Start here, then dive into the language you use.
 - [Prompt template schema](../spec/PromptTemplate.schema.json) — versioned chat template contract
 - [Eval report schema](../spec/EvalReport.schema.json) — metadata-safe eval report contract
 - [Control-plane runtime config schema](../spec/ControlPlaneRuntimeConfig.schema.json) — SDK config fetched from the self-hosted control plane
+- [Control-plane event schema](../spec/ControlPlaneEvent.schema.json) — metadata-only runtime events accepted by the self-hosted control plane
 - [OTel mapping](./otel-mapping.md) — InspectorEvent → OpenTelemetry spans · [Grafana dashboard](./grafana/gavio-dashboard.json)
 - [CHANGELOG](../CHANGELOG.md) — release history + feature IDs
 - [RELEASING](../RELEASING.md) — how releases are cut
