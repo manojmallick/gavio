@@ -22,7 +22,7 @@ from .exceptions import (
     ServerError,
     ToolRuntimeError,
 )
-from .exporters import GavioRuntimeExporter, JsonlRuntimeExporter
+from .exporters import GavioRuntimeExporter, JsonlRuntimeExporter, OtelSpanExporter
 from .gateway import Gateway, GatewayBuilder
 from .request import GavioRequest
 from .response import GavioResponse
@@ -58,6 +58,7 @@ __all__ = [
     "GuardrailOutcome",
     "GavioRuntimeExporter",
     "JsonlRuntimeExporter",
+    "OtelSpanExporter",
     # exceptions
     "GavioError",
     "ConfigurationError",

@@ -26,7 +26,7 @@ features:
     linkText: Interceptors →
   - icon: 🔁
     title: Request runtime, not a black box
-    details: Retry with backoff, fallback, timeouts, circuit breaker, and load balancing wrap every call. The Inspector shows live request traces, agent graphs, replay, RED stats, and a read-only production dashboard. v0.11.0 adds Cost Intelligence reports; v0.12.0 adds Policy Pack manifests; v0.13.0 adds richer runtime context and OpenRouter; v0.14.0 adds Tool Runtime checks; v1.0.0 adds the stable release gate and LTS policy; v1.1.0 adds metadata-safe runtime event export and integration recipes; v1.2.0 adds Cost Governance v2 budget policies and reports.
+    details: Retry with backoff, fallback, timeouts, circuit breaker, and load balancing wrap every call. The Inspector shows live request traces, agent graphs, replay, RED stats, and a read-only production dashboard. v0.11.0 adds Cost Intelligence reports; v0.12.0 adds Policy Pack manifests; v0.13.0 adds richer runtime context and OpenRouter; v0.14.0 adds Tool Runtime checks; v1.0.0 adds the stable release gate and LTS policy; v1.1.0 adds metadata-safe runtime event export and integration recipes; v1.2.0 adds Cost Governance v2 budget policies and reports; v1.3.0 adds OpenTelemetry-style span export.
     link: /guide/interceptors
     linkText: Production core →
   - icon: 🌐

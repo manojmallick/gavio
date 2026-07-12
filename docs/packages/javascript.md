@@ -73,7 +73,7 @@ import { auditInterceptor } from 'gavio/interceptors/audit'
 import { stdoutSink }       from 'gavio/interceptors/audit/sinks'
 import { retryInterceptor, timeoutPolicy, fallbackChain } from 'gavio/interceptors/reliability'
 import { toolRuntime }      from 'gavio/interceptors/tool-runtime'
-import { jsonlRuntimeExporter } from 'gavio/exporters'
+import { jsonlRuntimeExporter, otelSpanExporter } from 'gavio/exporters'
 import { anthropicAdapter, openaiAdapter, openrouterAdapter } from 'gavio/providers'
 import { GavioTestKit, mockProvider }      from 'gavio/testing'
 ```
@@ -257,6 +257,20 @@ const gw = new Gateway({
 The JSONL exporter strips `messages`, `content`, and `diff` by default, even if
 the local Inspector runs in `full` mode. See [runtime events](../runtime-events.md)
 and [integrations](../integrations.md).
+
+Observability + OTel (v1.3.0, `F-OBS-07`) maps the same runtime events into
+OpenTelemetry-style span JSON without adding mandatory OTel dependencies:
+
+```typescript
+import { Gateway, otelSpanExporter } from 'gavio'
+
+const gw = new Gateway({
+  exporters: [otelSpanExporter({
+    path: 'otel-spans.jsonl',
+    serviceName: 'checkout-api',
+  })],
+})
+```
 
 ## Embeddings
 

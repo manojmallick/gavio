@@ -1,8 +1,8 @@
 """Runtime exporter contracts.
 
 The public 1.1.0 exporter surface intentionally reuses InspectorEvent as the
-runtime event envelope. That keeps Inspector, future OTel export, and JSONL
-export on one event path instead of creating parallel observability models.
+runtime event envelope. That keeps Inspector, OTel export, and JSONL export on
+one event path instead of creating parallel observability models.
 """
 
 from __future__ import annotations

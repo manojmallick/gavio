@@ -29,8 +29,18 @@ export type { InterceptorContextInit } from './context.js'
 export { uuid7, newTraceId } from './ids.js'
 export { PricingProvider, estimateTokens } from './pricing.js'
 
-export { jsonlRuntimeExporter, metadataOnlyEvent } from './exporters/index.js'
-export type { GavioRuntimeEvent, GavioRuntimeExporter } from './exporters/index.js'
+export {
+  jsonlRuntimeExporter,
+  metadataOnlyEvent,
+  otelSpanExporter,
+  otelSpansFromEvents,
+} from './exporters/index.js'
+export type {
+  GavioRuntimeEvent,
+  GavioRuntimeExporter,
+  OtelSpan,
+  OtelSpanExporterOptions,
+} from './exporters/index.js'
 
 export {
   Provider,

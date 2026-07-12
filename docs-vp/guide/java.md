@@ -103,7 +103,8 @@ r.audit();              // AuditRecord
 ```
 
 **Builder options:** `.provider()`, `.model()`, `.adapter(custom)`, `.use(...)`,
-`.devMode(true)`, `.dryRun(true)`.
+`.devMode(true)`, `.dryRun(true)`, `.exporter(new JsonlRuntimeExporter(...))`,
+`.exporter(new OtelSpanExporter(...))`.
 
 ---
 

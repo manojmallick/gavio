@@ -154,16 +154,19 @@ dashboard endpoints from its embedded server.
 
 ```java
 import io.gavio.exporters.JsonlRuntimeExporter;
+import io.gavio.exporters.OtelSpanExporter;
 
 Gateway gw = Gateway.builder()
     .devMode(true)
     .exporter(new JsonlRuntimeExporter(Path.of("runtime-events.jsonl")))
+    .exporter(new OtelSpanExporter(Path.of("otel-spans.jsonl"), "checkout-api"))
     .build();
 ```
 
 Runtime export (v1.1.0) writes metadata-safe JSONL events for integrations. The
 exporter strips `messages`, `content`, and `diff` by default, even when the
-local Inspector is in full capture mode.
+local Inspector is in full capture mode. Observability + OTel (v1.3.0) maps
+the same stream into OpenTelemetry-style span JSON (`F-OBS-07`).
 
 ## What's inside
 
@@ -189,8 +192,9 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   tracing via `agentId`/`parentTraceId` (`F-OBS-03`), prompt lineage
   (`F-OBS-04`), `MetricsInterceptor` Prometheus metrics (`F-OBS-08`),
   `StdoutSink`.
-- **Runtime export** — metadata-safe JSONL runtime events for gateway,
-  observability, and eval integrations (`F-EXP-01`).
+- **Runtime export** — metadata-safe JSONL runtime events (`F-EXP-01`) and
+  OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
+  eval integrations.
 - **Quality** — `GuardrailsInterceptor` with `JsonSchemaValidator` and regex
   validators (`F-QUA-01/02`), composite `RiskScorer` (`F-QUA-06`).
 - **Inspector** — dev-time visualizer (`F-DX-09/10`), agent call graphs and

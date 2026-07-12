@@ -101,7 +101,8 @@ r.audit();              // AuditRecord
 ```
 
 **Builder options:** `.provider()`, `.model()`, `.adapter(custom)`, `.use(...)`,
-`.devMode(true)`, `.dryRun(true)`, `.exporter(new JsonlRuntimeExporter(...))`.
+`.devMode(true)`, `.dryRun(true)`, `.exporter(new JsonlRuntimeExporter(...))`,
+`.exporter(new OtelSpanExporter(...))`.
 
 ---
 
@@ -291,6 +292,17 @@ Gateway gw = Gateway.builder()
 The JSONL exporter strips `messages`, `content`, and `diff` by default, even if
 the local Inspector runs in `FULL` mode. See [runtime events](../runtime-events.md)
 and [integrations](../integrations.md).
+
+Observability + OTel (v1.3.0, `F-OBS-07`) maps the same runtime events into
+OpenTelemetry-style span JSON without adding mandatory OTel dependencies:
+
+```java
+import io.gavio.exporters.OtelSpanExporter;
+
+Gateway gw = Gateway.builder()
+    .exporter(new OtelSpanExporter(Path.of("otel-spans.jsonl"), "checkout-api"))
+    .build();
+```
 
 ## Embeddings
 

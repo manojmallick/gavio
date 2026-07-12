@@ -56,7 +56,7 @@ r.interceptorsFired  // string[]
 r.audit              // AuditRecord
 ```
 
-**Constructor options:** `{ provider, model, devMode, dryRun }`.
+**Constructor options:** `{ provider, model, devMode, dryRun, exporters }`.
 **Chain methods:** `.use(interceptor)`, `.withAdapter(adapter)`.
 
 - **`devMode: true`** → mock provider + stdout audit auto-wired.
@@ -76,6 +76,7 @@ import { auditInterceptor } from 'gavio/interceptors/audit'
 import { stdoutSink }       from 'gavio/interceptors/audit/sinks'
 import { retryInterceptor, timeoutPolicy, fallbackChain } from 'gavio/interceptors/reliability'
 import { toolRuntime }      from 'gavio/interceptors/tool-runtime'
+import { jsonlRuntimeExporter, otelSpanExporter } from 'gavio/exporters'
 import { anthropicAdapter, openaiAdapter } from 'gavio/providers'
 import { GavioTestKit, mockProvider }      from 'gavio/testing'
 ```
