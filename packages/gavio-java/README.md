@@ -6,7 +6,7 @@
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
-budgets, audit logging, runtime context — before and after the provider call. Same API in
+budgets, audit logging, tool runtime, runtime context — before and after the provider call. Same API in
 [Python, Java, and JavaScript](https://github.com/manojmallick/gavio), enforced
 by shared cross-SDK test vectors.
 
@@ -21,22 +21,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.13.0</version>
+  <version>0.14.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>0.13.0</version>
+  <version>0.14.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>0.13.0</version>
+  <version>0.14.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>0.13.0</version>
+  <version>0.14.0</version>
 </dependency>
 ```
 
@@ -73,6 +73,21 @@ System.out.println("pii types: " + ((AuditRecord) resp.audit()).piiEntityTypes()
 
 All gateway calls return `CompletableFuture<GavioResponse>`; use `.join()`,
 `.get()`, or compose with `thenApply(...)`.
+
+## Tool Runtime
+
+```java
+import io.gavio.interceptors.toolruntime.ToolRuntimeInterceptor;
+
+Gateway gw = Gateway.builder()
+    .devMode(true)
+    .use(ToolRuntimeInterceptor.builder().build())
+    .build();
+```
+
+Tool Runtime (v0.14.0) reads `metadata("tools", ...)`, validates declared
+input/output schemas, checks result freshness, detects configured conflicts,
+and records provenance in `ctx.tools().get("runtime")`.
 
 ## Real providers
 
@@ -182,11 +197,11 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `0.13.0`.
+All artifacts share the `io.github.manojmallick` group id and version `0.14.0`.
 
 | Artifact | Contains |
 |---|---|
-| `gavio-core` | Gateway, request/response model, interceptor chain, pricing, inspector, OpenAI shim, zero-dep JSON |
+| `gavio-core` | Gateway, request/response model, interceptor chain, Tool Runtime, pricing, inspector, OpenAI shim, zero-dep JSON |
 | `gavio-interceptor-pii` | PiiGuard, PiiScanner SPI, built-in scanners, SecretScanner, PromptInjectionGuard |
 | `gavio-interceptor-audit` | AuditInterceptor, AuditSink, AuditRecord, hash chain, StdoutSink |
 | `gavio-interceptor-reliability` | RetryInterceptor, FallbackChain, CircuitBreaker, LoadBalancer, TimeoutPolicy |

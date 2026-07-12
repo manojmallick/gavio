@@ -121,6 +121,13 @@ public class GavioException extends RuntimeException {
         }
     }
 
+    /** Tool Runtime blocked invalid or stale tool context. */
+    public static class ToolRuntimeException extends GavioException {
+        public ToolRuntimeException(String message) {
+            super(message);
+        }
+    }
+
     /** A prompt-injection attempt was detected and the guard is in block mode. */
     public static class PromptInjectionException extends GavioException {
         public PromptInjectionException(String message) {

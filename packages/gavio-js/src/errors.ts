@@ -64,6 +64,9 @@ export class ModelNotAllowedError extends GavioError {
 /** Output failed a guardrail validator with onFailure='error'. */
 export class GuardrailViolationError extends GavioError {}
 
+/** Tool Runtime blocked invalid or stale tool context. */
+export class ToolRuntimeError extends GavioError {}
+
 /** A prompt-injection attempt was detected and the guard is in block mode. */
 export class PromptInjectionError extends GavioError {
   readonly patterns: string[]

@@ -71,6 +71,7 @@ import { emailScanner }     from 'gavio/interceptors/pii/scanners'
 import { auditInterceptor } from 'gavio/interceptors/audit'
 import { stdoutSink }       from 'gavio/interceptors/audit/sinks'
 import { retryInterceptor, timeoutPolicy, fallbackChain } from 'gavio/interceptors/reliability'
+import { toolRuntime }      from 'gavio/interceptors/tool-runtime'
 import { anthropicAdapter, openaiAdapter, openrouterAdapter } from 'gavio/providers'
 import { GavioTestKit, mockProvider }      from 'gavio/testing'
 ```
@@ -85,6 +86,7 @@ Interceptors are **factory functions** returning an interceptor object:
 import { piiGuard } from 'gavio/interceptors/pii'
 import { auditInterceptor } from 'gavio/interceptors/audit'
 import { retryInterceptor, timeoutPolicy } from 'gavio/interceptors/reliability'
+import { toolRuntime } from 'gavio/interceptors/tool-runtime'
 
 const gw = new Gateway({ provider: 'anthropic', model: 'claude-sonnet-4-6' })
   .use(auditInterceptor({ sink: 'stdout' }))              // outermost
@@ -96,6 +98,31 @@ const gw = new Gateway({ provider: 'anthropic', model: 'claude-sonnet-4-6' })
 `piiGuard` options: `scanners`, `sensitivity`, `mode`
 (`'redact' | 'mask' | 'tag' | 'block'`), `restoreOnResponse`, `logEntityTypes`,
 `dryRun`. See [interceptors.md](../interceptors.md).
+
+### Tool Runtime (v0.14.0)
+
+`toolRuntime()` validates tool metadata from `metadata.tools` before tool
+outputs re-enter model context. It supports declared input/output schemas,
+freshness/TTL checks, conflict detection across configured result keys,
+confidence scoring, and provenance records under `ctx.tools.runtime`.
+
+```typescript
+const gw = new Gateway({ devMode: true })
+  .use(toolRuntime({ onFailure: 'error' }))
+
+await gw.complete({
+  messages: [{ role: 'user', content: 'summarize inventory' }],
+  metadata: { tools: { calls: [{
+    id: 'inventory-1',
+    name: 'inventory',
+    source: 'warehouse',
+    created_at: '2026-07-12T12:00:00Z',
+    ttl_seconds: 60,
+    result: { sku: 'SKU-1', quantity: 4 },
+    output_schema: { required: ['sku', 'quantity'] },
+  }] } },
+})
+```
 
 ### Policy packs (v0.12.0)
 

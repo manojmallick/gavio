@@ -80,6 +80,7 @@ from gavio.interceptors.pii.scanners import (
 )
 from gavio.interceptors.audit import AuditInterceptor, StdoutSink
 from gavio.interceptors.reliability import RetryInterceptor, FallbackChain, TimeoutPolicy
+from gavio.interceptors.tool_runtime import ToolRuntimeInterceptor
 ```
 
 Typical production stack (order matters — audit outermost, PII before it):
@@ -95,6 +96,35 @@ gw = (Gateway.builder()
 ```
 
 See [interceptors.md](./interceptors.md) for options and custom scanners.
+
+### Tool Runtime (v0.14.0)
+
+`ToolRuntimeInterceptor` validates tool metadata from `metadata["tools"]` before
+tool outputs re-enter model context. It supports declared input/output schemas,
+freshness/TTL checks, conflict detection across configured result keys,
+confidence scoring, and provenance records under `ctx.tools["runtime"]`.
+
+```python
+from gavio.interceptors.tool_runtime import ToolRuntimeInterceptor
+
+gw = (Gateway.builder()
+      .dev_mode(True)
+      .use(ToolRuntimeInterceptor(on_failure="error"))
+      .build())
+
+await gw.complete(
+    messages=[{"role": "user", "content": "summarize inventory"}],
+    metadata={"tools": {"calls": [{
+        "id": "inventory-1",
+        "name": "inventory",
+        "source": "warehouse",
+        "created_at": "2026-07-12T12:00:00Z",
+        "ttl_seconds": 60,
+        "result": {"sku": "SKU-1", "quantity": 4},
+        "output_schema": {"required": ["sku", "quantity"]},
+    }]}},
+)
+```
 
 ### Policy packs (v0.12.0)
 

@@ -57,4 +57,5 @@ export {
   PiiBlockedError,
   BudgetExceededError,
   GuardrailViolationError,
+  ToolRuntimeError,
 } from './errors.js'

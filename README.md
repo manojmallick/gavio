@@ -25,7 +25,7 @@ interceptors. **Same API in Python, Java, and JavaScript.**
 
 Gavio sits **between your application and any LLM provider**. Every request
 passes through a pre/post **interceptor chain** — PII redaction, retries, cost
-tracking, audit logging, policy packs, runtime context — before and after the
+tracking, audit logging, policy packs, tool runtime, runtime context — before and after the
 provider call:
 
 ```
@@ -45,7 +45,7 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
 
-> **Status:** v0.13.0 ships OpenRouter support, richer runtime context, and AI Request Runtime positioning (`F-ADP-02/F-RT-01/F-DOC-V4`).
+> **Status:** v0.14.0 ships Tool Runtime schema, freshness, conflict, and provenance checks (`F-TOOL-01/02/03/04`).
 > Semver stability holds since v0.2.0; pre-1.0, some APIs may still change.
 > See the [CHANGELOG](./CHANGELOG.md).
 
@@ -102,6 +102,7 @@ pipeline in reverse order:
 - **AI Request Inspector** — opt-in live traces, per-interceptor waterfall, replay, agent DAGs, RED stats, and production audit-store views.
 - **Cost Intelligence** — tenant/feature/user attribution, `/api/cost-report`, retry overhead, cache savings, and scoped budget fallback.
 - **Domain-aware Policy Packs** — core and FinTech manifests plus custom regex-rule packs that keep detector metadata, actions, audit labels, and redaction strategy together.
+- **Tool Runtime** — validate tool inputs/outputs, freshness, conflicts, confidence, and provenance before tool results re-enter model context.
 - **Runtime context** — interceptors can now read first-class `tenant`, `feature`, `cost`, `retry`, `tools`, and `policy` fields derived from request metadata.
 
 ---
@@ -177,7 +178,7 @@ showing `EMAIL` was detected and redacted before the (mock) provider ever saw it
 |---|---|---|
 | **Python** 3.10+ | `pip install gavio` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
 | **JavaScript** (Node 18+) | `npm install gavio` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:0.13.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:0.14.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -224,7 +225,7 @@ family (`gavio-interceptor-pii`, `-audit`, `-reliability`, `-cache`,
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.13.0</version>
+  <version>0.14.0</version>
 </dependency>
 ```
 
@@ -303,6 +304,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | OpenAI drop-in shim, config loader | `F-DX-04/05` | 0.2.0 |
 | Runtime context fields — `tenant`, `feature`, `cost`, `retry`, `tools`, `policy` | `F-RT-01` | 0.13.0 |
 | AI Request Runtime / Inspector positioning | `F-DOC-V4` | 0.13.0 |
+| Tool Runtime — schema validation, freshness, conflict detection, provenance | `F-TOOL-01/02/03/04` | 0.14.0 |
 | **Providers** — OpenAI · Anthropic · Gemini · Azure OpenAI · Ollama · Mock (all stdlib HTTP, no vendor SDKs) | — | 0.1–0.2 |
 | **OpenRouter provider adapter** — direct OpenAI-compatible integration with attribution headers | `F-ADP-02` | 0.13.0 |
 

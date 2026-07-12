@@ -70,6 +70,10 @@ class GuardrailViolationError(GavioError):
     """Output failed a guardrail validator with on_failure='error'."""
 
 
+class ToolRuntimeError(GavioError):
+    """Tool Runtime blocked invalid or stale tool context."""
+
+
 class PromptInjectionError(GavioError):
     """A prompt-injection attempt was detected and the guard is in block mode."""
 

@@ -6,7 +6,7 @@ description: Inspect, govern, and route AI requests with PII protection, audit t
 hero:
   name: Gavio
   text: AI request runtime and inspector
-  tagline: "PII protection · audit trails · reliability · Cost Intelligence · Policy Packs — as composable interceptors. Same API in Python, Java, and JavaScript."
+  tagline: "PII protection · audit trails · reliability · Cost Intelligence · Policy Packs · Tool Runtime — as composable interceptors. Same API in Python, Java, and JavaScript."
   actions:
     - theme: brand
       text: Get Started →
@@ -26,7 +26,7 @@ features:
     linkText: Interceptors →
   - icon: 🔁
     title: Request runtime, not a black box
-    details: Retry with backoff, fallback, timeouts, circuit breaker, and load balancing wrap every call. The Inspector shows live request traces, agent graphs, replay, RED stats, and a read-only production dashboard. v0.11.0 adds Cost Intelligence reports; v0.12.0 adds Policy Pack manifests; v0.13.0 adds richer runtime context and OpenRouter.
+    details: Retry with backoff, fallback, timeouts, circuit breaker, and load balancing wrap every call. The Inspector shows live request traces, agent graphs, replay, RED stats, and a read-only production dashboard. v0.11.0 adds Cost Intelligence reports; v0.12.0 adds Policy Pack manifests; v0.13.0 adds richer runtime context and OpenRouter; v0.14.0 adds Tool Runtime checks.
     link: /guide/interceptors
     linkText: Production core →
   - icon: 🌐
@@ -46,7 +46,7 @@ features:
 ```bash
 pip install gavio            # Python 3.10+
 npm install gavio            # Node 18+
-# Maven: io.github.manojmallick:gavio-core:0.13.0  (Java 17+)
+# Maven: io.github.manojmallick:gavio-core:0.14.0  (Java 17+)
 ```
 
 ## 30-second taste (Python, dev mode — no key)

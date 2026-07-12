@@ -20,6 +20,7 @@ from .exceptions import (
     ProviderUnavailableError,
     RateLimitError,
     ServerError,
+    ToolRuntimeError,
 )
 from .gateway import Gateway, GatewayBuilder
 from .request import GavioRequest
@@ -61,6 +62,7 @@ __all__ = [
     "ProviderUnavailableError",
     "RateLimitError",
     "ServerError",
+    "ToolRuntimeError",
     "PiiBlockedError",
     "BudgetExceededError",
     "GuardrailViolationError",

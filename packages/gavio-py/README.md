@@ -6,7 +6,7 @@
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
-budgets, audit logging, runtime context — before and after the provider call. Same API in
+budgets, audit logging, tool runtime, runtime context — before and after the provider call. Same API in
 [Python, Java, and JavaScript](https://github.com/manojmallick/gavio), enforced
 by shared cross-SDK test vectors.
 
@@ -82,6 +82,18 @@ restore, audit) run on the complete response before any chunk reaches you:
 async for chunk in gw.stream(messages=[{"role": "user", "content": "Hi"}]):
     print(chunk, end="")
 ```
+
+## Tool Runtime
+
+```python
+from gavio.interceptors.tool_runtime import ToolRuntimeInterceptor
+
+gw = Gateway.builder().dev_mode(True).use(ToolRuntimeInterceptor()).build()
+```
+
+Tool Runtime (v0.14.0) reads `metadata["tools"]["calls"]`, validates declared
+input/output schemas, checks result freshness, detects configured conflicts,
+and records provenance in `ctx.tools["runtime"]`.
 
 Embeddings run through the same pipeline — inputs are PII-scanned before the
 provider's embedding API is called:
