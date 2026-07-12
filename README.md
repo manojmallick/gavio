@@ -71,6 +71,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `1.3.0` | Observability + OTel | OpenTelemetry-style span exporter, shared OTel vectors, JSONL-to-OTel conversion |
 | `1.4.0` | Prompt Registry + Evals | Versioned prompt templates, metadata-only lineage, deterministic eval suites and privacy-safe reports |
 | `1.5.0` | Tool Runtime v2 | Registry-backed permissions, approval gates, replay records, MCP metadata capture |
+| `1.6.0` | Policy Pack Catalog | Signed domain policy-pack manifests, catalog loaders, overrides, suppression rules, and domain examples |
 
 ---
 
@@ -127,7 +128,7 @@ pipeline in reverse order:
 - **Prompt Registry + Evals** — versioned chat templates, prompt lineage, deterministic pass/fail eval reports, and output hashes instead of raw model output.
 - **Cost Intelligence** — tenant/feature/user attribution, `/api/cost-report`, retry overhead, cache savings, and scoped budget fallback.
 - **Cost Governance v2** — budget policy/decision contracts, projected-spend controls, fallback/downgrade/dry-run actions, budget-aware reports, and `gavio cost report`.
-- **Domain-aware Policy Packs** — core and FinTech manifests plus custom regex-rule packs that keep detector metadata, actions, audit labels, and redaction strategy together.
+- **Domain-aware Policy Packs** — signed catalog manifests for core, finance, healthcare, legal, HR, support, code security, and regional identifiers, plus custom regex-rule packs with overrides and false-positive suppression.
 - **Tool Runtime** — validate tool inputs/outputs, freshness, conflicts, permissions, approvals, replay records, and MCP provenance before tool results re-enter model context.
 - **Runtime context** — interceptors can now read first-class `tenant`, `feature`, `cost`, `retry`, `tools`, and `policy` fields derived from request metadata.
 
@@ -241,6 +242,7 @@ compared side by side.
 | 07 | Tool Runtime — schema, freshness, conflicts, permissions, approvals, replay | [py](./examples/python/07-tool-runtime/) | [js](./examples/javascript/07-tool-runtime/) | [java](./examples/java/07-tool-runtime/) | no |
 | 08 | Runtime Export — metadata-safe runtime events and JSONL export | [py](./examples/python/08-runtime-export/) | [js](./examples/javascript/08-runtime-export/) | [java](./examples/java/08-runtime-export/) | no |
 | 09 | Prompt Registry + Evals — versioned templates and metadata-safe reports | [py](./examples/python/09-prompt-registry-evals/) | [js](./examples/javascript/09-prompt-registry-evals/) | [java](./examples/java/09-prompt-registry-evals/) | no |
+| 12 | Domain Policy Pack Catalog — signed packs, overrides, suppression | [py](./examples/python/12-domain-policy-packs/) | [js](./examples/javascript/12-domain-policy-packs/) | [java](./examples/java/12-domain-policy-packs/) | no |
 
 Example 02 uses a real provider if `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is
 set; otherwise it falls back to the mock provider. All other examples run with
@@ -325,6 +327,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Prompt-injection defense — pattern corpus + optional semantic similarity | `F-SEC-05` | 0.2.0 |
 | Embedding call guard — `gw.embed(texts)` runs the same PII pipeline before embedding APIs | `F-SEC-10` | 0.9.0 |
 | Policy Pack architecture — core/FinTech manifests and custom regex-rule packs | `F-PACK-01/02/05` | 0.12.0 |
+| Policy Pack Catalog — signed domain packs, load-by-name/path APIs, overrides, false-positive suppression | `F-PACK-01/02/05` | 1.6.0 |
 
 ### 🔁 Reliability
 

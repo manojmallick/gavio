@@ -1,0 +1,69 @@
+{
+  "$schema": "../../spec/PolicyPackManifest.schema.json",
+  "schemaVersion": "1.0",
+  "id": "gavio.finance",
+  "name": "Finance",
+  "version": "1.0.0",
+  "domain": "finance",
+  "description": "Financial account, card, bank, and transaction identifiers.",
+  "compatibility": { "gavio": ">=1.6.0 <2.0.0" },
+  "defaultAction": "redact",
+  "redactionStrategy": "tokenize",
+  "auditLabels": ["PII", "FINANCIAL_IDENTIFIER"],
+  "detectors": [
+    {
+      "name": "credit_card",
+      "entityType": "CREDIT_CARD",
+      "type": "scanner",
+      "action": "redact",
+      "label": "FINANCIAL_IDENTIFIER",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "iban",
+      "entityType": "IBAN",
+      "type": "scanner",
+      "action": "redact",
+      "label": "FINANCIAL_IDENTIFIER",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "swift_bic",
+      "entityType": "SWIFT_BIC",
+      "type": "scanner",
+      "action": "redact",
+      "label": "FINANCIAL_IDENTIFIER",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "routing_number",
+      "entityType": "ROUTING_NUMBER",
+      "type": "scanner",
+      "action": "redact",
+      "label": "FINANCIAL_IDENTIFIER",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "account_number",
+      "entityType": "ACCOUNT_NUMBER",
+      "type": "regex",
+      "action": "flag",
+      "label": "FINANCIAL_IDENTIFIER",
+      "confidence": 0.88,
+      "redactionStrategy": "hash",
+      "pattern": "\\bACCT-[0-9]{8,12}\\b",
+      "replacementPrefix": "ACCOUNT_NUMBER",
+      "suppressionPatterns": ["\\bACCT-00000000\\b"]
+    }
+  ],
+  "signature": {
+    "algorithm": "sha256",
+    "value": "6f685749032eeca519b7d7d419bcf0c75da65d16bb8fb6a5b89e640ced293385",
+    "keyId": "gavio-catalog-v1",
+    "signedAt": "2026-07-12T00:00:00Z"
+  }
+}

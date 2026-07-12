@@ -1,0 +1,42 @@
+{
+  "$schema": "../../../spec/PolicyPackManifest.schema.json",
+  "schemaVersion": "1.0",
+  "id": "gavio.regional.eu",
+  "name": "Regional EU",
+  "version": "1.0.0",
+  "domain": "regional/eu",
+  "description": "European regional identifiers including BSN and VAT-style tax IDs.",
+  "compatibility": { "gavio": ">=1.6.0 <2.0.0" },
+  "defaultAction": "redact",
+  "redactionStrategy": "tokenize",
+  "auditLabels": ["PII", "GOVERNMENT_ID"],
+  "detectors": [
+    {
+      "name": "bsn",
+      "entityType": "BSN",
+      "type": "scanner",
+      "action": "redact",
+      "label": "GOVERNMENT_ID",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "eu_vat",
+      "entityType": "EU_VAT",
+      "type": "regex",
+      "action": "flag",
+      "label": "GOVERNMENT_ID",
+      "confidence": 0.82,
+      "redactionStrategy": "hash",
+      "pattern": "\\b[A-Z]{2}[0-9A-Z]{8,12}\\b",
+      "replacementPrefix": "EU_VAT",
+      "suppressionPatterns": ["\\bEU00000000\\b"]
+    }
+  ],
+  "signature": {
+    "algorithm": "sha256",
+    "value": "30f12d53365040917acd6d2cf190bd12dbee64f2e90065c71a4f060a9aabe56e",
+    "keyId": "gavio-catalog-v1",
+    "signedAt": "2026-07-12T00:00:00Z"
+  }
+}

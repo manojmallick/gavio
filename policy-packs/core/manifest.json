@@ -1,0 +1,93 @@
+{
+  "$schema": "../../spec/PolicyPackManifest.schema.json",
+  "schemaVersion": "1.0",
+  "id": "gavio.core-pii",
+  "name": "Core PII",
+  "version": "1.0.0",
+  "domain": "core",
+  "description": "Deterministic baseline PII scanners for application traffic.",
+  "compatibility": { "gavio": ">=1.6.0 <2.0.0" },
+  "defaultAction": "redact",
+  "redactionStrategy": "tokenize",
+  "auditLabels": ["PII"],
+  "detectors": [
+    {
+      "name": "secret",
+      "entityType": "SECRET",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PII",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "email",
+      "entityType": "EMAIL",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PII",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "iban",
+      "entityType": "IBAN",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PII",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "bsn",
+      "entityType": "BSN",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PII",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "credit_card",
+      "entityType": "CREDIT_CARD",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PII",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "ssn",
+      "entityType": "SSN",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PII",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "phone",
+      "entityType": "PHONE",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PII",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "ip_address",
+      "entityType": "IP_ADDRESS",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PII",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    }
+  ],
+  "signature": {
+    "algorithm": "sha256",
+    "value": "c28596abafa76e0b080373a3ca6657256f42304dfd5e69b54be07cb0f2d2b4f2",
+    "keyId": "gavio-catalog-v1",
+    "signedAt": "2026-07-12T00:00:00Z"
+  }
+}

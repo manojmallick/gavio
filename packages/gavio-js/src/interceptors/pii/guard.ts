@@ -16,6 +16,8 @@ import type { Interceptor } from '../base.js'
 import { ScanContext } from './context.js'
 import { matchLength } from './match.js'
 import type { PiiMatch } from './match.js'
+import type { PolicyPack } from './policy-pack.js'
+import { policyPackScanners } from './policy-pack.js'
 import { scannerTier } from './scanner.js'
 import type { PiiScanner } from './scanner.js'
 import { defaultScanners } from './scanners/index.js'
@@ -198,4 +200,13 @@ export function resolveOverlaps(matches: PiiMatch[]): PiiMatch[] {
 /** Factory: build a PiiGuard interceptor. */
 export function piiGuard(options: PiiGuardOptions = {}): Interceptor {
   return new PiiGuard(options)
+}
+
+/** Factory: build a PiiGuard interceptor from one or more Policy Packs. */
+export function piiGuardFromPolicyPack(
+  packs: PolicyPack | PolicyPack[],
+  options: Omit<PiiGuardOptions, 'scanners'> = {},
+): Interceptor {
+  const packList = Array.isArray(packs) ? packs : [packs]
+  return new PiiGuard({ ...options, scanners: policyPackScanners(...packList) })
 }

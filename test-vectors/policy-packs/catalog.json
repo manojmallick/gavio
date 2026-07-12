@@ -1,0 +1,85 @@
+{
+  "catalogNames": [
+    "code-security",
+    "core",
+    "finance",
+    "healthcare",
+    "hr",
+    "legal",
+    "regional/eu",
+    "regional/india",
+    "regional/us",
+    "support"
+  ],
+  "catalogPacks": [
+    {
+      "name": "finance",
+      "id": "gavio.finance",
+      "domain": "finance",
+      "auditLabels": ["PII", "FINANCIAL_IDENTIFIER"],
+      "detectorEntityTypes": [
+        "CREDIT_CARD",
+        "IBAN",
+        "SWIFT_BIC",
+        "ROUTING_NUMBER",
+        "ACCOUNT_NUMBER"
+      ]
+    },
+    {
+      "name": "healthcare",
+      "id": "gavio.healthcare",
+      "domain": "healthcare",
+      "auditLabels": ["PII", "PHI"],
+      "detectorEntityTypes": [
+        "EMAIL",
+        "PHONE",
+        "MEDICAL_RECORD_NUMBER",
+        "INSURANCE_MEMBER_ID"
+      ]
+    },
+    {
+      "name": "regional/india",
+      "id": "gavio.regional.india",
+      "domain": "regional/india",
+      "auditLabels": ["PII", "GOVERNMENT_ID"],
+      "detectorEntityTypes": ["INDIA_PAN", "AADHAAR"]
+    }
+  ],
+  "signature": {
+    "algorithm": "sha256",
+    "badValue": "0000000000000000000000000000000000000000000000000000000000000000"
+  },
+  "overrideCase": {
+    "pack": "finance",
+    "detector": "account_number",
+    "overrides": {
+      "detectors": {
+        "account_number": {
+          "action": "block",
+          "severity": "critical",
+          "redactionStrategy": "redact"
+        }
+      }
+    },
+    "expectedAction": "block",
+    "expectedSeverity": "critical",
+    "expectedRedactionStrategy": "redact"
+  },
+  "suppressionCase": {
+    "pack": "hr",
+    "text": "Template EMP-000000 is allowed, but EMP-123456 is real.",
+    "expectedTypes": ["EMPLOYEE_ID"]
+  },
+  "domainCases": [
+    {
+      "pack": "healthcare",
+      "text": "Patient MRN-123456 has insurance member MEM-AB12CD34.",
+      "expectedTypes": ["INSURANCE_MEMBER_ID", "MEDICAL_RECORD_NUMBER"]
+    },
+    {
+      "pack": "regional/india",
+      "text": "PAN ABCDE1234F and Aadhaar 1234 5678 9012 are present.",
+      "expectedTypes": ["AADHAAR", "INDIA_PAN"]
+    }
+  ]
+}

@@ -203,8 +203,9 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   CreditCard (Luhn), Phone, IP, SSN scanners, redact/mask/tag/block + restore,
   and custom scanners via the `PiiScanner` SPI (`F-SEC-01`); `SecretScanner`
   (`F-SEC-04`); `PromptInjectionGuard` (`F-SEC-05`); embedding call guard
-  (`F-SEC-10`); Policy Pack manifests for core, FinTech, and custom regex-rule
-  packs (`F-PACK-01/02/05`).
+  (`F-SEC-10`); Policy Pack manifests for core, FinTech, custom regex-rule
+  packs, and the signed domain catalog with load/override/signature APIs
+  (`F-PACK-01/02/05`).
 - **Reliability** — `RetryInterceptor` (`F-REL-01`), `FallbackChain`
   (`F-REL-02`), `CircuitBreaker` (`F-REL-03`), `LoadBalancer` (`F-REL-04`),
   buffered streaming (`F-REL-06`), `TimeoutPolicy` (`F-REL-07`).

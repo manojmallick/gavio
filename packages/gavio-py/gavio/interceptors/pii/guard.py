@@ -8,6 +8,7 @@ or blocked. In REDACT mode the original values are restored in the response.
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING, Any
 
 from ...context import InterceptorContext
 from ...exceptions import PiiBlockedError
@@ -19,6 +20,9 @@ from .context import ScanContext
 from .match import PiiMatch
 from .scanner import PiiScanner
 from .scanners import default_scanners
+
+if TYPE_CHECKING:
+    from .policy_pack import PolicyPack
 
 logger = logging.getLogger("gavio.pii")
 
@@ -62,6 +66,12 @@ class PiiGuard(Interceptor):
     @property
     def dry_run_safe(self) -> bool:
         return True
+
+    @classmethod
+    def from_policy_pack(cls, *packs: PolicyPack, **kwargs: Any) -> PiiGuard:
+        from .policy_pack import policy_pack_scanners
+
+        return cls(scanners=policy_pack_scanners(*packs), **kwargs)
 
     async def before(
         self, request: GavioRequest, ctx: InterceptorContext

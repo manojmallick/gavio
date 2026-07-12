@@ -1,0 +1,44 @@
+{
+  "$schema": "../../spec/PolicyPackManifest.schema.json",
+  "schemaVersion": "1.0",
+  "id": "gavio.legal",
+  "name": "Legal",
+  "version": "1.0.0",
+  "domain": "legal",
+  "description": "Legal matter, case, and client identifiers for legal workflows.",
+  "compatibility": { "gavio": ">=1.6.0 <2.0.0" },
+  "defaultAction": "flag",
+  "redactionStrategy": "hash",
+  "auditLabels": ["CONFIDENTIAL", "LEGAL_IDENTIFIER"],
+  "detectors": [
+    {
+      "name": "matter_id",
+      "entityType": "MATTER_ID",
+      "type": "regex",
+      "action": "flag",
+      "label": "LEGAL_IDENTIFIER",
+      "confidence": 0.9,
+      "redactionStrategy": "hash",
+      "pattern": "\\bMAT-[A-Z]{2}-[0-9]{5}\\b",
+      "replacementPrefix": "MATTER_ID"
+    },
+    {
+      "name": "case_number",
+      "entityType": "CASE_NUMBER",
+      "type": "regex",
+      "action": "flag",
+      "label": "LEGAL_IDENTIFIER",
+      "confidence": 0.84,
+      "redactionStrategy": "hash",
+      "pattern": "\\bCASE-[0-9]{4}-[A-Z0-9]{6}\\b",
+      "replacementPrefix": "CASE_NUMBER",
+      "suppressionPatterns": ["\\bCASE-0000-EXAMPLE\\b"]
+    }
+  ],
+  "signature": {
+    "algorithm": "sha256",
+    "value": "40454175730ac47227c3ec4b5c7b65b0620f9bd6b232fa9f8816c26d3a0ef6da",
+    "keyId": "gavio-catalog-v1",
+    "signedAt": "2026-07-12T00:00:00Z"
+  }
+}

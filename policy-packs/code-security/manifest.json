@@ -1,0 +1,53 @@
+{
+  "$schema": "../../spec/PolicyPackManifest.schema.json",
+  "schemaVersion": "1.0",
+  "id": "gavio.code-security",
+  "name": "Code Security",
+  "version": "1.0.0",
+  "domain": "code-security",
+  "description": "Secrets and credentials commonly found in source code or logs.",
+  "compatibility": { "gavio": ">=1.6.0 <2.0.0" },
+  "defaultAction": "block",
+  "redactionStrategy": "redact",
+  "auditLabels": ["SECRET", "CREDENTIAL"],
+  "detectors": [
+    {
+      "name": "secret",
+      "entityType": "SECRET",
+      "type": "scanner",
+      "action": "block",
+      "label": "SECRET",
+      "confidence": 1.0,
+      "redactionStrategy": "redact"
+    },
+    {
+      "name": "github_token",
+      "entityType": "GITHUB_TOKEN",
+      "type": "regex",
+      "action": "block",
+      "label": "CREDENTIAL",
+      "confidence": 0.95,
+      "redactionStrategy": "redact",
+      "pattern": "\\bgh[pousr]_[A-Za-z0-9_]{20,}\\b",
+      "replacementPrefix": "GITHUB_TOKEN",
+      "suppressionPatterns": ["\\bghp_example[A-Za-z0-9_]*\\b"]
+    },
+    {
+      "name": "private_key_header",
+      "entityType": "PRIVATE_KEY",
+      "type": "regex",
+      "action": "block",
+      "label": "CREDENTIAL",
+      "confidence": 0.94,
+      "redactionStrategy": "redact",
+      "pattern": "-----BEGIN (RSA |EC |OPENSSH |)PRIVATE KEY-----",
+      "replacementPrefix": "PRIVATE_KEY"
+    }
+  ],
+  "signature": {
+    "algorithm": "sha256",
+    "value": "2563a3369d204892788d644bc5d41de7b948a45726c18dd3f62cab62a8c49651",
+    "keyId": "gavio-catalog-v1",
+    "signedAt": "2026-07-12T00:00:00Z"
+  }
+}

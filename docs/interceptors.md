@@ -43,6 +43,10 @@ custom regex-rule packs.
 **v0.14.0** — [Tool Runtime](#tool-runtime-f-tool-01020304): schema,
 freshness, conflict, confidence, and provenance checks for tool calls/results.
 
+**v1.6.0** — [Policy Pack Catalog](#domain-policy-packs-f-pack-010205):
+signed domain manifests, load-by-name/path APIs, overrides, suppression rules,
+and cross-SDK domain examples.
+
 ---
 
 ## PII Guard (`F-SEC-01`)
@@ -173,6 +177,48 @@ uses `PolicyPacks.core()`, `PolicyPacks.fintech()`, `PolicyPacks.custom()` and
 Per-rule `confidence` still combines with `PiiGuard` sensitivity thresholds.
 The action and redaction strategy are manifest metadata in this slice; runtime
 blocking/redaction behavior is still controlled by `PiiGuard` mode.
+
+v1.6.0 adds a signed catalog under `policy-packs/` for reusable domain packs:
+`core`, `finance`, `healthcare`, `legal`, `hr`, `support`, `code-security`,
+`regional/eu`, `regional/us`, and `regional/india`. Each manifest is covered by
+`spec/PolicyPackManifest.schema.json`, includes SHA-256 signature metadata, and
+can declare `suppressionPatterns` for auditable false-positive suppression.
+
+```python
+from gavio.interceptors.pii import PiiGuard, PolicyPack, list_policy_packs
+
+print(list_policy_packs())
+
+healthcare = PolicyPack.load("healthcare")
+assert healthcare.verify_signature()
+
+hr = PolicyPack.load("hr").with_overrides({
+    "detectors": {
+        "employee_id": {
+            "action": "flag",
+            "severity": "critical",
+            "redactionStrategy": "hash",
+        }
+    }
+})
+
+PiiGuard.from_policy_pack(healthcare, hr)
+```
+
+JavaScript exposes `listPolicyPacks()`, `loadPolicyPack()`,
+`loadPolicyPackPath()`, `pack.verifySignature()`, `pack.withOverrides(...)`, and
+`piiGuardFromPolicyPack(...)`. Java exposes `PolicyPacks.listCatalog()`,
+`PolicyPacks.load(...)`, `PolicyPacks.loadPath(...)`,
+`pack.verifySignature()`, `pack.withOverrides(...)`, and
+`PiiGuard.fromPolicyPack(...)`.
+
+The Python CLI can inspect the same catalog:
+
+```bash
+gavio policy list
+gavio policy validate finance
+gavio policy sign policy-packs/finance
+```
 
 ---
 

@@ -1,0 +1,8 @@
+{
+  "name": "gavio-example-domain-policy-packs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node domain-policy-packs.mjs" },
+  "dependencies": { "gavio": "^1.6.0" }
+}

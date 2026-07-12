@@ -1,0 +1,51 @@
+{
+  "$schema": "../../../spec/PolicyPackManifest.schema.json",
+  "schemaVersion": "1.0",
+  "id": "gavio.regional.us",
+  "name": "Regional US",
+  "version": "1.0.0",
+  "domain": "regional/us",
+  "description": "United States government and financial identifiers.",
+  "compatibility": { "gavio": ">=1.6.0 <2.0.0" },
+  "defaultAction": "redact",
+  "redactionStrategy": "tokenize",
+  "auditLabels": ["PII", "GOVERNMENT_ID"],
+  "detectors": [
+    {
+      "name": "ssn",
+      "entityType": "SSN",
+      "type": "scanner",
+      "action": "redact",
+      "label": "GOVERNMENT_ID",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "routing_number",
+      "entityType": "ROUTING_NUMBER",
+      "type": "scanner",
+      "action": "redact",
+      "label": "FINANCIAL_IDENTIFIER",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "ein",
+      "entityType": "EIN",
+      "type": "regex",
+      "action": "flag",
+      "label": "GOVERNMENT_ID",
+      "confidence": 0.82,
+      "redactionStrategy": "hash",
+      "pattern": "\\b[0-9]{2}-[0-9]{7}\\b",
+      "replacementPrefix": "EIN",
+      "suppressionPatterns": ["\\b00-0000000\\b"]
+    }
+  ],
+  "signature": {
+    "algorithm": "sha256",
+    "value": "7ee55291e81ae8e34783bcb408f6149e4268ed2149fcb7312de612741efdde29",
+    "keyId": "gavio-catalog-v1",
+    "signedAt": "2026-07-12T00:00:00Z"
+  }
+}
