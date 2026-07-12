@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0",
+  "bundleId": "trust-prod-support-2026-07-12",
+  "generatedAt": "2026-07-12T12:00:00Z",
+  "sdk": {
+    "name": "gavio-python",
+    "version": "1.7.0"
+  },
+  "release": {
+    "version": "1.7.0",
+    "tag": "v1.7.0",
+    "commit": "b1ff1be"
+  },
+  "runtime": {
+    "environment": "production",
+    "policySource": "project:prod-support",
+    "controlPlaneEnabled": true,
+    "eventExportMode": "metadata_only"
+  },
+  "privacy": {
+    "contentMode": "metadata_only",
+    "containsRawContent": false,
+    "redactedFields": [
+      "messages",
+      "content",
+      "diff"
+    ]
+  },
+  "evidence": {
+    "auditChain": {
+      "recordCount": 2,
+      "verified": true,
+      "headHash": "sha256:930084c76d08de26ce192a85a88f6543f5df6c6d7d6ddfbe98646151b0379428",
+      "tailHash": "sha256:326cd90b101106c9e62005a94e6269838a88fc7f146ce3b7baa1254cdff9e14f"
+    },
+    "runtimeEvents": {
+      "eventCount": 4,
+      "contentFree": true,
+      "eventTypes": [
+        "provider.call.end",
+        "provider.call.start",
+        "trace.end",
+        "trace.start"
+      ]
+    },
+    "controls": [
+      {
+        "type": "policy_pack",
+        "id": "support",
+        "status": "pass",
+        "source": "test-vectors/policy-packs/catalog.json",
+        "sha256": "sha256:6873e5ba8fb65b5c25b687ed1ee537d7b13ef82d620d788737a2b3b36a6630ac",
+        "metadata": {
+          "pack": "support"
+        }
+      },
+      {
+        "type": "benchmark",
+        "id": "inspector-overhead",
+        "status": "pass",
+        "source": "docs/gavio-1x-gap-closure-roadmap.md",
+        "sha256": "sha256:0764a23e00d34751cd0e6a6e348f01046bceec879fd988da7fd4be306f9eb416"
+      }
+    ]
+  },
+  "documents": [
+    {
+      "name": "Threat model",
+      "path": "docs/trust-package.md#threat-model",
+      "sha256": "sha256:b51c91ff9ff68571996e8c831887d337669fec8d20838c81c6a12d8b8752252f"
+    }
+  ],
+  "bundleHash": "sha256:fd96bb89871c84dee7f44ac8081c95d9f283297cc550122d5d005eec95af92ed"
+}

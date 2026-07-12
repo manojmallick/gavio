@@ -22,6 +22,7 @@ serialise to shapes valid against these schemas.
 | [`PolicyPackSignature.schema.json`](./PolicyPackSignature.schema.json) | Deterministic Policy Pack manifest signature metadata |
 | [`ControlPlaneRuntimeConfig.schema.json`](./ControlPlaneRuntimeConfig.schema.json) | Runtime config fetched by SDKs from the optional self-hosted control plane |
 | [`ControlPlaneEvent.schema.json`](./ControlPlaneEvent.schema.json) | Metadata-only audit/event records searchable by trace, tenant, feature, provider, model, risk, and time |
+| [`ProductionTrustBundle.schema.json`](./ProductionTrustBundle.schema.json) | Metadata-only production release evidence bundle with audit-chain, runtime-event, control, benchmark, and document pointers |
 | [`BudgetPolicy.schema.json`](./BudgetPolicy.schema.json) | Cost Governance v2 scoped budget policy |
 | [`BudgetDecision.schema.json`](./BudgetDecision.schema.json) | Cost Governance v2 allow/warn/block/fallback decision |
 | [`CostReport.schema.json`](./CostReport.schema.json) | Cost Governance v2 spend, overhead, savings, and budget report |

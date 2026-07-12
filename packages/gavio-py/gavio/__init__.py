@@ -28,6 +28,12 @@ from .gateway import Gateway, GatewayBuilder
 from .prompts import EvalSuite, PromptRegistry, PromptTemplate, RenderedPrompt
 from .request import GavioRequest
 from .response import GavioResponse
+from .trust import (
+    TrustBundleVerification,
+    build_production_trust_bundle,
+    trust_bundle_hash,
+    verify_production_trust_bundle,
+)
 from .types import (
     CacheType,
     GuardrailOutcome,
@@ -68,6 +74,10 @@ __all__ = [
     "RenderedPrompt",
     "PromptRegistry",
     "EvalSuite",
+    "TrustBundleVerification",
+    "build_production_trust_bundle",
+    "trust_bundle_hash",
+    "verify_production_trust_bundle",
     # exceptions
     "GavioError",
     "ConfigurationError",

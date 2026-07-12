@@ -74,6 +74,19 @@ export type {
 } from './exporters/index.js'
 
 export {
+  TRUST_SCHEMA_VERSION,
+  buildProductionTrustBundle,
+  trustBundleHash,
+  verifyProductionTrustBundle,
+} from './trust.js'
+export type {
+  ProductionTrustBundle,
+  ProductionTrustBundleOptions,
+  TrustBundleVerification,
+  TrustJsonValue,
+} from './trust.js'
+
+export {
   Provider,
   CacheType,
   PiiMode,

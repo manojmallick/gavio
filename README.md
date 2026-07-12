@@ -44,6 +44,7 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Audit by default** — every call logged as metadata + SHA-256 content hashes (never raw text).
 - **Runtime event export** — metadata-safe JSONL events for integrations with gateways, observability, and eval workflows.
 - **Self-hosted Control Plane** — optional local/private server for runtime config, policy rollout, budget config, audit search, and cached SDK fallback.
+- **Production Trust Package** — metadata-only release evidence bundles that verify audit-chain, runtime-event, policy, benchmark, and document evidence.
 - **OTel bridge** — runtime events map to OpenTelemetry-style spans for production APM pipelines.
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
@@ -74,6 +75,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `1.5.0` | Tool Runtime v2 | Registry-backed permissions, approval gates, replay records, MCP metadata capture |
 | `1.6.0` | Policy Pack Catalog | Signed domain policy-pack manifests, catalog loaders, overrides, suppression rules, and domain examples |
 | `1.7.0` | Self-hosted Control Plane | Local/private runtime config, policy rollout, budget config, audit search, snapshots, and SDK cache fallback |
+| `1.8.0` | Production Trust Package | Metadata-only release evidence bundles, deterministic verification, threat model, benchmark and reference-architecture docs |
 
 ---
 
@@ -134,6 +136,7 @@ pipeline in reverse order:
 - **Tool Runtime** — validate tool inputs/outputs, freshness, conflicts, permissions, approvals, replay records, and MCP provenance before tool results re-enter model context.
 - **Runtime context** — interceptors can now read first-class `tenant`, `feature`, `cost`, `retry`, `tools`, and `policy` fields derived from request metadata.
 - **Self-hosted Control Plane** — runtime projects, environments, hashed keys, policy rollout, budget config, audit/event search, and config snapshots for local/private deployments.
+- **Production Trust Package** — build and verify metadata-only evidence bundles for release reviews, threat models, benchmarks, and production architecture signoff.
 
 ---
 

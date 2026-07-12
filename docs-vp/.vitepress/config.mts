@@ -87,6 +87,7 @@ export default defineConfig({
           { text: 'Runtime Events', link: '/guide/runtime-events' },
           { text: 'Prompt Registry + Evals', link: '/guide/prompt-registry-evals' },
           { text: 'Control Plane', link: '/guide/control-plane' },
+          { text: 'Trust Package', link: '/guide/trust-package' },
           { text: 'Integrations', link: '/guide/integrations' },
           { text: 'Stability', link: '/guide/stability' },
         ],
