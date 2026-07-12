@@ -29,16 +29,9 @@ __all__ = [
 
 def default_scanners() -> list:
     """The default scanner set wired into PiiGuard when none is supplied."""
-    return [
-        SecretScanner(),
-        EmailScanner(),
-        IbanScanner(),
-        BsnScanner(),
-        CreditCardScanner(),
-        SsnScanner(),
-        PhoneScanner(),
-        IpAddressScanner(),
-    ]
+    from ..policy_pack import core_policy_pack
+
+    return core_policy_pack().scanner_list()
 
 
 def fintech_scanners() -> list:
@@ -48,4 +41,6 @@ def fintech_scanners() -> list:
     ``PiiGuard(scanners=[*default_scanners(), *fintech_scanners()])``.
     (IBAN is already in the default set.)
     """
-    return [SwiftBicScanner(), RoutingNumberScanner()]
+    from ..policy_pack import fintech_policy_pack
+
+    return fintech_policy_pack().scanner_list()

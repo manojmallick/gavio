@@ -143,6 +143,39 @@ GavioRequest request = GavioRequest.builder()
 Those labels can be used with `/api/stats?group_by=tenant` and
 `/api/cost-report?group_by=feature`.
 
+### Policy packs (v0.12.0)
+
+Policy packs expose scanner composition plus manifest metadata. Existing
+scanner factories still work, but the built-in core and FinTech packs are now
+first-class:
+
+```java
+import io.gavio.interceptors.pii.PiiGuard;
+import io.gavio.interceptors.pii.policy.PolicyAction;
+import io.gavio.interceptors.pii.policy.PolicyPacks;
+import io.gavio.interceptors.pii.policy.RedactionStrategy;
+import io.gavio.interceptors.pii.policy.RegexPolicyRule;
+import java.util.List;
+
+var fintech = PolicyPacks.fintech();
+System.out.println(fintech.manifest().get("detectors"));
+
+var custom = PolicyPacks.custom(
+    "acme.internal",
+    "Acme Internal IDs",
+    "1.0.0",
+    "custom",
+    List.of(new RegexPolicyRule("employee_id", "EMPLOYEE_ID", "\\bEMP-[0-9]{6}\\b")),
+    PolicyAction.FLAG,
+    RedactionStrategy.HASH,
+    List.of("INTERNAL_IDENTIFIER"),
+    "Custom organization policy pack.");
+
+var guard = PiiGuard.builder()
+    .scanners(PolicyPacks.scanners(PolicyPacks.core(), fintech, custom))
+    .build();
+```
+
 ---
 
 ## Providers

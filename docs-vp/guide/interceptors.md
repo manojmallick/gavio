@@ -39,6 +39,10 @@ before the provider's embedding API.
 **v0.11.0** — Cost Intelligence (`F-COST-01/02/04`): spend attribution,
 cost reports, retry overhead, cache savings, and scoped budget fallback.
 
+**v0.12.0** — [Policy Pack architecture](#domain-policy-packs-f-pack-010205):
+core/FinTech manifests, detector action metadata, redaction strategies, and
+custom regex-rule packs.
+
 ---
 
 ## PII Guard (`F-SEC-01`)
@@ -78,6 +82,58 @@ PiiGuard(
     restore_on_response=True,
 )
 ```
+
+### Domain policy packs (`F-PACK-01/02/05`)
+
+Generic PII detection misses domain-specific identifiers. **Policy packs** wrap
+scanner sets in a manifest: pack id/name/version/domain, detectors, default
+action, redaction strategy, audit labels, and scanner composition. The scanners
+still plug into `PiiGuard` unchanged.
+
+Built-ins:
+
+- **Core PII** (`gavio.core-pii`) backs the default scanner set.
+- **FinTech** (`gavio.fintech`) promotes the v0.10.0 scanner prototype into a
+  first-class pack for SWIFT/BIC and US ABA routing numbers.
+
+```python
+from gavio.interceptors.pii import (
+    PiiGuard,
+    RegexPolicyRule,
+    core_policy_pack,
+    custom_policy_pack,
+    fintech_policy_pack,
+    policy_pack_scanners,
+)
+
+pack = fintech_policy_pack()
+PiiGuard(scanners=policy_pack_scanners(core_policy_pack(), pack))
+
+custom = custom_policy_pack(
+    id="acme.internal",
+    name="Acme Internal IDs",
+    rules=[
+        RegexPolicyRule(
+            name="employee_id",
+            entity_type="EMPLOYEE_ID",
+            pattern=r"\bEMP-[0-9]{6}\b",
+            confidence=0.88,
+            replacement_prefix="EMPLOYEE_ID",
+            action="flag",
+            redaction_strategy="hash",
+            label="INTERNAL_IDENTIFIER",
+        )
+    ],
+    default_action="flag",
+    redaction_strategy="hash",
+    audit_labels=["INTERNAL_IDENTIFIER"],
+)
+```
+
+Existing factory APIs remain compatible: `default_scanners()` /
+`fintech_scanners()` in Python, `defaultScanners()` / `fintechScanners()` in
+JavaScript, and `DefaultScanners.defaults()` / `DefaultScanners.fintech()` in
+Java are now backed by the pack objects.
 
 ---
 

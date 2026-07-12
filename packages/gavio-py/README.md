@@ -119,7 +119,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
 - **Privacy & security** — PII Guard with Email, IBAN (mod-97), BSN (11-proef),
   CreditCard (Luhn), Phone, IP, SSN scanners and redact/mask/tag/block +
   restore (`F-SEC-01`); secret/credential scanner (`F-SEC-04`); prompt
-  injection guard (`F-SEC-05`); embedding call guard (`F-SEC-10`).
+  injection guard (`F-SEC-05`); embedding call guard (`F-SEC-10`); Policy Pack
+  manifests for core, FinTech, and custom regex-rule packs (`F-PACK-01/02/05`).
 - **Reliability** — retry with backoff (`F-REL-01`), provider fallback chain
   (`F-REL-02`), circuit breaker (`F-REL-03`), load balancing (`F-REL-04`),
   buffered streaming (`F-REL-06`), timeouts (`F-REL-07`).

@@ -236,6 +236,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Secret scanner — API keys, AWS `AKIA`, GitHub tokens, JWT, PEM, DB URLs | `F-SEC-04` | 0.1.0 |
 | Prompt-injection defense — pattern corpus + optional semantic similarity | `F-SEC-05` | 0.2.0 |
 | Embedding call guard — `gw.embed(texts)` runs the same PII pipeline before embedding APIs | `F-SEC-10` | 0.9.0 |
+| Policy Pack architecture — core/FinTech manifests and custom regex-rule packs | `F-PACK-01/02/05` | 0.12.0 |
 
 ### 🔁 Reliability
 

@@ -14,6 +14,22 @@ export type {
   ModalityGuardOptions,
   ModalityAction,
 } from './modality.js'
+export {
+  corePolicyPack,
+  customPolicyPack,
+  fintechPolicyPack,
+  policyPackScanners,
+  regexRuleScanner,
+} from './policy-pack.js'
+export type {
+  CustomPolicyPackOptions,
+  PolicyAction,
+  PolicyPack,
+  PolicyPackDetector,
+  PolicyPackManifest,
+  RedactionStrategy,
+  RegexPolicyRule,
+} from './policy-pack.js'
 export { PiiMode, Sensitivity } from '../../types.js'
 export {
   bsnScanner,

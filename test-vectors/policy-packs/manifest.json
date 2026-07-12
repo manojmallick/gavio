@@ -1,0 +1,68 @@
+{
+  "description": "Policy Pack architecture cases (F-PACK-01/02/05). All SDKs expose JSON-compatible pack manifests, keep the FinTech pack backed by scanners, and can build a custom regex-rule pack.",
+  "schemaVersion": "1.0",
+  "builtinPacks": [
+    {
+      "id": "gavio.core-pii",
+      "name": "Core PII",
+      "version": "0.12.0",
+      "domain": "core",
+      "defaultAction": "redact",
+      "redactionStrategy": "tokenize",
+      "auditLabels": ["PII"],
+      "detectorEntityTypes": [
+        "SECRET",
+        "EMAIL",
+        "IBAN",
+        "BSN",
+        "CREDIT_CARD",
+        "SSN",
+        "PHONE",
+        "IP_ADDRESS"
+      ]
+    },
+    {
+      "id": "gavio.fintech",
+      "name": "FinTech",
+      "version": "0.12.0",
+      "domain": "fintech",
+      "defaultAction": "redact",
+      "redactionStrategy": "tokenize",
+      "auditLabels": ["FINANCIAL_IDENTIFIER"],
+      "detectorEntityTypes": ["SWIFT_BIC", "ROUTING_NUMBER"]
+    }
+  ],
+  "customRulePack": {
+    "id": "acme.internal",
+    "name": "Acme Internal IDs",
+    "version": "2026.07",
+    "domain": "custom",
+    "defaultAction": "flag",
+    "redactionStrategy": "hash",
+    "auditLabels": ["INTERNAL_IDENTIFIER"],
+    "rules": [
+      {
+        "name": "employee_id",
+        "entityType": "EMPLOYEE_ID",
+        "pattern": "\\bEMP-[0-9]{6}\\b",
+        "confidence": 0.88,
+        "replacementPrefix": "EMPLOYEE_ID",
+        "action": "flag",
+        "redactionStrategy": "hash",
+        "label": "INTERNAL_IDENTIFIER"
+      }
+    ],
+    "cases": [
+      {
+        "id": "employee-id-detected",
+        "text": "Escalate EMP-123456 before Friday.",
+        "expectedTypes": ["EMPLOYEE_ID"]
+      },
+      {
+        "id": "employee-id-not-detected",
+        "text": "Escalate EMP-12345 before Friday.",
+        "expectedTypes": []
+      }
+    ]
+  }
+}

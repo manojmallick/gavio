@@ -97,6 +97,33 @@ const gw = new Gateway({ provider: 'anthropic', model: 'claude-sonnet-4-6' })
 (`'redact' | 'mask' | 'tag' | 'block'`), `restoreOnResponse`, `logEntityTypes`,
 `dryRun`. See [interceptors.md](../interceptors.md).
 
+### Policy packs (v0.12.0)
+
+Policy packs expose scanner composition plus manifest metadata. Existing
+scanner factories still work, but the built-in core and FinTech packs are now
+first-class:
+
+```typescript
+import {
+  piiGuard,
+  corePolicyPack,
+  fintechPolicyPack,
+  customPolicyPack,
+  policyPackScanners,
+} from 'gavio/interceptors/pii'
+
+const fintech = fintechPolicyPack()
+console.log(fintech.manifest().detectors)
+
+const custom = customPolicyPack({
+  id: 'acme.internal',
+  name: 'Acme Internal IDs',
+  rules: [{ name: 'employee_id', entityType: 'EMPLOYEE_ID', pattern: '\\bEMP-[0-9]{6}\\b' }],
+})
+
+const guard = piiGuard({ scanners: policyPackScanners(corePolicyPack(), fintech, custom) })
+```
+
 ---
 
 ## Providers

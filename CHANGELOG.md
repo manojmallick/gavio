@@ -11,7 +11,15 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Policy Pack architecture (all SDKs, `F-PACK-01/02/05`)** — new
+  `PolicyPack` manifest API exposes detector metadata, default action,
+  redaction strategy, audit labels and scanner composition. The core PII and
+  FinTech scanners are now backed by first-class packs while preserving
+  existing scanner factory APIs, and custom organization regex-rule packs can
+  define entity type, pattern, confidence, replacement prefix, action and
+  redaction strategy. Shared contract:
+  `test-vectors/policy-packs/manifest.json`. PR #51.
 
 ---
 
