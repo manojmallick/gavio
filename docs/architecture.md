@@ -117,7 +117,8 @@ Canonical shapes live in [`spec/`](../spec/) as JSON Schema. The wire format is
 
 A `ProviderAdapter` implements `complete(request) → response`, optional
 `stream(...)`, and `health_check()`. Gavio ships **OpenAI**, **Anthropic**, and
-**Mock** (v0.1.0), plus **Gemini**, **Azure OpenAI**, and **Ollama** (v0.2.0) —
-all over stdlib HTTP, no vendor SDK. Cost is computed from token usage via a
-shared pricing table. Adding a provider is a single class; see
-[interceptors.md](./interceptors.md) and each package guide.
+**Mock** (v0.1.0), plus **Gemini**, **Azure OpenAI**, and **Ollama** (v0.2.0),
+and **OpenRouter** (v0.13.0) — all over stdlib HTTP or native fetch, no vendor
+SDK. Cost is computed from token usage via a shared pricing table. Adding a
+provider is a single class; see [interceptors.md](./interceptors.md) and each
+package guide.

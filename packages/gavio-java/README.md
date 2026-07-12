@@ -1,12 +1,12 @@
 # Gavio — Java SDK
 
-> The open standard AI gateway for production systems. PII protection, audit
-> trails, reliability, cost control, and an embedded inspector as composable
-> interceptors.
+> AI request runtime and inspector for production systems. PII protection,
+> audit trails, reliability, cost intelligence, policy packs, and provider
+> adapters as composable interceptors.
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
-budgets, audit logging — before and after the provider call. Same API in
+budgets, audit logging, runtime context — before and after the provider call. Same API in
 [Python, Java, and JavaScript](https://github.com/manojmallick/gavio), enforced
 by shared cross-SDK test vectors.
 
@@ -21,22 +21,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.12.0</version>
+  <version>0.13.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>0.12.0</version>
+  <version>0.13.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>0.12.0</version>
+  <version>0.13.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>0.12.0</version>
+  <version>0.13.0</version>
 </dependency>
 ```
 
@@ -99,10 +99,10 @@ GavioResponse resp = gw.complete(
     GavioRequest.builder().message("user", "Hi").build()).join();
 ```
 
-`OpenAiAdapter`, `GeminiAdapter`, `AzureOpenAiAdapter`, and `OllamaAdapter`
-work the same way — switching providers is a config change, never an
-application change. Reliability policies implement `ExecutorPolicy` and wrap
-the provider executor — the first registered is outermost.
+`OpenAiAdapter`, `GeminiAdapter`, `AzureOpenAiAdapter`, `OpenRouterAdapter`,
+and `OllamaAdapter` work the same way — switching providers is a config change,
+never an application change. Reliability policies implement `ExecutorPolicy`
+and wrap the provider executor — the first registered is outermost.
 
 Streaming buffers the provider stream (`F-REL-06`) so post-interceptors run on
 the complete response — the publisher emits the fully processed content:
@@ -166,8 +166,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
 - **Developer experience** — dev mode (`F-DX-01`), dry-run (`F-DX-02`),
   `GavioTestKit` + `MockProvider` + `GavioAssertions` in `gavio-testing`
   (`F-DX-03`), `GavioOpenAI` drop-in shim (`F-DX-04`).
-- **Providers** — OpenAI, Anthropic, Gemini, Azure OpenAI, Ollama, Mock — all
-  over `java.net.http.HttpClient`.
+- **Providers** — OpenAI, Anthropic, Gemini, Azure OpenAI, OpenRouter, Ollama,
+  Mock — all over `java.net.http.HttpClient`.
 
 See the [documentation site](https://manojmallick.github.io/gavio), the
 [Java guide](../../docs/packages/java.md), the runnable
@@ -182,7 +182,7 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `0.12.0`.
+All artifacts share the `io.github.manojmallick` group id and version `0.13.0`.
 
 | Artifact | Contains |
 |---|---|
@@ -195,5 +195,5 @@ All artifacts share the `io.github.manojmallick` group id and version `0.12.0`.
 | `gavio-interceptor-guardrails` | GuardrailsInterceptor, JsonSchemaValidator, regex validators |
 | `gavio-interceptor-metrics` | MetricsInterceptor, PrometheusMetrics |
 | `gavio-interceptor-quality` | RiskScorer |
-| `gavio-provider-openai` / `-anthropic` / `-gemini` / `-azure` / `-ollama` | Provider adapters |
+| `gavio-provider-openai` / `-anthropic` / `-gemini` / `-azure` / `-openrouter` / `-ollama` | Provider adapters |
 | `gavio-testing` | GavioTestKit, MockProvider, GavioAssertions, Fixtures |

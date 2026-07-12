@@ -1,12 +1,12 @@
 # Gavio — Python SDK
 
-> The open standard AI gateway for production systems. PII protection, audit
-> trails, reliability, cost control, and an embedded inspector as composable
-> interceptors.
+> AI request runtime and inspector for production systems. PII protection,
+> audit trails, reliability, cost intelligence, policy packs, and provider
+> adapters as composable interceptors.
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
-budgets, audit logging — before and after the provider call. Same API in
+budgets, audit logging, runtime context — before and after the provider call. Same API in
 [Python, Java, and JavaScript](https://github.com/manojmallick/gavio), enforced
 by shared cross-SDK test vectors.
 
@@ -70,8 +70,10 @@ gw = (
 resp = await gw.complete(messages=[{"role": "user", "content": "Hi"}])
 ```
 
-OpenAI, Gemini, Azure OpenAI, and Ollama adapters work the same way —
-switching providers is a config change, never an application change.
+OpenAI, Gemini, Azure OpenAI, OpenRouter, and Ollama adapters work the same way
+(`Provider.OPENAI`, `Provider.GEMINI`, `Provider.AZURE_OPENAI`,
+`Provider.OPENROUTER`, `Provider.OLLAMA`) — switching providers is a config
+change, never an application change.
 
 Streaming buffers the provider stream so post-interceptors (guardrails, PII
 restore, audit) run on the complete response before any chunk reaches you:
@@ -142,7 +144,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
 - **Developer experience** — dev mode (`F-DX-01`), dry-run (`F-DX-02`),
   `GavioTestKit` (`F-DX-03`), OpenAI drop-in shim (`F-DX-04`), config-file
   gateway construction (`F-DX-05`).
-- **Providers** — OpenAI, Anthropic, Gemini, Azure OpenAI, Ollama, Mock.
+- **Providers** — OpenAI, Anthropic, Gemini, Azure OpenAI, OpenRouter, Ollama,
+  Mock.
 
 See the [documentation site](https://manojmallick.github.io/gavio), the
 [Python guide](../../docs/packages/python.md), the runnable

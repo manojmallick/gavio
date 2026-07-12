@@ -13,6 +13,8 @@ const DEFAULT_PRICES: Record<string, [number, number]> = {
   // OpenAI
   'gpt-4o': [0.0025, 0.01],
   'gpt-4o-mini': [0.00015, 0.0006],
+  'openai/gpt-4o': [0.0025, 0.01],
+  'openai/gpt-4o-mini': [0.00015, 0.0006],
   o1: [0.015, 0.06],
   'o1-mini': [0.0011, 0.0044],
   // Anthropic

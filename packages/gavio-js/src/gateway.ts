@@ -68,6 +68,7 @@ export interface EmbedOptions {
 const DEFAULT_MODELS: Record<string, string> = {
   openai: 'gpt-4o',
   anthropic: 'claude-sonnet-4-6',
+  openrouter: 'openai/gpt-4o',
   mock: 'mock',
 }
 
@@ -194,13 +195,7 @@ export class Gateway {
       images: opts.images ?? [],
       lineage: opts.lineage ?? null,
     })
-    const ctx = new InterceptorContext({
-      traceId: request.traceId,
-      agentId: request.agentId,
-      parentTraceId: request.parentTraceId,
-      sessionId: request.sessionId,
-      dryRun: this.dryRunMode,
-    })
+    const ctx = InterceptorContext.fromRequest(request, this.dryRunMode)
 
     return this.executeTraced(request, ctx, adapter)
   }
@@ -230,13 +225,7 @@ export class Gateway {
       options: opts.options ?? {},
       metadata: { ...(opts.metadata ?? {}), call_type: 'embedding' },
     })
-    const ctx = new InterceptorContext({
-      traceId: request.traceId,
-      agentId: request.agentId,
-      parentTraceId: request.parentTraceId,
-      sessionId: request.sessionId,
-      dryRun: this.dryRunMode,
-    })
+    const ctx = InterceptorContext.fromRequest(request, this.dryRunMode)
 
     return this.executeTraced(request, ctx, adapter, (req) => adapter.embed!(req))
   }
@@ -294,13 +283,7 @@ export class Gateway {
       options: opts.options ?? {},
       metadata: opts.metadata ?? {},
     })
-    const ctx = new InterceptorContext({
-      traceId: request.traceId,
-      agentId: request.agentId,
-      parentTraceId: request.parentTraceId,
-      sessionId: request.sessionId,
-      dryRun: this.dryRunMode,
-    })
+    const ctx = InterceptorContext.fromRequest(request, this.dryRunMode)
 
     const startedAt = performance.now()
     const buffer = new StreamBuffer()

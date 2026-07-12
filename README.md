@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🌉 Gavio
+# Gavio
 
-**The open standard AI gateway for production systems.**
+**The AI request runtime and inspector for production systems.**
 
 PII protection · audit trails · reliability · cost control — as composable
 interceptors. **Same API in Python, Java, and JavaScript.**
@@ -25,7 +25,8 @@ interceptors. **Same API in Python, Java, and JavaScript.**
 
 Gavio sits **between your application and any LLM provider**. Every request
 passes through a pre/post **interceptor chain** — PII redaction, retries, cost
-tracking, audit logging — before and after the provider call:
+tracking, audit logging, policy packs, runtime context — before and after the
+provider call:
 
 ```
 Request → [ PII Guard · Secret Scanner · … ] → Provider → [ … · PII Restore · Audit ] → Response
@@ -37,14 +38,14 @@ provider, log an audit trail, track spend. Gavio ships them once, as swappable
 interceptors, with **identical behaviour across three languages** — enforced by
 [shared test vectors](./test-vectors/).
 
-- **Provider-agnostic** — OpenAI, Anthropic, Gemini, Azure, Ollama, Mock. Switching is a config change.
+- **Provider-agnostic** — OpenAI, Anthropic, Gemini, Azure, OpenRouter, Ollama, Mock. Switching is a config change.
 - **Zero mandatory dependencies** in every core (stdlib HTTP everywhere — no vendor SDKs).
 - **Dev mode** — the whole stack runs in-process with a mock provider. No API key, no network.
 - **Audit by default** — every call logged as metadata + SHA-256 content hashes (never raw text).
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
 
-> **Status:** v0.12.0 includes Policy Pack architecture (`F-PACK-01/02/05`).
+> **Status:** v0.13.0 ships OpenRouter support, richer runtime context, and AI Request Runtime positioning (`F-ADP-02/F-RT-01/F-DOC-V4`).
 > Semver stability holds since v0.2.0; pre-1.0, some APIs may still change.
 > See the [CHANGELOG](./CHANGELOG.md).
 
@@ -67,7 +68,8 @@ pipeline in reverse order:
           │                                             │  Provider Adapter    │        │
           │                                             │ OpenAI · Anthropic · │        │
           │                                             │ Gemini · Azure ·     │        │
-          │                                             │ Ollama · Mock        │        │
+          │                                             │ OpenRouter · Ollama ·│        │
+          │                                             │ Mock                 │        │
           │                                             └──────────┬──────────┘        │
           │           Guardrails ◀─ RiskScorer ◀─ PiiRestore ◀─────┘                   │
  ◀─────── │   POST ◀─ Metrics ◀─ AuditInterceptor (hash-chained record)                │ response
@@ -94,6 +96,13 @@ pipeline in reverse order:
 | `agent_id` · `parent_trace_id` | `content` (PII restored) | `prompt_hash` · `response_hash` |
 | `messages` · `model` · `provider` | `usage` · `cost_usd` · `latency_ms` | `pii_entity_types` · `risk_score` |
 | `options` · `lineage` · `metadata` | `cache_hit` · `cache_type` | `previous_hash` · `lineage` · `schema_version` |
+
+## Runtime Intelligence
+
+- **AI Request Inspector** — opt-in live traces, per-interceptor waterfall, replay, agent DAGs, RED stats, and production audit-store views.
+- **Cost Intelligence** — tenant/feature/user attribution, `/api/cost-report`, retry overhead, cache savings, and scoped budget fallback.
+- **Domain-aware Policy Packs** — core and FinTech manifests plus custom regex-rule packs that keep detector metadata, actions, audit labels, and redaction strategy together.
+- **Runtime context** — interceptors can now read first-class `tenant`, `feature`, `cost`, `retry`, `tools`, and `policy` fields derived from request metadata.
 
 ---
 
@@ -168,7 +177,7 @@ showing `EMAIL` was detected and redacted before the (mock) provider ever saw it
 |---|---|---|
 | **Python** 3.10+ | `pip install gavio` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
 | **JavaScript** (Node 18+) | `npm install gavio` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:0.12.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:0.13.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -207,15 +216,15 @@ npm install gavio
 Multi-artifact Maven project: `gavio-core` plus one artifact per interceptor
 family (`gavio-interceptor-pii`, `-audit`, `-reliability`, `-cache`,
 `-governance`, `-guardrails`, `-metrics`, `-quality`), one per provider
-(`gavio-provider-openai`, `-anthropic`, `-gemini`, `-azure`, `-ollama`), and
-`gavio-testing`. Immutable records + builders, `CompletableFuture` async,
-Java 17+.
+(`gavio-provider-openai`, `-anthropic`, `-gemini`, `-azure`, `-openrouter`,
+`-ollama`), and `gavio-testing`. Immutable records + builders,
+`CompletableFuture` async, Java 17+.
 
 ```xml
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.12.0</version>
+  <version>0.13.0</version>
 </dependency>
 ```
 
@@ -292,7 +301,10 @@ gated by the same [shared test vectors](./test-vectors/).
 |---|---|---|
 | Dev mode, dry-run mode, `GavioTestKit` | `F-DX-01/02/03` | 0.1.0 |
 | OpenAI drop-in shim, config loader | `F-DX-04/05` | 0.2.0 |
+| Runtime context fields — `tenant`, `feature`, `cost`, `retry`, `tools`, `policy` | `F-RT-01` | 0.13.0 |
+| AI Request Runtime / Inspector positioning | `F-DOC-V4` | 0.13.0 |
 | **Providers** — OpenAI · Anthropic · Gemini · Azure OpenAI · Ollama · Mock (all stdlib HTTP, no vendor SDKs) | — | 0.1–0.2 |
+| **OpenRouter provider adapter** — direct OpenAI-compatible integration with attribution headers | `F-ADP-02` | 0.13.0 |
 
 Conformance-tested across all three SDKs on every push and PR
 ([`ci.yml`](./.github/workflows/ci.yml) runs Python 3.10–3.12, Node 18/20/22,

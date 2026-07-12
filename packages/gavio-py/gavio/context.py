@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+_COST_DIMENSION_KEYS = ("tenant", "feature", "user", "endpoint", "environment", "workflow", "tool")
+
 
 @dataclass
 class InterceptorContext:
@@ -20,6 +22,15 @@ class InterceptorContext:
     parent_trace_id: str | None = None
     session_id: str | None = None
     dry_run: bool = False
+
+    # First-class runtime metadata (F-RT-01). These mirror common metadata
+    # conventions while preserving the original request.metadata map unchanged.
+    tenant: str | None = None
+    feature: str | None = None
+    cost: dict[str, Any] = field(default_factory=dict)
+    retry: dict[str, Any] = field(default_factory=dict)
+    tools: dict[str, Any] = field(default_factory=dict)
+    policy: dict[str, Any] = field(default_factory=dict)
 
     # Signals accumulated by interceptors during the request.
     interceptors_fired: list[str] = field(default_factory=list)
@@ -40,6 +51,19 @@ class InterceptorContext:
     # Governance events (e.g. drift alerts, F-GOV-07) to surface as standalone
     # governance.event inspector events; drained per hook by the emitter.
     governance_pending: list[dict[str, Any]] = field(default_factory=list)
+
+    @classmethod
+    def from_request(cls, request: Any, *, dry_run: bool = False) -> InterceptorContext:
+        """Create a context from a request, including runtime metadata fields."""
+        runtime = _runtime_fields(request.metadata)
+        return cls(
+            trace_id=request.trace_id,
+            agent_id=request.agent_id,
+            parent_trace_id=request.parent_trace_id,
+            session_id=request.session_id,
+            dry_run=dry_run,
+            **runtime,
+        )
 
     def inspect(self, key: str, value: Any) -> None:
         """Attach a JSON-safe decision record for the Gavio Inspector.
@@ -77,3 +101,64 @@ class InterceptorContext:
             self.pii_entity_counts[et] = self.pii_entity_counts.get(et, 0) + 1
             if et not in self.pii_entity_types:
                 self.pii_entity_types.append(et)
+
+
+def _runtime_fields(metadata: dict[str, Any] | None) -> dict[str, Any]:
+    metadata = metadata or {}
+    cost = _section(metadata, "cost", "costContext", "cost_context")
+    dimensions = _dimensions(metadata, cost)
+
+    tenant = _first_scalar(metadata, "tenant", "tenantId", "tenant_id")
+    tenant = tenant or _first_scalar(cost, "tenant", "tenantId", "tenant_id")
+    tenant = tenant or _first_scalar(dimensions, "tenant", "tenantId", "tenant_id")
+
+    feature = _first_scalar(metadata, "feature", "featureId", "feature_id")
+    feature = feature or _first_scalar(cost, "feature", "featureId", "feature_id")
+    feature = feature or _first_scalar(dimensions, "feature", "featureId", "feature_id")
+
+    if dimensions:
+        cost["dimensions"] = dimensions
+    if tenant is not None:
+        cost.setdefault("tenant", tenant)
+    if feature is not None:
+        cost.setdefault("feature", feature)
+
+    return {
+        "tenant": tenant,
+        "feature": feature,
+        "cost": cost,
+        "retry": _section(metadata, "retry", "retryContext", "retry_context"),
+        "tools": _section(metadata, "tools", "toolContext", "tool_context"),
+        "policy": _section(metadata, "policy", "policyContext", "policy_context"),
+    }
+
+
+def _section(metadata: dict[str, Any], *keys: str) -> dict[str, Any]:
+    for key in keys:
+        value = metadata.get(key)
+        if isinstance(value, dict):
+            return dict(value)
+    return {}
+
+
+def _dimensions(metadata: dict[str, Any], cost: dict[str, Any]) -> dict[str, Any]:
+    dimensions: dict[str, Any] = {}
+    existing = cost.get("dimensions")
+    if isinstance(existing, dict):
+        dimensions.update(existing)
+    for key in _COST_DIMENSION_KEYS:
+        if key in metadata:
+            dimensions[key] = metadata[key]
+    for key in ("costDimensions", "cost_dimensions"):
+        value = metadata.get(key)
+        if isinstance(value, dict):
+            dimensions.update(value)
+    return dimensions
+
+
+def _first_scalar(metadata: dict[str, Any], *keys: str) -> str | None:
+    for key in keys:
+        value = metadata.get(key)
+        if value is not None and not isinstance(value, (dict, list, tuple, set)):
+            return str(value)
+    return None

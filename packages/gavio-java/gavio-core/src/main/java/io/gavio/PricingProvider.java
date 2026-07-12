@@ -24,6 +24,8 @@ public final class PricingProvider {
         // OpenAI
         DEFAULT_PRICES.put("gpt-4o", new double[] {0.0025, 0.010});
         DEFAULT_PRICES.put("gpt-4o-mini", new double[] {0.00015, 0.0006});
+        DEFAULT_PRICES.put("openai/gpt-4o", new double[] {0.0025, 0.010});
+        DEFAULT_PRICES.put("openai/gpt-4o-mini", new double[] {0.00015, 0.0006});
         DEFAULT_PRICES.put("o1", new double[] {0.015, 0.060});
         DEFAULT_PRICES.put("o1-mini", new double[] {0.0011, 0.0044});
         // Anthropic

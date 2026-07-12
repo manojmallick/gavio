@@ -6,11 +6,11 @@
 
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-parent</artifactId>
-  <version>0.12.0</version>
+  <version>0.13.0</version>
   <packaging>pom</packaging>
 
   <name>Gavio Java SDK (parent)</name>
-  <description>Local-first AI gateway with PII guard, audit, reliability and pluggable providers.</description>
+  <description>Local-first AI request runtime and inspector with PII guard, audit, reliability and pluggable providers.</description>
   <url>https://manojmallick.github.io/gavio</url>
 
   <licenses>
@@ -50,6 +50,7 @@
     <module>gavio-provider-anthropic</module>
     <module>gavio-provider-gemini</module>
     <module>gavio-provider-azure</module>
+    <module>gavio-provider-openrouter</module>
     <module>gavio-provider-ollama</module>
     <module>gavio-testing</module>
   </modules>
@@ -125,6 +126,11 @@
       <dependency>
         <groupId>io.github.manojmallick</groupId>
         <artifactId>gavio-provider-anthropic</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.manojmallick</groupId>
+        <artifactId>gavio-provider-openrouter</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

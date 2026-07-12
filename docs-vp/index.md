@@ -1,12 +1,12 @@
 ---
 layout: home
-title: Gavio — the open standard AI gateway for production systems
-description: PII protection, audit trails, reliability, and cost control as composable interceptors. Same API in Python, Java, and JavaScript. Zero mandatory dependencies.
+title: Gavio — AI request runtime and inspector for production systems
+description: Inspect, govern, and route AI requests with PII protection, audit trails, reliability, cost intelligence, and policy packs as composable interceptors. Same API in Python, Java, and JavaScript.
 
 hero:
   name: Gavio
-  text: The open standard AI gateway
-  tagline: "PII protection · audit trails · reliability · cost control — as composable interceptors. Same API in Python, Java, and JavaScript."
+  text: AI request runtime and inspector
+  tagline: "PII protection · audit trails · reliability · Cost Intelligence · Policy Packs — as composable interceptors. Same API in Python, Java, and JavaScript."
   actions:
     - theme: brand
       text: Get Started →
@@ -25,8 +25,8 @@ features:
     link: /guide/interceptors
     linkText: Interceptors →
   - icon: 🔁
-    title: Reliable by default
-    details: Retry with backoff, fallback, timeouts, circuit breaker, and load balancing wrap every call. Semantic caching, budgets/rate-limits, and guardrails ship in v0.2.0. Tamper-evident hash-chain audit — never raw text. v0.3.0 adds Prometheus metrics, prompt lineage, and composite risk scoring. v0.4.0 adds a distributed Redis cache backend. v0.5.0 adds cost-optimiser routing. v0.6.0 adds the embedded Inspector — a live dev-time visualizer for every request. v0.7.0 completes it with agent call graphs, replay, RED stats, and a read-only production dashboard. v0.11.0 adds Cost Intelligence reports; v0.12.0 adds Policy Pack manifests for core, FinTech, and custom regex-rule packs.
+    title: Request runtime, not a black box
+    details: Retry with backoff, fallback, timeouts, circuit breaker, and load balancing wrap every call. The Inspector shows live request traces, agent graphs, replay, RED stats, and a read-only production dashboard. v0.11.0 adds Cost Intelligence reports; v0.12.0 adds Policy Pack manifests; v0.13.0 adds richer runtime context and OpenRouter.
     link: /guide/interceptors
     linkText: Production core →
   - icon: 🌐
@@ -46,7 +46,7 @@ features:
 ```bash
 pip install gavio            # Python 3.10+
 npm install gavio            # Node 18+
-# Maven: io.github.manojmallick:gavio-core:0.12.0  (Java 17+)
+# Maven: io.github.manojmallick:gavio-core:0.13.0  (Java 17+)
 ```
 
 ## 30-second taste (Python, dev mode — no key)

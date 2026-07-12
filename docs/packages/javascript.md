@@ -71,7 +71,7 @@ import { emailScanner }     from 'gavio/interceptors/pii/scanners'
 import { auditInterceptor } from 'gavio/interceptors/audit'
 import { stdoutSink }       from 'gavio/interceptors/audit/sinks'
 import { retryInterceptor, timeoutPolicy, fallbackChain } from 'gavio/interceptors/reliability'
-import { anthropicAdapter, openaiAdapter } from 'gavio/providers'
+import { anthropicAdapter, openaiAdapter, openrouterAdapter } from 'gavio/providers'
 import { GavioTestKit, mockProvider }      from 'gavio/testing'
 ```
 
@@ -134,14 +134,30 @@ const guard = piiGuard({ scanners: policyPackScanners(corePolicyPack(), fintech,
 | OpenAI | `'openai'` | `OPENAI_API_KEY` |
 | Gemini | `'gemini'` | `GEMINI_API_KEY` |
 | Azure OpenAI | `'azure_openai'` | `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT` |
+| OpenRouter | `'openrouter'` | `OPENROUTER_API_KEY` |
 | Ollama | `'ollama'` | — (local; `OLLAMA_HOST`) |
 | Mock | dev mode / `mockProvider()` | — |
 
-Gemini, Azure OpenAI, and Ollama were added in **v0.2.0**.
+Gemini, Azure OpenAI, and Ollama were added in **v0.2.0**; OpenRouter was added
+in **v0.13.0**.
 
 ```typescript
 import { anthropicAdapter } from 'gavio/providers/anthropic'
 const gw = new Gateway().withAdapter(anthropicAdapter({ apiKey: process.env.ANTHROPIC_API_KEY, timeoutMs: 30_000 }))
+```
+
+OpenRouter accepts direct adapter options for custom base URLs and optional
+attribution headers:
+
+```typescript
+import { openrouterAdapter } from 'gavio/providers/openrouter'
+
+const gw = new Gateway()
+  .withAdapter(openrouterAdapter({
+    apiKey: process.env.OPENROUTER_API_KEY,
+    httpReferer: 'https://app.example',
+    appTitle: 'Gavio',
+  }))
 ```
 
 Adapters use native `fetch` — no `node-fetch` or vendor SDK.

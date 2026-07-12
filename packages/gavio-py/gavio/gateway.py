@@ -111,13 +111,7 @@ class Gateway:
             images=images or [],
             lineage=lineage,
         )
-        ctx = InterceptorContext(
-            trace_id=request.trace_id,
-            agent_id=agent_id,
-            parent_trace_id=parent_trace_id,
-            session_id=session_id,
-            dry_run=self._dry_run,
-        )
+        ctx = InterceptorContext.from_request(request, dry_run=self._dry_run)
         emitter = self._inspector.emitter(request) if self._inspector else None
         executor = self._build_executor(ctx, emitter)
         if emitter is None:
@@ -153,13 +147,7 @@ class Gateway:
             options=options,
             metadata=metadata or {},
         )
-        ctx = InterceptorContext(
-            trace_id=request.trace_id,
-            agent_id=agent_id,
-            parent_trace_id=parent_trace_id,
-            session_id=session_id,
-            dry_run=self._dry_run,
-        )
+        ctx = InterceptorContext.from_request(request, dry_run=self._dry_run)
         started = time.monotonic()
         buffer = StreamBuffer()
 
@@ -205,13 +193,7 @@ class Gateway:
             options=options,
             metadata={**(metadata or {}), "call_type": "embedding"},
         )
-        ctx = InterceptorContext(
-            trace_id=request.trace_id,
-            agent_id=agent_id,
-            parent_trace_id=parent_trace_id,
-            session_id=session_id,
-            dry_run=self._dry_run,
-        )
+        ctx = InterceptorContext.from_request(request, dry_run=self._dry_run)
         emitter = self._inspector.emitter(request) if self._inspector else None
         executor = self._build_executor(ctx, emitter, call=self._adapter.embed)
         if emitter is None:
@@ -399,5 +381,6 @@ def _default_model(adapter: ProviderAdapter) -> str:
     return {
         "openai": "gpt-4o",
         "anthropic": "claude-sonnet-4-6",
+        "openrouter": "openai/gpt-4o",
         "mock": "mock",
     }.get(adapter.provider_name, "mock")

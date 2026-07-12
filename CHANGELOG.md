@@ -15,6 +15,33 @@ Nothing yet.
 
 ---
 
+## [0.13.0] — 2026-07-12
+
+### Summary
+**Adapter & positioning.** v0.13.0 adds an optional OpenRouter adapter, richer
+runtime context fields, and updates the public positioning around Gavio as an
+AI request runtime and inspector rather than only a gateway. Feature IDs
+`F-ADP-02`, `F-RT-01`, and `F-DOC-V4`. Feature PR #54 (#53).
+
+Tests: Python 239 · JavaScript 253 · Java modules green.
+
+### Added
+- **OpenRouter adapter (all SDKs, `F-ADP-02`)** — Python, JavaScript, and Java
+  now expose an optional OpenRouter provider adapter using direct
+  OpenAI-compatible chat-completions HTTP calls, `OPENROUTER_API_KEY`, optional
+  base URL, timeout, and attribution headers.
+- **Runtime context fields (all SDKs, `F-RT-01`)** — interceptor context now
+  derives first-class `tenant`, `feature`, `cost`, `retry`, `tools`, and
+  `policy` fields from request metadata while preserving the original metadata
+  map for compatibility.
+
+### Changed
+- **Positioning docs (`F-DOC-V4`)** — README, docs homepage, and package guides
+  now lead with AI Request Runtime / Inspector positioning and call out Cost
+  Intelligence, Policy Packs, and OpenRouter in the provider surface.
+
+---
+
 ## [0.12.0] — 2026-07-12
 
 ### Summary
@@ -718,7 +745,8 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/manojmallick/gavio/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/manojmallick/gavio/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/manojmallick/gavio/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/manojmallick/gavio/compare/v0.9.0...v0.10.0
