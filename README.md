@@ -47,11 +47,12 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Self-hosted Control Plane** — optional local/private server for runtime config, policy rollout, budget config, audit search, and cached SDK fallback.
 - **Production Trust Package** — metadata-only release evidence bundles that verify audit-chain, runtime-event, policy, benchmark, and document evidence.
 - **Platform Runtime Profile** — metadata-only readiness score and gap report for platform-grade production runtime posture.
+- **Platform Workflow Release** — one metadata-only release artifact for prompts, evals, policy packs, trust bundles, and runtime profiles.
 - **OTel bridge** — runtime events map to OpenTelemetry-style spans for production APM pipelines.
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
 
-> **Status:** v2.7.0 is the current stable package line. Gavio has an API
+> **Status:** v3.0.0 is the current stable package line. Gavio has an API
 > stability guarantee, a 24-month 1.x LTS policy, and release automation that
 > checks lockstep SDK versions before publishing. See
 > [STABILITY.md](./STABILITY.md) and the [CHANGELOG](./CHANGELOG.md).
@@ -87,6 +88,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `2.5.0` | Ecosystem Adapters | Metadata-only adapter payload helpers for LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and Vercel AI SDK |
 | `2.6.0` | Enterprise Admin v2 | OIDC/SAML-lite metadata, scoped admin keys, rollout approvals, audit export, and retention controls |
 | `2.7.0` | Ecosystem Trust Package | Integration conformance vectors, generated compatibility matrix, offline sample production apps, and cross-SDK trust checks |
+| `3.0.0` | Platform Workflow Release | Unified prompt, eval, policy, trust, and runtime-profile release artifacts with CLI and control-plane storage |
 
 ---
 
@@ -150,6 +152,7 @@ pipeline in reverse order:
 - **Self-hosted Control Plane** — runtime projects, environments, hashed keys, policy rollout, budget config, audit/event search, config snapshots, v2.3.0 durable SQLite/Postgres storage, and v2.6.0 Enterprise Admin v2 controls for local/private deployments.
 - **Production Trust Package** — build and verify metadata-only evidence bundles for release reviews, threat models, benchmarks, and production architecture signoff.
 - **Platform Runtime Profile** — compute metadata-only readiness scores and deterministic gaps across audit, runtime events, policies, costs, tools, and trust evidence.
+- **Platform Workflow Release** — produce reviewable release artifacts with prompt release bundles, eval gates, policy signatures, trust verification, and runtime-profile readiness.
 
 ---
 
@@ -238,9 +241,9 @@ The Java snippet uses `gavio-core`, `gavio-interceptor-pii`, and
 
 | Language | Command | Docs |
 |---|---|---|
-| **Python** 3.10+ | `pip install gavio==2.7.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
-| **JavaScript** (Node 18+) | `npm install gavio@2.7.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:2.7.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Python** 3.10+ | `pip install gavio==3.0.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
+| **JavaScript** (Node 18+) | `npm install gavio@3.0.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:3.0.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -270,6 +273,7 @@ compared side by side.
 | 22 | Platform Feature Tour — all major v2.x surfaces in one offline project | [py](./examples/python/22-platform-feature-tour/) | — | — | no |
 | 23 | Prompt Registry v2 — signed manifests, semver selectors, approvals, metadata-safe diffs | [py](./examples/python/23-prompt-registry-v2/) | — | — | no |
 | 24 | Enterprise Admin v2 — scoped admin keys, rollout approvals, audit export, retention controls | — | [js](./examples/javascript/24-enterprise-admin-v2/) | — | no |
+| 25 | Platform Workflow Release — unified prompt/eval/policy/trust/runtime-profile release artifact | [py](./examples/python/25-platform-workflow-release/) | — | — | no |
 
 Example 02 uses a real provider if `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is
 set; otherwise it falls back to the mock provider. All other examples run with
@@ -290,7 +294,7 @@ optional extras include `gavio[redis]`, `gavio[presidio]`, `gavio[otel]`,
 `gavio[elasticsearch]`, `gavio[pgvector]`, and `gavio[ocr]`.
 
 ```bash
-pip install gavio==2.7.0
+pip install gavio==3.0.0
 ```
 
 → **[Full Python guide](./docs/packages/python.md)** · [package README](./packages/gavio-py/README.md)
@@ -302,7 +306,7 @@ with per-subpath `exports` for tree-shaking. Native `fetch`, `node:crypto`.
 Node 18+, Deno, Bun.
 
 ```bash
-npm install gavio@2.7.0
+npm install gavio@3.0.0
 ```
 
 → **[Full JavaScript guide](./docs/packages/javascript.md)** · [package README](./packages/gavio-js/README.md)
@@ -322,17 +326,17 @@ Quickstart stack:
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>2.7.0</version>
+  <version>3.0.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>2.7.0</version>
+  <version>3.0.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>2.7.0</version>
+  <version>3.0.0</version>
 </dependency>
 ```
 
@@ -428,6 +432,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Ecosystem adapter payloads — dependency-light payload fragments for LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and Vercel AI SDK | `F-INT-02` | 2.5.0 |
 | Ecosystem Trust Package — integration conformance tests, generated compatibility matrix, and sample production apps | `F-INT-03` | 2.7.0 |
 | Platform Runtime Profile — metadata-only readiness score, platform surfaces, evidence, and gap checks | `F-PLAT-01` | 2.0.0 |
+| Platform Workflow Release — unified prompt/eval/policy/trust/runtime-profile release artifacts | `F-PLAT-02` | 3.0.0 |
 | Stable release gate — lockstep version checks, release hygiene, API stability and LTS policy | — | 1.0.0 |
 | Runtime event/export contract — metadata-safe JSONL exporters and integration recipes | `F-EXP-01` | 1.1.0 |
 | Cost Governance v2 CLI — `gavio cost report` over JSONL records and budget policies | `F-COST-05` | 1.2.0 |
@@ -469,6 +474,7 @@ the [interceptors guide](./docs/interceptors.md) for every built-in interceptor.
 | [docs/trust-package.md](./docs/trust-package.md) | Production trust bundle threat model, privacy boundary, and SDK APIs |
 | [docs/integrations.md](./docs/integrations.md) | How Gavio fits beside gateway, observability, and eval tools |
 | [docs/platform-runtime.md](./docs/platform-runtime.md) | Platform runtime readiness profile, metadata-only posture checks, and SDK APIs |
+| [docs/platform-workflow-release.md](./docs/platform-workflow-release.md) | Unified prompt, eval, policy, trust, and runtime-profile release artifacts |
 | [docs/otel-mapping.md](./docs/otel-mapping.md) | InspectorEvent → OpenTelemetry spans · [Grafana dashboard](./docs/grafana/gavio-dashboard.json) |
 | [docs/packages/](./docs/packages/) | Deep guide per SDK |
 | [examples/](./examples/) | Runnable example projects in all three languages |

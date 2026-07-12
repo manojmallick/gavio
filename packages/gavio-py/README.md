@@ -227,7 +227,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "2.7.0", "tag": "v2.7.0"},
+    release={"version": "3.0.0", "tag": "v3.0.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",
@@ -294,6 +294,23 @@ gavio eval run examples/python/21-eval-ci-gate/suite.yaml \
   --summary
 ```
 
+## Platform Workflow Release
+
+Python v3.0.0 adds a release workflow that joins prompt release bundles, eval
+reports, policy-pack signature evidence, production trust verification, and
+platform-runtime readiness into one metadata-only artifact.
+
+```bash
+gavio workflow release workflow.json --output workflow-release.json --pretty
+```
+
+```python
+from gavio import run_platform_workflow_release_file
+
+result = run_platform_workflow_release_file("workflow.json")
+print(result.artifact["workflowHash"])
+```
+
 ## What's inside
 
 Every feature is an interceptor you compose explicitly — no hidden magic.
@@ -322,6 +339,9 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   gates, signed manifests, semantic-version selectors, approvals, and
   metadata-safe prompt diffs, prompt-to-eval links, triage metadata, and prompt
   release bundles (`F-EVAL-01/02/03/04/05`).
+- **Platform Workflow Release** — `gavio workflow release` artifacts that join
+  prompt release bundles, eval gates, policy evidence, trust verification, and
+  runtime-profile readiness (`F-PLAT-02`).
 - **Runtime export** — metadata-safe JSONL runtime events (`F-EXP-01`) and
   OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
   eval integrations.

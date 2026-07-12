@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
 public final class Inspector {
 
     /** Keep in sync with the parent pom's project.version. */
-    public static final String SDK_VERSION = "2.7.0";
+    public static final String SDK_VERSION = "3.0.0";
 
     /**
      * Re-fires a captured request through the live gateway pipeline (F-DX-11).

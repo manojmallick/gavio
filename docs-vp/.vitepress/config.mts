@@ -67,7 +67,7 @@ export default defineConfig({
     nav: [
       { text: 'Docs', link: '/guide/getting-started', activeMatch: '/guide/' },
       {
-        text: 'v2.7.0',
+        text: 'v3.0.0',
         items: [
           { text: 'Changelog', link: 'https://github.com/manojmallick/gavio/blob/main/CHANGELOG.md' },
           { text: 'Releasing', link: 'https://github.com/manojmallick/gavio/blob/main/RELEASING.md' },
@@ -90,6 +90,7 @@ export default defineConfig({
           { text: 'Trust Package', link: '/guide/trust-package' },
           { text: 'Integrations', link: '/guide/integrations' },
           { text: 'Platform Runtime', link: '/guide/platform-runtime' },
+          { text: 'Platform Workflow Release', link: '/guide/platform-workflow-release' },
           { text: 'Stability', link: '/guide/stability' },
         ],
       },
