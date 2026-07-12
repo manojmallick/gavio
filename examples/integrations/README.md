@@ -1,7 +1,7 @@
 # Ecosystem integration examples
 
-These examples run offline and show how to label Gavio requests when the app
-also uses common AI stack tools.
+These examples run offline and show how to label Gavio requests and build
+metadata-only adapter payloads when the app also uses common AI stack tools.
 
 | Integration | Example |
 |---|---|
@@ -15,13 +15,15 @@ also uses common AI stack tools.
 | LangGraph | [`langgraph/recipe.py`](./langgraph/recipe.py) |
 | Vercel AI SDK | [`vercel-ai-sdk/recipe.py`](./vercel-ai-sdk/recipe.py) |
 | OpenAI SDK | [`openai-sdk/recipe.py`](./openai-sdk/recipe.py) |
+| Adapter payload tour | [`adapters/recipe.py`](./adapters/recipe.py) |
 | Full stack | [`full-stack/integration_stack.py`](./full-stack/integration_stack.py) |
 
 From the repository:
 
 ```bash
 PYTHONPATH=packages/gavio-py python examples/integrations/litellm/recipe.py
+PYTHONPATH=packages/gavio-py python examples/integrations/adapters/recipe.py
 PYTHONPATH=packages/gavio-py python examples/integrations/full-stack/integration_stack.py
 ```
 
-After installing the 1.9 package, the same scripts run without `PYTHONPATH`.
+After installing the 2.5 package line, the same scripts run without `PYTHONPATH`.

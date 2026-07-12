@@ -332,15 +332,22 @@ or preload the fetched config before constructing a gateway.
 
 Ecosystem integration helpers (v1.9.0, `F-INT-01`) provide dependency-light
 metadata labels and compatibility rows for common gateways, observability
-tools, eval tools, frameworks, and provider SDKs.
+tools, eval tools, frameworks, and provider SDKs. Ecosystem adapter helpers
+(v2.5.0, `F-INT-02`) add metadata-only payload fragments for LiteLLM,
+promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and the Vercel AI SDK.
 
 ```java
 import io.gavio.integrations.IntegrationCatalog;
+import io.gavio.integrations.IntegrationAdapters;
 
 var metadata = IntegrationCatalog.metadata(
     "langchain",
     Map.of("tenant", "acme", "feature", "support-chat", "environment", "prod"));
 var rows = IntegrationCatalog.compatibilityMatrix();
+var adapter = IntegrationAdapters.payload(
+    "langchain",
+    Map.of("traceId", "trace_123", "data", Map.of("status", "ok", "provider", "openai")),
+    Map.of("tenant", "acme", "feature", "support-chat", "prompt", "raw prompt text"));
 ```
 
 ## Platform Runtime Profile

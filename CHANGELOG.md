@@ -11,7 +11,15 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- **Ecosystem Adapters (all SDKs, `F-INT-02`)** — added dependency-light
+  adapter payload helpers for LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain,
+  LangGraph, and the Vercel AI SDK. Payloads propagate trace/cost/model labels,
+  replace content-bearing metadata with SHA-256 hashes, and share a
+  cross-SDK adapter vector plus schema coverage.
+- **Adapter examples and docs** — refreshed integration docs, package docs, and
+  offline examples with metadata-only adapter payload usage.
 
 ---
 

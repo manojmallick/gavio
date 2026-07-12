@@ -150,7 +150,7 @@ the same stream into OpenTelemetry-style span JSON (`F-OBS-07`).
 ## Ecosystem integrations
 
 ```python
-from gavio import compatibility_matrix, integration_metadata
+from gavio import compatibility_matrix, integration_adapter_payload, integration_metadata
 
 metadata = integration_metadata(
     "litellm",
@@ -159,11 +159,18 @@ metadata = integration_metadata(
     environment="prod",
 )
 rows = compatibility_matrix()
+adapter = integration_adapter_payload(
+    "litellm",
+    {"traceId": "trace_123", "data": {"status": "ok", "provider": "openai"}},
+    metadata={**metadata, "prompt": "raw prompt text"},
+)
 ```
 
 Ecosystem integration helpers (v1.9.0, `F-INT-01`) provide dependency-light
 metadata labels and compatibility rows for common gateways, observability
-tools, eval tools, frameworks, and provider SDKs.
+tools, eval tools, frameworks, and provider SDKs. Ecosystem adapter helpers
+(v2.5.0, `F-INT-02`) add metadata-only payload fragments for LiteLLM,
+promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and the Vercel AI SDK.
 
 ## Platform Runtime Profile
 
