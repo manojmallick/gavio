@@ -7,6 +7,14 @@ import { startControlPlane } from '../src/server.mjs'
 
 let server
 let base
+let hasNodeSqlite = false
+
+try {
+  await import('node:sqlite')
+  hasNodeSqlite = true
+} catch {
+  hasNodeSqlite = false
+}
 
 before(async () => {
   const dir = mkdtempSync(join(tmpdir(), 'gavio-control-plane-'))
@@ -121,18 +129,176 @@ test('search filters events and strips content-bearing metadata', async () => {
   assert.deepEqual(result.items[0].metadata, { decision: { action: 'flag' } })
 })
 
-async function get(path, headers = {}) {
-  const response = await fetch(`${base}${path}`, { headers })
+test('sqlite storage migrates and persists control-plane records across restarts', { skip: !hasNodeSqlite }, async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'gavio-control-plane-sqlite-'))
+  const sqlitePath = join(dir, 'control-plane.sqlite')
+  const first = await startControlPlane({ port: 0, storage: 'sqlite', sqlitePath })
+  let runtimeKey
+  try {
+    assert.deepEqual(await first.store.migrationVersions(), [1])
+    await post('/api/projects', { id: 'proj_durable', name: 'Durable Support' }, {}, first.url)
+    await post('/api/environments', { id: 'env_durable_prod', projectId: 'proj_durable', name: 'prod' }, {}, first.url)
+    await post(
+      '/api/policies',
+      {
+        id: 'pol_durable',
+        name: 'Durable policy',
+        policyPack: 'support',
+        rules: [{ id: 'durable-email', action: 'redact' }],
+      },
+      {},
+      first.url,
+    )
+    await post(
+      '/api/budgets',
+      {
+        id: 'budget_durable',
+        projectId: 'proj_durable',
+        scopeType: 'project',
+        limitUsd: 42,
+        window: 'day',
+        action: 'warn',
+      },
+      {},
+      first.url,
+    )
+    const key = await post(
+      '/api/keys',
+      {
+        id: 'key_durable_prod',
+        projectId: 'proj_durable',
+        environment: 'prod',
+        name: 'prod runtime',
+      },
+      {},
+      first.url,
+    )
+    runtimeKey = key.token
+    await post(
+      '/api/policy-rollouts',
+      {
+        id: 'rollout_durable_prod',
+        projectId: 'proj_durable',
+        environment: 'prod',
+        policySource: 'project:durable-support',
+        policyId: 'pol_durable',
+        cacheTtlSeconds: 180,
+      },
+      {},
+      first.url,
+    )
+    await post(
+      '/api/events',
+      {
+        id: 'evt_durable_001',
+        traceId: 'trace-durable',
+        tenant: 'acme',
+        feature: 'support-chat',
+        model: 'gpt-4o-mini',
+        provider: 'openai',
+        risk: 'medium',
+        metadata: {
+          decision: { action: 'allow' },
+          messages: [{ role: 'user', content: 'raw prompt must not persist' }],
+        },
+      },
+      { authorization: `Bearer ${runtimeKey}` },
+      first.url,
+    )
+    await post(
+      '/api/audit-records',
+      {
+        id: 'audit_durable_001',
+        kind: 'admin.audit',
+        actor: 'admin',
+        action: 'review',
+        resource: 'policies',
+        resourceId: 'pol_durable',
+        traceId: 'trace-audit',
+        tenant: 'acme',
+        feature: 'support-chat',
+        metadata: {
+          decision: { status: 'approved' },
+          content: 'raw policy text must not persist',
+        },
+      },
+      {},
+      first.url,
+    )
+  } finally {
+    await closeServer(first.server)
+  }
+
+  const restarted = await startControlPlane({ port: 0, storage: 'sqlite', sqlitePath })
+  try {
+    assert.deepEqual(await restarted.store.migrationVersions(), [1])
+
+    const projects = await get('/api/projects', {}, restarted.url)
+    assert.equal(projects.items[0].id, 'proj_durable')
+
+    const listedKeys = await get('/api/keys', {}, restarted.url)
+    assert.equal(listedKeys.items[0].id, 'key_durable_prod')
+    assert.equal(listedKeys.items[0].keyHash, undefined)
+
+    const config = await get(
+      '/api/runtime/config?policy_source=project:durable-support',
+      { authorization: `Bearer ${runtimeKey}` },
+      restarted.url,
+    )
+    assert.equal(config.projectId, 'proj_durable')
+    assert.equal(config.policy.id, 'pol_durable')
+    assert.equal(config.budgets[0].limitUsd, 42)
+    assert.equal(config.cache.ttlSeconds, 180)
+
+    const snapshots = await get('/api/config-snapshots', {}, restarted.url)
+    assert.equal(snapshots.items.length, 1)
+    assert.equal(snapshots.items[0].policySource, 'project:durable-support')
+
+    const events = await get(
+      '/api/events?trace=trace-durable&tenant=acme&feature=support-chat&model=gpt-4o-mini&provider=openai&risk=medium',
+      {},
+      restarted.url,
+    )
+    assert.equal(events.items.length, 1)
+    assert.deepEqual(events.items[0].metadata, { decision: { action: 'allow' } })
+
+    const audit = await get('/api/audit-records?trace=trace-audit&tenant=acme&feature=support-chat', {}, restarted.url)
+    assert.equal(audit.items.length, 1)
+    assert.deepEqual(audit.items[0].metadata, { decision: { status: 'approved' } })
+  } finally {
+    await closeServer(restarted.server)
+  }
+})
+
+test('postgres storage reports actionable configuration and driver errors', async () => {
+  await assert.rejects(
+    () => startControlPlane({ port: 0, storage: 'postgres' }),
+    /GAVIO_CONTROL_PLANE_DATABASE_URL/,
+  )
+  await assert.rejects(
+    () => startControlPlane({ port: 0, storage: 'postgres', databaseUrl: 'postgres://localhost/gavio' }),
+    /optional 'pg' package/,
+  )
+})
+
+async function get(path, headers = {}, target = base) {
+  const response = await fetch(`${target}${path}`, { headers })
   if (!response.ok) assert.fail(await response.text())
   return response.json()
 }
 
-async function post(path, body, headers = {}) {
-  const response = await fetch(`${base}${path}`, {
+async function post(path, body, headers = {}, target = base) {
+  const response = await fetch(`${target}${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...headers },
     body: JSON.stringify(body),
   })
   if (!response.ok) assert.fail(await response.text())
   return response.json()
+}
+
+function closeServer(target) {
+  return new Promise((resolve, reject) => {
+    target.close((error) => (error ? reject(error) : resolve()))
+  })
 }

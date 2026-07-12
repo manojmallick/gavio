@@ -1,11 +1,13 @@
 # Self-hosted Control Plane
 
-Since: `1.7.0`
+Since: `1.7.0`; durable persistence since `2.3.0`
 
 The Gavio control plane is optional and self-hosted. It manages runtime
 projects, environments, hashed runtime keys, policy rollout, budgets, audit
 search, and config snapshots while keeping SDK runtime packages dependency
-light.
+light. v2.3.0 adds storage adapters for the control-plane app: the default JSON
+file store, migration-backed SQLite for durable local/private deployments, and
+a Postgres adapter path for managed database deployments.
 
 ## Local server
 
@@ -16,6 +18,37 @@ npm start
 
 The local API listens on `http://127.0.0.1:8787` by default and stores state in
 `.gavio-control-plane/state.json`.
+
+## Storage
+
+| Mode | Configuration | Notes |
+|---|---|---|
+| JSON file | default, or `GAVIO_CONTROL_PLANE_STORAGE=file` with `GAVIO_CONTROL_PLANE_STATE=.gavio-control-plane/state.json` | Backwards-compatible local store. |
+| SQLite | `GAVIO_CONTROL_PLANE_STORAGE=sqlite` with `GAVIO_CONTROL_PLANE_SQLITE_PATH=.gavio-control-plane/control-plane.sqlite` | Runs idempotent migrations on startup and persists projects, environments, keys, policies, rollouts, budgets, events, audit records, and config snapshots. Requires a Node runtime with `node:sqlite` support. |
+| Postgres | `GAVIO_CONTROL_PLANE_STORAGE=postgres` with `GAVIO_CONTROL_PLANE_DATABASE_URL=postgres://...` | Uses the same migration contract. The optional `pg` driver must be installed in `apps/control-plane` before enabling this mode. |
+
+SQLite example:
+
+```bash
+cd apps/control-plane
+GAVIO_CONTROL_PLANE_STORAGE=sqlite \
+GAVIO_CONTROL_PLANE_SQLITE_PATH=.gavio-control-plane/control-plane.sqlite \
+npm start
+```
+
+Postgres example:
+
+```bash
+cd apps/control-plane
+npm install pg
+GAVIO_CONTROL_PLANE_STORAGE=postgres \
+GAVIO_CONTROL_PLANE_DATABASE_URL=postgres://gavio:gavio@localhost:5432/gavio \
+npm start
+```
+
+Migrations are intentionally idempotent: every startup checks the
+`gavio_control_plane_migrations` table and applies missing schema changes
+before serving requests.
 
 ## Runtime config flow
 

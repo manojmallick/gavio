@@ -82,6 +82,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `2.0.0` | Platform-Grade Runtime | Metadata-only platform runtime profile, readiness score, deterministic gap checks, and cross-SDK posture helpers |
 | `2.1.0` | Eval Runner + CI Gates | `gavio eval run` for JSON/YAML suites, baseline comparison, fail-under gates, and JSON/JUnit reports |
 | `2.2.0` | Prompt Registry v2 | File-backed prompt manifests, semver selectors, approval metadata, metadata-safe diffs, and HMAC signatures |
+| `2.3.0` | Control Plane Persistence | SQLite migrations, Postgres adapter path, durable projects/envs/keys/policies/budgets/events/audit search |
 
 ---
 
@@ -142,7 +143,7 @@ pipeline in reverse order:
 - **Domain-aware Policy Packs** — signed catalog manifests for core, finance, healthcare, legal, HR, support, code security, and regional identifiers, plus custom regex-rule packs with overrides and false-positive suppression.
 - **Tool Runtime** — validate tool inputs/outputs, freshness, conflicts, permissions, approvals, replay records, and MCP provenance before tool results re-enter model context.
 - **Runtime context** — interceptors can now read first-class `tenant`, `feature`, `cost`, `retry`, `tools`, and `policy` fields derived from request metadata.
-- **Self-hosted Control Plane** — runtime projects, environments, hashed keys, policy rollout, budget config, audit/event search, and config snapshots for local/private deployments.
+- **Self-hosted Control Plane** — runtime projects, environments, hashed keys, policy rollout, budget config, audit/event search, config snapshots, and v2.3.0 durable SQLite/Postgres storage for local/private deployments.
 - **Production Trust Package** — build and verify metadata-only evidence bundles for release reviews, threat models, benchmarks, and production architecture signoff.
 - **Platform Runtime Profile** — compute metadata-only readiness scores and deterministic gaps across audit, runtime events, policies, costs, tools, and trust evidence.
 
@@ -414,6 +415,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Tool Runtime — schema validation, freshness, conflict detection, provenance | `F-TOOL-01/02/03/04` | 0.14.0 |
 | Tool Runtime v2 — registry-backed permissions, approval gates, replay, MCP metadata | `F-TOOL-05/06/07/08` | 1.5.0 |
 | Self-hosted Control Plane — runtime config, policy rollout, budget config, audit search, snapshots | — | 1.7.0 |
+| Control Plane Persistence — SQLite migrations, Postgres adapter path, durable runtime/admin records | `F-CP-01` | 2.3.0 |
 | Production Trust Package — metadata-only release evidence bundle and verifier | `F-TRUST-01` | 1.8.0 |
 | Ecosystem integration catalog — compatibility matrix, metadata helpers, JS subpath, and offline recipes | `F-INT-01` | 1.9.0 |
 | Platform Runtime Profile — metadata-only readiness score, platform surfaces, evidence, and gap checks | `F-PLAT-01` | 2.0.0 |

@@ -17,11 +17,19 @@ const API_RESOURCES = new Map([
 ])
 
 export async function startControlPlane(options = {}) {
-  const store = createStore({ statePath: options.statePath })
+  const store = await createStore({
+    storage: options.storage,
+    statePath: options.statePath,
+    sqlitePath: options.sqlitePath,
+    databaseUrl: options.databaseUrl,
+  })
   const host = options.host ?? '127.0.0.1'
   const port = options.port ?? 8787
   const server = createServer((req, res) => {
     handleRequest(req, res, store).catch((error) => sendError(res, error))
+  })
+  server.on('close', () => {
+    void Promise.resolve(store.close?.()).catch(() => {})
   })
   await new Promise((resolve) => server.listen(port, host, resolve))
   const address = server.address()
@@ -35,40 +43,40 @@ async function handleRequest(req, res, store) {
     return sendHtml(res, readUi())
   }
   if (req.method === 'GET' && url.pathname === '/health') {
-    return sendJson(res, { ok: true, service: 'gavio-control-plane' })
+    return sendJson(res, { ok: true, service: 'gavio-control-plane', storage: store.kind })
   }
   if (req.method === 'GET' && url.pathname === '/api/runtime/config') {
     const policySource = url.searchParams.get('policy_source') ?? url.searchParams.get('policySource')
     const token = bearerToken(req)
     if (!policySource) return sendError(res, httpError(400, 'policy_source is required'))
-    const config = store.runtimeConfig(policySource, token, url.searchParams.get('fail_mode') ?? 'open')
+    const config = await store.runtimeConfig(policySource, token, url.searchParams.get('fail_mode') ?? 'open')
     return sendJson(res, config)
   }
   if (url.pathname === '/api/keys') {
-    if (req.method === 'GET') return sendJson(res, { items: store.listKeys() })
+    if (req.method === 'GET') return sendJson(res, { items: await store.listKeys() })
     if (req.method === 'POST') {
       requireRole(req, ROLES.WRITE_ADMIN)
-      return sendJson(res, store.createRuntimeKey(await readJson(req), role(req)), 201)
+      return sendJson(res, await store.createRuntimeKey(await readJson(req), role(req)), 201)
     }
   }
   const resource = API_RESOURCES.get(url.pathname)
   if (!resource) return sendError(res, httpError(404, 'not found'))
   if (req.method === 'GET') {
-    return sendJson(res, { items: store.list(resource, Object.fromEntries(url.searchParams)) })
+    return sendJson(res, { items: await store.list(resource, Object.fromEntries(url.searchParams)) })
   }
   if (req.method === 'POST') {
-    requireMutation(req, resource, store)
-    const item = store.create(resource, await readJson(req), role(req))
+    await requireMutation(req, resource, store)
+    const item = await store.create(resource, await readJson(req), role(req))
     return sendJson(res, item, 201)
   }
   return sendError(res, httpError(405, 'method not allowed'))
 }
 
-function requireMutation(req, resource, store) {
+async function requireMutation(req, resource, store) {
   if (resource === 'events') {
     const token = bearerToken(req, false)
     if (token) {
-      if (!store.verifyRuntimeKey(token)) throw httpError(401, 'invalid runtime key')
+      if (!(await store.verifyRuntimeKey(token))) throw httpError(401, 'invalid runtime key')
       return
     }
     return requireRole(req, ROLES.WRITE_EVENT)
