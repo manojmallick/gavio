@@ -11,7 +11,7 @@ implemented per SDK, so you can compare the APIs side by side.
 | 04 | **Production core stack** — hash-chain audit → PII → rate limit → guardrails → semantic cache | [py](./python/04-production-stack/) | — | — | no |
 | 05 | **Inspector & multi-agent tracing** — trace waterfall, PII diff, agent DAG, sessions | [py](./python/05-inspector/) | [js](./javascript/05-inspector/) | — | no |
 | 06 | **Policy Packs** — core PII + FinTech + custom regex pack | [py](./python/06-policy-packs/) | [js](./javascript/06-policy-packs/) | [java](./java/06-policy-packs/) | no |
-| 07 | **Tool Runtime** — schema, freshness, conflicts, confidence, provenance | [py](./python/07-tool-runtime/) | [js](./javascript/07-tool-runtime/) | [java](./java/07-tool-runtime/) | no |
+| 07 | **Tool Runtime** — schema, freshness, conflicts, permissions, approvals, replay | [py](./python/07-tool-runtime/) | [js](./javascript/07-tool-runtime/) | [java](./java/07-tool-runtime/) | no |
 | 08 | **Runtime Export** — metadata-safe runtime events and JSONL export | [py](./python/08-runtime-export/) | [js](./javascript/08-runtime-export/) | [java](./java/08-runtime-export/) | no |
 | 09 | **Prompt Registry + Evals** — versioned templates and metadata-safe eval reports | [py](./python/09-prompt-registry-evals/) | [js](./javascript/09-prompt-registry-evals/) | [java](./java/09-prompt-registry-evals/) | no |
 

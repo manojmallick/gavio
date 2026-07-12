@@ -148,6 +148,13 @@ input/output schemas, checks freshness with per-call or context TTLs, detects
 conflicts across configured result keys, computes confidence, and records
 provenance under runtime context plus Inspector decision state.
 
+Tool Runtime v2 also accepts a lightweight registry under
+`metadata.tools.definitions[]`, global grants under `metadata.tools.permissions`,
+approval records under `metadata.tools.approvals[]`, and replay records under
+`metadata.tools.records[]`. Definitions can declare required permissions, risk,
+approval requirements, freshness TTLs, provenance requirements, and MCP metadata
+without coupling Gavio to a specific MCP implementation.
+
 ```python
 from gavio.interceptors.tool_runtime import ToolRuntimeInterceptor
 
@@ -162,6 +169,34 @@ gw = Gateway.builder().use(
 
 JavaScript imports `toolRuntime` from `gavio/interceptors/tool-runtime`; Java
 uses `io.gavio.interceptors.toolruntime.ToolRuntimeInterceptor`.
+
+```python
+from gavio.interceptors.tool_runtime import analyze_tool_runtime, replay_tool_runtime
+
+tools = {
+    "permissions": ["read.billing"],
+    "definitions": [
+        {
+            "name": "lookup_invoice",
+            "permissions": ["read.billing"],
+            "risk": "low",
+            "provenance_required": True,
+            "mcp": {"server": "billing-mcp", "tool": "lookup_invoice"},
+        }
+    ],
+    "calls": [
+        {
+            "id": "invoice-1",
+            "name": "lookup_invoice",
+            "result": {"status": "paid"},
+            "mcp": {"server": "billing-mcp", "tool": "lookup_invoice"},
+        }
+    ],
+}
+
+decision = analyze_tool_runtime(tools)
+replayed = replay_tool_runtime({**tools, "records": tools["calls"]})
+```
 
 ---
 

@@ -1,0 +1,174 @@
+{
+  "version": "1.5.0",
+  "cases": [
+    {
+      "id": "read-permission-allowed-with-mcp-metadata",
+      "tools": {
+        "now": "2026-07-12T12:00:30Z",
+        "permissions": ["read.billing"],
+        "definitions": [
+          {
+            "name": "lookup_invoice",
+            "description": "Read invoice status",
+            "permissions": ["read.billing"],
+            "risk": "low",
+            "freshness_ttl_seconds": 300,
+            "provenance_required": true,
+            "mcp": { "server": "billing-mcp", "tool": "lookup_invoice" },
+            "input_schema": {
+              "required": ["invoice_id"],
+              "properties": { "invoice_id": { "type": "string" } }
+            },
+            "output_schema": {
+              "required": ["status"],
+              "properties": { "status": { "type": "string" } }
+            }
+          }
+        ],
+        "calls": [
+          {
+            "id": "invoice-1",
+            "name": "lookup_invoice",
+            "input": { "invoice_id": "INV-100" },
+            "result": { "status": "paid" },
+            "created_at": "2026-07-12T12:00:00Z",
+            "confidence": 0.98,
+            "mcp": { "server": "billing-mcp", "tool": "lookup_invoice", "session_id": "mcp-session-1" }
+          }
+        ]
+      },
+      "expected": {
+        "violation_count": 0,
+        "decision_count": 1,
+        "first_action": "allow",
+        "provenance_count": 1,
+        "first_mcp_server": "billing-mcp"
+      }
+    },
+    {
+      "id": "missing-permission-blocks-low-risk-tool",
+      "tools": {
+        "now": "2026-07-12T12:00:30Z",
+        "permissions": ["read.customer"],
+        "definitions": [
+          {
+            "name": "lookup_invoice",
+            "permissions": ["read.billing"],
+            "risk": "low"
+          }
+        ],
+        "calls": [
+          {
+            "id": "invoice-2",
+            "name": "lookup_invoice",
+            "result": { "status": "open" },
+            "source": "billing-api"
+          }
+        ]
+      },
+      "expected": {
+        "violation_count": 1,
+        "first_violation_kind": "permission",
+        "decision_count": 1,
+        "first_action": "block",
+        "blocked_count": 1
+      }
+    },
+    {
+      "id": "destructive-tool-requires-approval",
+      "tools": {
+        "now": "2026-07-12T12:00:30Z",
+        "permissions": ["destructive.billing"],
+        "definitions": [
+          {
+            "name": "refund_invoice",
+            "permissions": ["destructive.billing"],
+            "risk": "high",
+            "requires_approval": true
+          }
+        ],
+        "calls": [
+          {
+            "id": "refund-1",
+            "name": "refund_invoice",
+            "result": { "status": "pending" },
+            "source": "billing-api"
+          }
+        ]
+      },
+      "expected": {
+        "violation_count": 1,
+        "first_violation_kind": "approval",
+        "decision_count": 1,
+        "first_action": "require_approval",
+        "approval_required_count": 1
+      }
+    },
+    {
+      "id": "destructive-tool-approved",
+      "tools": {
+        "now": "2026-07-12T12:00:30Z",
+        "permissions": ["destructive.billing"],
+        "definitions": [
+          {
+            "name": "refund_invoice",
+            "permissions": ["destructive.billing"],
+            "risk": "high",
+            "requires_approval": true
+          }
+        ],
+        "approvals": [
+          {
+            "tool_call_id": "refund-2",
+            "status": "approved",
+            "approved_by": "ops-lead",
+            "expires_at": "2026-07-12T12:05:00Z"
+          }
+        ],
+        "calls": [
+          {
+            "id": "refund-2",
+            "name": "refund_invoice",
+            "result": { "status": "submitted" },
+            "source": "billing-api"
+          }
+        ]
+      },
+      "expected": {
+        "violation_count": 0,
+        "decision_count": 1,
+        "first_action": "allow",
+        "first_approved": true,
+        "approval_required_count": 1
+      }
+    },
+    {
+      "id": "provenance-required-is-enforced",
+      "tools": {
+        "now": "2026-07-12T12:00:30Z",
+        "permissions": ["read.billing"],
+        "definitions": [
+          {
+            "name": "lookup_invoice",
+            "permissions": ["read.billing"],
+            "risk": "low",
+            "provenance_required": true
+          }
+        ],
+        "calls": [
+          {
+            "id": "invoice-3",
+            "name": "lookup_invoice",
+            "result": { "status": "open" }
+          }
+        ]
+      },
+      "expected": {
+        "violation_count": 1,
+        "first_violation_kind": "provenance",
+        "decision_count": 1,
+        "first_action": "allow"
+      }
+    }
+  ]
+}

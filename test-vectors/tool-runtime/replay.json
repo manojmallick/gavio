@@ -1,0 +1,76 @@
+{
+  "version": "1.5.0",
+  "cases": [
+    {
+      "id": "replay-approved-tool-call",
+      "record": {
+        "now": "2026-07-12T12:00:30Z",
+        "permissions": ["read.billing", "destructive.billing"],
+        "definitions": [
+          {
+            "name": "refund_invoice",
+            "permissions": ["destructive.billing"],
+            "risk": "high",
+            "requires_approval": true,
+            "mcp": { "server": "billing-mcp", "tool": "refund_invoice" }
+          }
+        ],
+        "approvals": [
+          {
+            "tool_call_id": "refund-r1",
+            "status": "approved",
+            "approved_by": "ops-lead",
+            "expires_at": "2026-07-12T12:05:00Z"
+          }
+        ],
+        "records": [
+          {
+            "id": "refund-r1",
+            "name": "refund_invoice",
+            "result": { "status": "submitted" },
+            "created_at": "2026-07-12T12:00:00Z",
+            "mcp": { "server": "billing-mcp", "tool": "refund_invoice" }
+          }
+        ]
+      },
+      "expected": {
+        "violation_count": 0,
+        "decision_count": 1,
+        "first_action": "allow",
+        "first_approved": true,
+        "replayable": true,
+        "first_mcp_server": "billing-mcp"
+      }
+    },
+    {
+      "id": "replay-reconstructs-blocked-permission",
+      "record": {
+        "now": "2026-07-12T12:00:30Z",
+        "permissions": ["read.customer"],
+        "definitions": [
+          {
+            "name": "lookup_invoice",
+            "permissions": ["read.billing"],
+            "risk": "low"
+          }
+        ],
+        "records": [
+          {
+            "id": "invoice-r1",
+            "name": "lookup_invoice",
+            "result": { "status": "open" },
+            "source": "billing-api"
+          }
+        ]
+      },
+      "expected": {
+        "violation_count": 1,
+        "first_violation_kind": "permission",
+        "decision_count": 1,
+        "first_action": "block",
+        "blocked_count": 1,
+        "replayable": true
+      }
+    }
+  ]
+}

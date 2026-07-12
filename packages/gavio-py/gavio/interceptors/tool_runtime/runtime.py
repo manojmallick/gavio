@@ -60,6 +60,9 @@ class ToolRuntimeInterceptor(Interceptor):
         ctx.inspect("tool_runtime", decision)
         for conflict in decision["conflicts"]:
             ctx.record_governance_event({"kind": "tool_conflict", **conflict})
+        for call_decision in decision["decisions"]:
+            if call_decision["action"] != "allow":
+                ctx.record_governance_event({"kind": "tool_runtime_decision", **call_decision})
         if decision["violations"] and self.on_failure == "error" and not ctx.dry_run:
             messages = [v["message"] for v in decision["violations"]]
             raise ToolRuntimeError("; ".join(messages))
@@ -77,24 +80,49 @@ def analyze_tool_runtime(
 
     tools = dict(tools or {})
     calls = _calls(tools)
+    definitions = _definitions(tools)
     reference_time = now or _parse_time(_first(tools, "now", "evaluated_at")) or datetime.now(UTC)
     default_max_age = _number(_first(tools, "max_age_seconds", "maxAgeSeconds"))
     if max_age_seconds is not None:
         default_max_age = float(max_age_seconds)
+    granted_permissions = _permissions_granted(tools)
+    approvals = _approvals(tools)
 
     violations: list[dict[str, Any]] = []
     provenance: list[dict[str, Any]] = []
     confidence_values: list[float] = []
+    decisions: list[dict[str, Any]] = []
 
     for call in calls:
         tool_id = _tool_id(call)
         tool_name = _tool_name(call)
+        definition = _tool_definition(call, definitions)
         result = _record(_first(call, "result", "output"))
         input_value = _record(_first(call, "input", "arguments", "args"))
+        required_permissions = _permissions_required(call, definition)
+        missing_permissions = [
+            permission
+            for permission in required_permissions
+            if not _permission_granted(permission, granted_permissions)
+        ]
+        risk = _risk_level(call, definition)
+        approval_required = _approval_required(call, definition, risk, required_permissions)
+        approval = _matching_approval(call, approvals, reference_time)
+        approved = approval is not None
 
         for label, value, schema in (
-            ("input", input_value, _record(_first(call, "input_schema", "inputSchema"))),
-            ("output", result, _record(_first(call, "output_schema", "outputSchema", "schema"))),
+            (
+                "input",
+                input_value,
+                _record(_first(call, "input_schema", "inputSchema"))
+                or _record(_first(definition, "input_schema", "inputSchema")),
+            ),
+            (
+                "output",
+                result,
+                _record(_first(call, "output_schema", "outputSchema", "schema"))
+                or _record(_first(definition, "output_schema", "outputSchema", "schema")),
+            ),
         ):
             if schema:
                 violations.extend(_validate_schema(value, schema, label, tool_id, tool_name))
@@ -103,6 +131,8 @@ def analyze_tool_runtime(
             _first(call, "created_at", "createdAt", "timestamp", "observed_at")
         )
         ttl = _number(_first(call, "ttl_seconds", "ttlSeconds", "max_age_seconds", "maxAgeSeconds"))
+        if ttl is None:
+            ttl = _number(_first(definition, "freshness_ttl_seconds", "freshnessTtlSeconds"))
         if ttl is None:
             ttl = default_max_age
         if created_at is not None and ttl is not None:
@@ -119,6 +149,51 @@ def analyze_tool_runtime(
                     )
                 )
 
+        mcp = _mcp_metadata(call, definition)
+        source = _first(call, "source", "provider", "provenance")
+        if source is None and mcp:
+            source = mcp.get("server") or mcp.get("tool") or "mcp"
+        if _bool(_first(call, "provenance_required", "provenanceRequired")) or _bool(
+            _first(definition, "provenance_required", "provenanceRequired")
+        ):
+            if source is None and not mcp:
+                violations.append(
+                    _violation(
+                        "provenance",
+                        tool_id,
+                        tool_name,
+                        "tool result is missing required provenance",
+                    )
+                )
+
+        action = "allow"
+        if missing_permissions:
+            action = "require_approval" if approval_required and not approved else "block"
+            if not approved:
+                violations.append(
+                    _violation(
+                        "permission",
+                        tool_id,
+                        tool_name,
+                        "tool call is missing required permission(s): "
+                        + ", ".join(missing_permissions),
+                        action=action,
+                        missing_permissions=missing_permissions,
+                    )
+                )
+        if approval_required and not approved:
+            action = "require_approval"
+            violations.append(
+                _violation(
+                    "approval",
+                    tool_id,
+                    tool_name,
+                    "tool call requires approval",
+                    action=action,
+                    risk=risk,
+                )
+            )
+
         confidence = _number(call.get("confidence"))
         if confidence is not None:
             confidence_values.append(confidence)
@@ -126,13 +201,30 @@ def analyze_tool_runtime(
             {
                 "tool_id": tool_id,
                 "tool_name": tool_name,
-                "source": str(_first(call, "source", "provider", "provenance") or "unknown"),
+                "source": str(source or "unknown"),
                 "created_at": created_at.isoformat().replace("+00:00", "Z")
                 if created_at is not None
                 else None,
                 "cache_hit": bool(_first(call, "cache_hit", "cacheHit") or False),
                 "confidence": confidence,
+                "mcp": mcp or None,
+                "mcp_server": mcp.get("server") if mcp else None,
+                "mcp_tool": mcp.get("tool") if mcp else None,
                 "result_keys": sorted(result.keys()),
+            }
+        )
+        decisions.append(
+            {
+                "tool_id": tool_id,
+                "tool_name": tool_name,
+                "action": action,
+                "risk": risk,
+                "permissions_required": required_permissions,
+                "permissions_granted": granted_permissions,
+                "missing_permissions": missing_permissions,
+                "approval_required": approval_required,
+                "approved": approved,
+                "mcp": mcp or None,
             }
         )
 
@@ -144,14 +236,207 @@ def analyze_tool_runtime(
         "conflicts": conflicts,
         "confidence": confidence,
         "provenance": provenance,
+        "decisions": decisions,
+        "approvals_required": sum(1 for decision in decisions if decision["approval_required"]),
+        "blocked": sum(1 for decision in decisions if decision["action"] == "block"),
+        "replayable": bool(calls),
     }
 
 
+def replay_tool_runtime(
+    record: dict[str, Any] | None,
+    *,
+    max_age_seconds: float | None = None,
+    conflict_keys: Iterable[str] | None = None,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Reconstruct a Tool Runtime decision from stored tool-call records."""
+
+    return analyze_tool_runtime(
+        record,
+        max_age_seconds=max_age_seconds,
+        conflict_keys=conflict_keys,
+        now=now,
+    )
+
+
 def _calls(tools: dict[str, Any]) -> list[dict[str, Any]]:
-    raw = _first(tools, "calls", "tool_calls", "toolCalls", "results")
+    raw = _first(tools, "calls", "tool_calls", "toolCalls", "results", "records")
     if not isinstance(raw, list):
         return []
     return [dict(item) for item in raw if isinstance(item, dict)]
+
+
+def _definitions(tools: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    raw = _first(tools, "definitions", "tool_definitions", "toolDefinitions", "registry")
+    if isinstance(raw, dict):
+        raw = _first(raw, "tools", "definitions") or raw
+    definitions: list[dict[str, Any]]
+    if isinstance(raw, dict):
+        definitions = []
+        for key, value in raw.items():
+            if isinstance(value, dict):
+                definition = dict(value)
+                definition.setdefault("name", str(key))
+                definitions.append(definition)
+    elif isinstance(raw, list):
+        definitions = [dict(item) for item in raw if isinstance(item, dict)]
+    else:
+        definitions = []
+    out: dict[str, dict[str, Any]] = {}
+    for definition in definitions:
+        for key in (
+            _first(definition, "id", "tool_id", "toolId"),
+            _first(definition, "name", "tool", "tool_name", "toolName"),
+        ):
+            if key is not None:
+                out[str(key)] = definition
+    return out
+
+
+def _tool_definition(
+    call: dict[str, Any],
+    definitions: dict[str, dict[str, Any]],
+) -> dict[str, Any]:
+    inline = _record(_first(call, "definition"))
+    if inline:
+        return inline
+    for key in (
+        _first(call, "definition_id", "definitionId"),
+        _first(call, "name", "tool", "tool_name", "toolName"),
+        _first(call, "id", "tool_call_id", "toolCallId"),
+    ):
+        if key is not None and str(key) in definitions:
+            return definitions[str(key)]
+    return {}
+
+
+def _permissions_required(call: dict[str, Any], definition: dict[str, Any]) -> list[str]:
+    permissions: set[str] = set()
+    for source in (definition, call):
+        for key in ("permissions", "required_permissions", "requiredPermissions"):
+            value = source.get(key)
+            if isinstance(value, list):
+                permissions.update(str(item) for item in value if item is not None)
+    return sorted(permissions)
+
+
+def _permissions_granted(tools: dict[str, Any]) -> list[str]:
+    permissions: set[str] = set()
+    for key in (
+        "permissions",
+        "granted_permissions",
+        "grantedPermissions",
+        "allowed_permissions",
+        "allowedPermissions",
+        "scopes",
+    ):
+        value = tools.get(key)
+        if isinstance(value, list):
+            permissions.update(str(item) for item in value if item is not None)
+    return sorted(permissions)
+
+
+def _permission_granted(required: str, grants: Iterable[str]) -> bool:
+    for grant in grants:
+        if grant == "*" or grant == required:
+            return True
+        if grant.endswith(".*") and required.startswith(grant[:-1]):
+            return True
+    return False
+
+
+def _risk_level(call: dict[str, Any], definition: dict[str, Any]) -> str:
+    value = _first(call, "risk", "risk_level", "riskLevel")
+    if value is None:
+        value = _first(definition, "risk", "risk_level", "riskLevel")
+    return str(value or "low").lower()
+
+
+def _approval_required(
+    call: dict[str, Any],
+    definition: dict[str, Any],
+    risk: str,
+    permissions: Iterable[str],
+) -> bool:
+    explicit = _first(call, "requires_approval", "requiresApproval")
+    if explicit is None:
+        explicit = _first(definition, "requires_approval", "requiresApproval")
+    if explicit is not None:
+        return _bool(explicit)
+    if risk in {"high", "critical", "destructive"}:
+        return True
+    for permission in permissions:
+        if permission.startswith("destructive.") or permission.startswith("external_side_effect."):
+            return True
+        if permission in {
+            "destructive",
+            "destructive.*",
+            "external_side_effect",
+            "external_side_effect.*",
+        }:
+            return True
+    return False
+
+
+def _approvals(tools: dict[str, Any]) -> list[dict[str, Any]]:
+    raw = _first(tools, "approvals", "approval_records", "approvalRecords")
+    if not isinstance(raw, list):
+        return []
+    return [dict(item) for item in raw if isinstance(item, dict)]
+
+
+def _matching_approval(
+    call: dict[str, Any],
+    approvals: list[dict[str, Any]],
+    now: datetime,
+) -> dict[str, Any] | None:
+    inline = _record(_first(call, "approval"))
+    candidates = [inline] if inline else []
+    candidates.extend(approvals)
+    ids = {_tool_id(call), _tool_name(call)}
+    for approval in candidates:
+        target = _first(
+            approval,
+            "tool_call_id",
+            "toolCallId",
+            "call_id",
+            "callId",
+            "tool_id",
+            "toolId",
+        )
+        if target is not None and str(target) not in ids:
+            continue
+        if target is None:
+            tool_name = _first(approval, "tool_name", "toolName", "name", "tool")
+            if tool_name is not None and str(tool_name) not in ids:
+                continue
+        status = str(_first(approval, "status", "decision") or "").lower()
+        approved = _bool(_first(approval, "approved")) or status in {"approved", "allow", "allowed"}
+        if not approved or _bool(_first(approval, "revoked", "denied")):
+            continue
+        expires_at = _parse_time(_first(approval, "expires_at", "expiresAt"))
+        if expires_at is not None and expires_at < now:
+            continue
+        return approval
+    return None
+
+
+def _mcp_metadata(call: dict[str, Any], definition: dict[str, Any]) -> dict[str, Any]:
+    raw = _record(_first(definition, "mcp", "mcp_metadata", "mcpMetadata"))
+    raw.update(_record(_first(call, "mcp", "mcp_metadata", "mcpMetadata")))
+    aliases = {
+        "server": ("mcp_server", "mcpServer", "server"),
+        "tool": ("mcp_tool", "mcpTool"),
+        "session_id": ("mcp_session_id", "mcpSessionId"),
+    }
+    for canonical, keys in aliases.items():
+        value = _first(call, *keys)
+        if value is None:
+            value = _first(definition, *keys)
+        if value is not None:
+            raw[canonical] = str(value)
+    return {str(key): value for key, value in raw.items() if value is not None}
 
 
 def _conflicts(
@@ -281,6 +566,14 @@ def _number(value: Any) -> float | None:
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         return float(value)
     return None
+
+
+def _bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.lower() in {"1", "true", "yes", "approved", "allow", "allowed"}
+    return False
 
 
 def _parse_time(value: Any) -> datetime | None:

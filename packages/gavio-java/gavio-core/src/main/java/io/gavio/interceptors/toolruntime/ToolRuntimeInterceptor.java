@@ -48,6 +48,10 @@ public final class ToolRuntimeInterceptor implements Interceptor {
         return analyze(tools, null, List.of(), null);
     }
 
+    public static Map<String, Object> replay(Map<String, Object> record) {
+        return analyze(record, null, List.of(), null);
+    }
+
     public static Map<String, Object> analyze(
             Map<String, Object> tools,
             Double maxAgeSeconds,
@@ -55,6 +59,7 @@ public final class ToolRuntimeInterceptor implements Interceptor {
             Instant now) {
         Map<String, Object> context = tools == null ? Map.of() : new LinkedHashMap<>(tools);
         List<Map<String, Object>> calls = calls(context);
+        Map<String, Map<String, Object>> definitions = definitions(context);
         Instant referenceTime = now;
         if (referenceTime == null) {
             referenceTime = parseTime(first(context, "now", "evaluated_at"));
@@ -66,28 +71,49 @@ public final class ToolRuntimeInterceptor implements Interceptor {
         if (defaultMaxAge == null) {
             defaultMaxAge = number(first(context, "max_age_seconds", "maxAgeSeconds"));
         }
+        List<String> grantedPermissions = grantedPermissions(context);
+        List<Map<String, Object>> approvals = approvals(context);
 
         List<Map<String, Object>> violations = new ArrayList<>();
         List<Map<String, Object>> provenance = new ArrayList<>();
         List<Double> confidenceValues = new ArrayList<>();
+        List<Map<String, Object>> decisions = new ArrayList<>();
 
         for (Map<String, Object> call : calls) {
             String toolId = toolId(call);
             String toolName = toolName(call);
+            Map<String, Object> definition = definitionFor(call, definitions);
             Map<String, Object> result = record(first(call, "result", "output"));
             Map<String, Object> input = record(first(call, "input", "arguments", "args"));
+            List<String> requiredPermissions = requiredPermissions(call, definition);
+            List<String> missingPermissions = requiredPermissions.stream()
+                    .filter(permission -> !permissionGranted(permission, grantedPermissions))
+                    .toList();
+            String risk = riskLevel(call, definition);
+            boolean approvalRequired = approvalRequired(call, definition, risk, requiredPermissions);
+            Map<String, Object> approval = matchingApproval(call, approvals, referenceTime);
+            boolean approved = approval != null;
 
             Map<String, Object> inputSchema = record(first(call, "input_schema", "inputSchema"));
+            if (inputSchema.isEmpty()) {
+                inputSchema = record(first(definition, "input_schema", "inputSchema"));
+            }
             if (!inputSchema.isEmpty()) {
                 violations.addAll(validateSchema(input, inputSchema, "input", toolId, toolName));
             }
             Map<String, Object> outputSchema = record(first(call, "output_schema", "outputSchema", "schema"));
+            if (outputSchema.isEmpty()) {
+                outputSchema = record(first(definition, "output_schema", "outputSchema", "schema"));
+            }
             if (!outputSchema.isEmpty()) {
                 violations.addAll(validateSchema(result, outputSchema, "output", toolId, toolName));
             }
 
             Instant createdAt = parseTime(first(call, "created_at", "createdAt", "timestamp", "observed_at"));
             Double ttl = number(first(call, "ttl_seconds", "ttlSeconds", "max_age_seconds", "maxAgeSeconds"));
+            if (ttl == null) {
+                ttl = number(first(definition, "freshness_ttl_seconds", "freshnessTtlSeconds"));
+            }
             if (ttl == null) {
                 ttl = defaultMaxAge;
             }
@@ -103,6 +129,48 @@ public final class ToolRuntimeInterceptor implements Interceptor {
                 }
             }
 
+            Map<String, Object> mcp = mcpMetadata(call, definition);
+            Object source = first(call, "source", "provider", "provenance");
+            if (source == null && !mcp.isEmpty()) {
+                source = mcp.getOrDefault("server", mcp.getOrDefault("tool", "mcp"));
+            }
+            if (bool(first(call, "provenance_required", "provenanceRequired"))
+                    || bool(first(definition, "provenance_required", "provenanceRequired"))) {
+                if (source == null && mcp.isEmpty()) {
+                    violations.add(violation(
+                            "provenance",
+                            toolId,
+                            toolName,
+                            "tool result is missing required provenance",
+                            Map.of()));
+                }
+            }
+
+            String action = "allow";
+            if (!missingPermissions.isEmpty()) {
+                action = approvalRequired && !approved ? "require_approval" : "block";
+                if (!approved) {
+                    Map<String, Object> extra = new LinkedHashMap<>();
+                    extra.put("action", action);
+                    extra.put("missing_permissions", missingPermissions);
+                    violations.add(violation(
+                            "permission",
+                            toolId,
+                            toolName,
+                            "tool call is missing required permission(s): " + String.join(", ", missingPermissions),
+                            extra));
+                }
+            }
+            if (approvalRequired && !approved) {
+                action = "require_approval";
+                violations.add(violation(
+                        "approval",
+                        toolId,
+                        toolName,
+                        "tool call requires approval",
+                        Map.of("action", action, "risk", risk)));
+            }
+
             Double confidence = number(call.get("confidence"));
             if (confidence != null) {
                 confidenceValues.add(confidence);
@@ -110,13 +178,28 @@ public final class ToolRuntimeInterceptor implements Interceptor {
             Map<String, Object> trace = new LinkedHashMap<>();
             trace.put("tool_id", toolId);
             trace.put("tool_name", toolName);
-            Object source = first(call, "source", "provider", "provenance");
             trace.put("source", source == null ? "unknown" : String.valueOf(source));
             trace.put("created_at", createdAt == null ? null : createdAt.toString());
             trace.put("cache_hit", Boolean.TRUE.equals(first(call, "cache_hit", "cacheHit")));
             trace.put("confidence", confidence);
+            trace.put("mcp", mcp.isEmpty() ? null : mcp);
+            trace.put("mcp_server", mcp.get("server"));
+            trace.put("mcp_tool", mcp.get("tool"));
             trace.put("result_keys", result.keySet().stream().sorted().toList());
             provenance.add(trace);
+
+            Map<String, Object> callDecision = new LinkedHashMap<>();
+            callDecision.put("tool_id", toolId);
+            callDecision.put("tool_name", toolName);
+            callDecision.put("action", action);
+            callDecision.put("risk", risk);
+            callDecision.put("permissions_required", requiredPermissions);
+            callDecision.put("permissions_granted", grantedPermissions);
+            callDecision.put("missing_permissions", missingPermissions);
+            callDecision.put("approval_required", approvalRequired);
+            callDecision.put("approved", approved);
+            callDecision.put("mcp", mcp.isEmpty() ? null : mcp);
+            decisions.add(callDecision);
         }
 
         List<Map<String, Object>> conflicts = conflicts(calls, context, conflictKeys);
@@ -126,6 +209,14 @@ public final class ToolRuntimeInterceptor implements Interceptor {
         decision.put("conflicts", conflicts);
         decision.put("confidence", overallConfidence(conflicts, confidenceValues));
         decision.put("provenance", provenance);
+        decision.put("decisions", decisions);
+        decision.put("approvals_required", decisions.stream()
+                .filter(item -> Boolean.TRUE.equals(item.get("approval_required")))
+                .count());
+        decision.put("blocked", decisions.stream()
+                .filter(item -> "block".equals(item.get("action")))
+                .count());
+        decision.put("replayable", !calls.isEmpty());
         return decision;
     }
 
@@ -147,6 +238,14 @@ public final class ToolRuntimeInterceptor implements Interceptor {
             event.putAll(conflict);
             ctx.recordGovernanceEvent(event);
         }
+        for (Map<String, Object> callDecision : (List<Map<String, Object>>) decision.get("decisions")) {
+            if (!"allow".equals(callDecision.get("action"))) {
+                Map<String, Object> event = new LinkedHashMap<>();
+                event.put("kind", "tool_runtime_decision");
+                event.putAll(callDecision);
+                ctx.recordGovernanceEvent(event);
+            }
+        }
         List<Map<String, Object>> violations = (List<Map<String, Object>>) decision.get("violations");
         if (!violations.isEmpty() && onFailure == OnFailure.ERROR && !ctx.dryRun()) {
             return CompletableFuture.failedFuture(new ToolRuntimeException(messages(violations)));
@@ -161,7 +260,7 @@ public final class ToolRuntimeInterceptor implements Interceptor {
     }
 
     private static List<Map<String, Object>> calls(Map<String, Object> tools) {
-        Object raw = first(tools, "calls", "tool_calls", "toolCalls", "results");
+        Object raw = first(tools, "calls", "tool_calls", "toolCalls", "results", "records");
         if (!(raw instanceof List<?> list)) {
             return List.of();
         }
@@ -170,6 +269,232 @@ public final class ToolRuntimeInterceptor implements Interceptor {
             if (item instanceof Map<?, ?> map) {
                 out.add(copyMap(map));
             }
+        }
+        return out;
+    }
+
+    private static Map<String, Map<String, Object>> definitions(Map<String, Object> tools) {
+        Object raw = first(tools, "definitions", "tool_definitions", "toolDefinitions", "registry");
+        if (raw instanceof Map<?, ?> map) {
+            Object nested = first(copyMap(map), "tools", "definitions");
+            raw = nested == null ? raw : nested;
+        }
+        List<Map<String, Object>> definitions = new ArrayList<>();
+        if (raw instanceof List<?> list) {
+            for (Object item : list) {
+                if (item instanceof Map<?, ?> map) {
+                    definitions.add(copyMap(map));
+                }
+            }
+        } else if (raw instanceof Map<?, ?> map) {
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                if (entry.getValue() instanceof Map<?, ?> value) {
+                    Map<String, Object> definition = copyMap(value);
+                    definition.putIfAbsent("name", String.valueOf(entry.getKey()));
+                    definitions.add(definition);
+                }
+            }
+        }
+        Map<String, Map<String, Object>> out = new LinkedHashMap<>();
+        for (Map<String, Object> definition : definitions) {
+            Object id = first(definition, "id", "tool_id", "toolId");
+            if (id != null) {
+                out.put(String.valueOf(id), definition);
+            }
+            Object name = first(definition, "name", "tool", "tool_name", "toolName");
+            if (name != null) {
+                out.put(String.valueOf(name), definition);
+            }
+        }
+        return out;
+    }
+
+    private static Map<String, Object> definitionFor(
+            Map<String, Object> call,
+            Map<String, Map<String, Object>> definitions) {
+        Map<String, Object> inline = record(first(call, "definition"));
+        if (!inline.isEmpty()) {
+            return inline;
+        }
+        Object[] keys = new Object[] {
+                first(call, "definition_id", "definitionId"),
+                first(call, "name", "tool", "tool_name", "toolName"),
+                first(call, "id", "tool_call_id", "toolCallId")
+        };
+        for (Object key : keys) {
+            if (key != null && definitions.containsKey(String.valueOf(key))) {
+                return definitions.get(String.valueOf(key));
+            }
+        }
+        return Map.of();
+    }
+
+    private static List<String> requiredPermissions(Map<String, Object> call, Map<String, Object> definition) {
+        Set<String> permissions = new LinkedHashSet<>();
+        for (Map<String, Object> source : List.of(definition, call)) {
+            for (String key : List.of("permissions", "required_permissions", "requiredPermissions")) {
+                Object raw = source.get(key);
+                if (raw instanceof List<?> list) {
+                    for (Object item : list) {
+                        if (item != null) {
+                            permissions.add(String.valueOf(item));
+                        }
+                    }
+                }
+            }
+        }
+        return permissions.stream().sorted().toList();
+    }
+
+    private static List<String> grantedPermissions(Map<String, Object> tools) {
+        Set<String> permissions = new LinkedHashSet<>();
+        for (String key : List.of(
+                "permissions",
+                "granted_permissions",
+                "grantedPermissions",
+                "allowed_permissions",
+                "allowedPermissions",
+                "scopes")) {
+            Object raw = tools.get(key);
+            if (raw instanceof List<?> list) {
+                for (Object item : list) {
+                    if (item != null) {
+                        permissions.add(String.valueOf(item));
+                    }
+                }
+            }
+        }
+        return permissions.stream().sorted().toList();
+    }
+
+    private static boolean permissionGranted(String required, List<String> grants) {
+        for (String grant : grants) {
+            if ("*".equals(grant) || required.equals(grant)) {
+                return true;
+            }
+            if (grant.endsWith(".*") && required.startsWith(grant.substring(0, grant.length() - 1))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String riskLevel(Map<String, Object> call, Map<String, Object> definition) {
+        Object value = first(call, "risk", "risk_level", "riskLevel");
+        if (value == null) {
+            value = first(definition, "risk", "risk_level", "riskLevel");
+        }
+        return value == null ? "low" : String.valueOf(value).toLowerCase();
+    }
+
+    private static boolean approvalRequired(
+            Map<String, Object> call,
+            Map<String, Object> definition,
+            String risk,
+            List<String> permissions) {
+        Object explicit = first(call, "requires_approval", "requiresApproval");
+        if (explicit == null) {
+            explicit = first(definition, "requires_approval", "requiresApproval");
+        }
+        if (explicit != null) {
+            return bool(explicit);
+        }
+        if (Set.of("high", "critical", "destructive").contains(risk)) {
+            return true;
+        }
+        for (String permission : permissions) {
+            if (permission.startsWith("destructive.") || permission.startsWith("external_side_effect.")) {
+                return true;
+            }
+            if (Set.of("destructive", "destructive.*", "external_side_effect", "external_side_effect.*")
+                    .contains(permission)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static List<Map<String, Object>> approvals(Map<String, Object> tools) {
+        Object raw = first(tools, "approvals", "approval_records", "approvalRecords");
+        if (!(raw instanceof List<?> list)) {
+            return List.of();
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Object item : list) {
+            if (item instanceof Map<?, ?> map) {
+                out.add(copyMap(map));
+            }
+        }
+        return out;
+    }
+
+    private static Map<String, Object> matchingApproval(
+            Map<String, Object> call,
+            List<Map<String, Object>> approvals,
+            Instant now) {
+        List<Map<String, Object>> candidates = new ArrayList<>();
+        Map<String, Object> inline = record(first(call, "approval"));
+        if (!inline.isEmpty()) {
+            candidates.add(inline);
+        }
+        candidates.addAll(approvals);
+        Set<String> ids = Set.of(toolId(call), toolName(call));
+        for (Map<String, Object> approval : candidates) {
+            Object target = first(
+                    approval,
+                    "tool_call_id",
+                    "toolCallId",
+                    "call_id",
+                    "callId",
+                    "tool_id",
+                    "toolId");
+            if (target != null && !ids.contains(String.valueOf(target))) {
+                continue;
+            }
+            if (target == null) {
+                Object name = first(approval, "tool_name", "toolName", "name", "tool");
+                if (name != null && !ids.contains(String.valueOf(name))) {
+                    continue;
+                }
+            }
+            String status = String.valueOf(first(approval, "status", "decision")).toLowerCase();
+            boolean approved = bool(first(approval, "approved"))
+                    || Set.of("approved", "allow", "allowed").contains(status);
+            if (!approved || bool(first(approval, "revoked", "denied"))) {
+                continue;
+            }
+            Instant expiresAt = parseTime(first(approval, "expires_at", "expiresAt"));
+            if (expiresAt != null && expiresAt.isBefore(now)) {
+                continue;
+            }
+            return approval;
+        }
+        return null;
+    }
+
+    private static Map<String, Object> mcpMetadata(Map<String, Object> call, Map<String, Object> definition) {
+        Map<String, Object> out = new LinkedHashMap<>(record(first(definition, "mcp", "mcp_metadata", "mcpMetadata")));
+        out.putAll(record(first(call, "mcp", "mcp_metadata", "mcpMetadata")));
+        Object server = first(call, "mcp_server", "mcpServer", "server");
+        if (server == null) {
+            server = first(definition, "mcp_server", "mcpServer", "server");
+        }
+        if (server != null) {
+            out.put("server", String.valueOf(server));
+        }
+        Object tool = first(call, "mcp_tool", "mcpTool");
+        if (tool == null) {
+            tool = first(definition, "mcp_tool", "mcpTool");
+        }
+        if (tool != null) {
+            out.put("tool", String.valueOf(tool));
+        }
+        Object sessionId = first(call, "mcp_session_id", "mcpSessionId");
+        if (sessionId == null) {
+            sessionId = first(definition, "mcp_session_id", "mcpSessionId");
+        }
+        if (sessionId != null) {
+            out.put("session_id", String.valueOf(sessionId));
         }
         return out;
     }
@@ -331,6 +656,17 @@ public final class ToolRuntimeInterceptor implements Interceptor {
 
     private static Double number(Object value) {
         return value instanceof Number number ? number.doubleValue() : null;
+    }
+
+    private static boolean bool(Object value) {
+        if (value instanceof Boolean b) {
+            return b;
+        }
+        if (value instanceof String s) {
+            return Set.of("1", "true", "yes", "approved", "allow", "allowed")
+                    .contains(s.toLowerCase());
+        }
+        return false;
     }
 
     private static Instant parseTime(Object value) {

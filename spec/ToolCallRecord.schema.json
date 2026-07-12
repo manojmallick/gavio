@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/ToolCallRecord.v1.json",
+  "title": "ToolCallRecord",
+  "description": "Observed tool-call input/output record consumed by Tool Runtime v2.",
+  "type": "object",
+  "required": ["id", "name"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "tool_call_id": { "type": "string", "minLength": 1 },
+    "toolCallId": { "type": "string", "minLength": 1 },
+    "name": { "type": "string", "minLength": 1 },
+    "tool": { "type": "string", "minLength": 1 },
+    "input": { "type": "object", "additionalProperties": true },
+    "arguments": { "type": "object", "additionalProperties": true },
+    "result": { "type": "object", "additionalProperties": true },
+    "output": { "type": "object", "additionalProperties": true },
+    "input_schema": { "type": "object", "additionalProperties": true },
+    "output_schema": { "type": "object", "additionalProperties": true },
+    "created_at": { "type": "string", "format": "date-time" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "ttl_seconds": { "type": "number", "minimum": 0 },
+    "ttlSeconds": { "type": "number", "minimum": 0 },
+    "source": { "type": "string" },
+    "provider": { "type": "string" },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "permissions": {
+      "type": "array",
+      "items": { "$ref": "./ToolPermission.schema.json" },
+      "uniqueItems": true
+    },
+    "risk": { "type": "string", "enum": ["low", "medium", "high", "critical", "destructive"] },
+    "requires_approval": { "type": "boolean" },
+    "requiresApproval": { "type": "boolean" },
+    "approval": { "$ref": "./ToolApproval.schema.json" },
+    "mcp": { "$ref": "./ToolDefinition.schema.json#/$defs/mcp" }
+  },
+  "additionalProperties": true
+}

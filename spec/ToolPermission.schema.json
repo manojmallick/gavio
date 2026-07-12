@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/ToolPermission.v1.json",
+  "title": "ToolPermission",
+  "description": "Permission scope used by Tool Runtime v2 to authorize tool-call records.",
+  "type": "string",
+  "minLength": 1,
+  "pattern": "^(\\*|[a-z][a-z0-9_]*(\\.[a-z0-9_*]+)*)$",
+  "examples": [
+    "read.billing",
+    "read.*",
+    "destructive.billing",
+    "external_side_effect.email"
+  ]
+}

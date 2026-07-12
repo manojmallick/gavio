@@ -85,9 +85,10 @@ Gateway gw = Gateway.builder()
     .build();
 ```
 
-Tool Runtime (v0.14.0) reads `metadata("tools", ...)`, validates declared
-input/output schemas, checks result freshness, detects configured conflicts,
-and records provenance in `ctx.tools().get("runtime")`.
+Tool Runtime reads `metadata("tools", ...)`, validates declared input/output
+schemas, checks result freshness, detects configured conflicts, and records
+provenance in `ctx.tools().get("runtime")`. Tool Runtime v2 also understands
+`definitions`, `permissions`, `approvals`, `records`, and MCP metadata.
 
 ## Real providers
 
