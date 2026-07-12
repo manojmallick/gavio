@@ -2,7 +2,8 @@
 
 > AI request runtime and inspector for production systems. PII protection,
 > audit trails, runtime events, reliability, cost intelligence, policy packs,
-> production trust packages, and provider adapters as composable interceptors.
+> production trust packages, platform runtime profiles, and provider adapters
+> as composable interceptors.
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
@@ -213,7 +214,7 @@ import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
 const bundle = buildProductionTrustBundle({
   bundleId: 'trust-prod-support-2026-07-12',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '1.9.0', tag: 'v1.9.0' },
+  release: { version: '2.0.0', tag: 'v2.0.0' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',

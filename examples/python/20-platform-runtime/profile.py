@@ -8,7 +8,7 @@ from gavio import build_platform_runtime_profile, verify_platform_runtime_profil
 profile = build_platform_runtime_profile(
     profile_id="platform-prod-support",
     generated_at="2026-07-12T12:00:00Z",
-    sdk={"name": "gavio", "version": "1.9.0"},
+    sdk={"name": "gavio", "version": "2.0.0"},
     runtime={
         "environment": "production",
         "provider": "openai",

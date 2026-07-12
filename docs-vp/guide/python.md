@@ -271,23 +271,22 @@ from gavio import build_platform_runtime_profile, verify_platform_runtime_profil
 profile = build_platform_runtime_profile(
     profile_id="platform-prod-support",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "2.0.0", "tag": "v2.0.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",
         "eventExportMode": "metadata_only",
     },
+    surfaces=[
+        "runtime_events",
+        "audit_hashes",
+        "policy_packs",
+        "cost_governance",
+        "tool_runtime",
+        "trust_evidence",
+    ],
     evidence={
-        "surfaces": [
-            "runtime_events",
-            "audit_hashes",
-            "policy_packs",
-            "cost_governance",
-            "tool_runtime",
-            "trust_evidence",
-        ],
-        "runtimeEventsContentFree": True,
-        "auditChainVerified": True,
+        "auditChain": {"recordCount": 42, "verified": True},
+        "runtimeEvents": {"eventCount": 168, "contentFree": True},
     },
 )
 
@@ -334,7 +333,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "1.9.0", "tag": "v1.9.0"},
+    release={"version": "2.0.0", "tag": "v2.0.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",

@@ -22,7 +22,7 @@ The canonical schema is
 {
   "schemaVersion": "1.0",
   "bundleId": "trust-prod-support-2026-07-12",
-  "release": { "version": "1.9.0", "tag": "v1.9.0" },
+  "release": { "version": "2.0.0", "tag": "v2.0.0" },
   "runtime": {
     "environment": "production",
     "policySource": "project:prod-support",
@@ -102,7 +102,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "1.9.0", "tag": "v1.9.0"},
+    release={"version": "2.0.0", "tag": "v2.0.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",
@@ -122,7 +122,7 @@ import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
 const bundle = buildProductionTrustBundle({
   bundleId: 'trust-prod-support-2026-07-12',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '1.9.0', tag: 'v1.9.0' },
+  release: { version: '2.0.0', tag: 'v2.0.0' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',
@@ -139,7 +139,7 @@ Java:
 ```java
 Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
     .generatedAt("2026-07-12T12:00:00Z")
-    .release("1.9.0", "v1.9.0", commit)
+    .release("2.0.0", "v2.0.0", commit)
     .runtime("production", "project:prod-support", true, "metadata_only")
     .auditChain(recordCount, chainOk, headHash, tailHash)
     .build();

@@ -28,19 +28,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.9.0</version>
+  <version>2.0.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.9.0</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:1.9.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:1.9.0")
+implementation("io.github.manojmallick:gavio-core:2.0.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:2.0.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -354,15 +354,20 @@ import io.gavio.platform.PlatformRuntimeVerification;
 
 Map<String, Object> profile = PlatformRuntime.builder("platform-prod-support")
     .generatedAt("2026-07-12T12:00:00Z")
-    .release("2.0.0", "v2.0.0", commit)
-    .runtime("production", "project:prod-support", "metadata_only")
-    .evidence(List.of(
+    .runtime(Map.of(
+        "environment", "production",
+        "policySource", "project:prod-support",
+        "eventExportMode", "metadata_only"))
+    .surfaces(List.of(
         "runtime_events",
         "audit_hashes",
         "policy_packs",
         "cost_governance",
         "tool_runtime",
-        "trust_evidence"), true, true)
+        "trust_evidence"))
+    .evidence(Map.of(
+        "auditChain", Map.of("recordCount", 42, "verified", true),
+        "runtimeEvents", Map.of("eventCount", 168, "contentFree", true)))
     .build();
 
 PlatformRuntimeVerification result = PlatformRuntime.verify(profile);
@@ -383,7 +388,7 @@ import io.gavio.trust.ProductionTrustVerification;
 
 Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
     .generatedAt("2026-07-12T12:00:00Z")
-    .release("1.9.0", "v1.9.0", commit)
+    .release("2.0.0", "v2.0.0", commit)
     .runtime("production", "project:prod-support", true, "metadata_only")
     .auditChain(recordCount, chainOk, headHash, tailHash)
     .build();

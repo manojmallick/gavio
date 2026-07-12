@@ -8,11 +8,12 @@ seriously.
 
 | Version | Supported |
 |---|---|
+| 2.x | Current stable line |
 | 1.x | Supported through 2028-07-12 |
 | pre-1.0 minors | Not supported after 1.0.0 |
 
-The 1.x line receives the LTS coverage described in
-[STABILITY.md](./STABILITY.md).
+The 2.x line is the current stable line. The 1.x line receives the LTS coverage
+described in [STABILITY.md](./STABILITY.md).
 
 ## Reporting a vulnerability
 

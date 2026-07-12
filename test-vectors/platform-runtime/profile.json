@@ -7,7 +7,7 @@
     "generatedAt": "2026-07-12T12:00:00Z",
     "sdk": {
       "name": "gavio",
-      "version": "1.9.0"
+      "version": "2.0.0"
     },
     "runtime": {
       "environment": "production",
@@ -83,7 +83,7 @@
     "generatedAt": "2026-07-12T12:00:00Z",
     "sdk": {
       "name": "gavio",
-      "version": "1.9.0"
+      "version": "2.0.0"
     },
     "runtime": {
       "environment": "production",
@@ -175,7 +175,7 @@
       ],
       "gaps": []
     },
-    "profileHash": "sha256:34c41f5d879dd84c3722d1fe6b7340a946717680cc7a63cdfed6b84175da72e1"
+    "profileHash": "sha256:04d3e03c78b546788aae6be045d8ba4908eafa7f047f9448073a3d43101c0a4d"
   },
   "gapCase": {
     "input": {
@@ -183,7 +183,7 @@
       "generatedAt": "2026-07-12T12:00:00Z",
       "sdk": {
         "name": "gavio",
-        "version": "1.9.0"
+        "version": "2.0.0"
       },
       "runtime": {
         "environment": "staging",

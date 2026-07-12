@@ -284,23 +284,22 @@ import {
 const profile = buildPlatformRuntimeProfile({
   profileId: 'platform-prod-support',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '2.0.0', tag: 'v2.0.0' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',
     eventExportMode: 'metadata_only',
   },
+  surfaces: [
+    'runtime_events',
+    'audit_hashes',
+    'policy_packs',
+    'cost_governance',
+    'tool_runtime',
+    'trust_evidence',
+  ],
   evidence: {
-    surfaces: [
-      'runtime_events',
-      'audit_hashes',
-      'policy_packs',
-      'cost_governance',
-      'tool_runtime',
-      'trust_evidence',
-    ],
-    runtimeEventsContentFree: true,
-    auditChainVerified: true,
+    auditChain: { recordCount: 42, verified: true },
+    runtimeEvents: { eventCount: 168, contentFree: true },
   },
 })
 
@@ -322,7 +321,7 @@ import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
 const bundle = buildProductionTrustBundle({
   bundleId: 'trust-prod-support-2026-07-12',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '1.9.0', tag: 'v1.9.0' },
+  release: { version: '2.0.0', tag: 'v2.0.0' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',
