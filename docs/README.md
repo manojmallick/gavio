@@ -9,6 +9,7 @@ Start here, then dive into the language you use.
 - [Interceptors](./interceptors.md) — every built-in + writing your own
 - [Inspector](./inspector.md) — dev-time visualizer: live traces, waterfalls, PII diffs; v0.7.0 adds agent DAGs, replay, and the read-only dashboard
 - [Runtime events](./runtime-events.md) — metadata-safe runtime event/export contract, JSONL exporter, and OTel span bridge
+- [Prompt Registry + Evals](./prompt-registry-evals.md) — versioned prompt templates and metadata-safe eval reports
 - [Integrations](./integrations.md) — how Gavio fits beside gateways, observability, and eval tools
 - [Stability](./stability.md) — API stability, LTS policy, and stable release gate
 
@@ -24,6 +25,8 @@ Start here, then dive into the language you use.
 - [`test-vectors/`](../test-vectors/) — shared cross-SDK conformance cases
 - [Runtime event schema](../spec/GavioRuntimeEvent.schema.json) — public export envelope
 - [OTel span schema](../spec/GavioOtelSpan.schema.json) — OpenTelemetry-style span JSON emitted from runtime events
+- [Prompt template schema](../spec/PromptTemplate.schema.json) — versioned chat template contract
+- [Eval report schema](../spec/EvalReport.schema.json) — metadata-safe eval report contract
 - [OTel mapping](./otel-mapping.md) — InspectorEvent → OpenTelemetry spans · [Grafana dashboard](./grafana/gavio-dashboard.json)
 - [CHANGELOG](../CHANGELOG.md) — release history + feature IDs
 - [RELEASING](../RELEASING.md) — how releases are cut

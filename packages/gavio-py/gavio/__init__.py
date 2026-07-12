@@ -1,6 +1,6 @@
 """Gavio — AI request runtime and inspector for production systems.
 
-Stable public API surface (v1.3.0):
+Stable public API surface (v1.4.0):
 
     from gavio import Gateway, GavioRequest, GavioResponse, Provider
 
@@ -24,6 +24,7 @@ from .exceptions import (
 )
 from .exporters import GavioRuntimeExporter, JsonlRuntimeExporter, OtelSpanExporter
 from .gateway import Gateway, GatewayBuilder
+from .prompts import EvalSuite, PromptRegistry, PromptTemplate, RenderedPrompt
 from .request import GavioRequest
 from .response import GavioResponse
 from .types import (
@@ -38,7 +39,7 @@ from .types import (
     TokenUsage,
 )
 
-__version__ = "1.3.0"
+__version__ = "1.4.0"
 
 __all__ = [
     "__version__",
@@ -59,6 +60,10 @@ __all__ = [
     "GavioRuntimeExporter",
     "JsonlRuntimeExporter",
     "OtelSpanExporter",
+    "PromptTemplate",
+    "RenderedPrompt",
+    "PromptRegistry",
+    "EvalSuite",
     # exceptions
     "GavioError",
     "ConfigurationError",

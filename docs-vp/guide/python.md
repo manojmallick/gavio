@@ -13,6 +13,7 @@ The Python SDK is the **reference implementation**. Source:
 - [Gateway API](#gateway-api)
 - [Interceptors](#interceptors)
 - [Providers](#providers)
+- [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
 - [Version support](#version-support)
 
@@ -233,6 +234,38 @@ gw = Gateway.builder().use(BudgetPolicyControl(policy, estimated_request_cost_us
 
 ```bash
 gavio cost report --audit audit.jsonl --group-by tenant --budget-policy budgets.json --pretty
+```
+
+## Prompt Registry + Evals
+
+Prompt Registry + Evals (v1.4.0, `F-EVAL-01/02`) renders versioned chat
+templates with metadata-only `PromptLineage` and runs deterministic eval cases
+without storing raw model output in reports.
+
+```python
+from gavio import EvalSuite, PromptRegistry, PromptTemplate
+
+registry = PromptRegistry([
+    PromptTemplate(
+        id="support.reply",
+        version="2026-07-12",
+        messages=[
+            {"role": "system", "content": "You are concise."},
+            {"role": "user", "content": "Reply to {{ customer }} about {{ topic }}."},
+        ],
+        required_variables=("customer", "topic"),
+    )
+])
+
+report = await EvalSuite.from_dict({
+    "id": "support-smoke",
+    "cases": [{
+        "id": "refund",
+        "templateId": "support.reply",
+        "variables": {"customer": "Avery", "topic": "refund"},
+        "assertions": [{"type": "contains", "value": "refund"}],
+    }],
+}).run(registry, lambda _prompt, _case: "Avery refund approved")
 ```
 
 ## Embeddings

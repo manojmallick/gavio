@@ -142,6 +142,38 @@ exporter strips `messages`, `content`, and `diff` by default, even when the
 local Inspector is in full capture mode. Observability + OTel (v1.3.0) maps
 the same stream into OpenTelemetry-style span JSON (`F-OBS-07`).
 
+## Prompt Registry + Evals
+
+```typescript
+import { EvalSuite, PromptRegistry, PromptTemplate } from 'gavio/prompts'
+
+const registry = new PromptRegistry([
+  new PromptTemplate({
+    id: 'support.reply',
+    version: '2026-07-12',
+    messages: [
+      { role: 'system', content: 'You are concise.' },
+      { role: 'user', content: 'Reply to {{ customer }} about {{ topic }}.' },
+    ],
+    requiredVariables: ['customer', 'topic'],
+  }),
+])
+
+const report = await new EvalSuite({
+  id: 'support-smoke',
+  cases: [{
+    id: 'refund',
+    templateId: 'support.reply',
+    variables: { customer: 'Avery', topic: 'refund' },
+    assertions: [{ type: 'contains', value: 'refund' }],
+  }],
+}).run(registry, () => 'Avery refund approved')
+```
+
+Prompt Registry + Evals (v1.4.0) adds versioned prompt templates,
+metadata-only lineage, deterministic pass/fail reports, and SHA-256 output
+hashes instead of raw model output (`F-EVAL-01/02`).
+
 ## What's inside
 
 Every feature is an interceptor you compose explicitly — no hidden magic.
@@ -165,6 +197,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   raw text (`F-OBS-01`), tamper-evident hash chain (`F-OBS-02`), multi-agent
   DAG tracing via `agentId`/`parentTraceId` (`F-OBS-03`), prompt lineage
   (`F-OBS-04`), Prometheus metrics (`F-OBS-08`), stdout sink.
+- **Prompt Registry + Evals** — `PromptRegistry`, `PromptTemplate`, and
+  `EvalSuite` via `gavio/prompts` (`F-EVAL-01/02`).
 - **Runtime export** — metadata-safe JSONL runtime events (`F-EXP-01`) and
   OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
   eval integrations.

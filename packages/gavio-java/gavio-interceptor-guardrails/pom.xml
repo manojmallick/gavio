@@ -6,7 +6,7 @@
   <parent>
     <groupId>io.github.manojmallick</groupId>
     <artifactId>gavio-parent</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
   </parent>
   <artifactId>gavio-interceptor-guardrails</artifactId>
   <name>Gavio Guardrails</name>

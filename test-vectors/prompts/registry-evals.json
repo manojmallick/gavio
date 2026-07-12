@@ -1,0 +1,85 @@
+{
+  "contentKeys": ["renderedPrompt", "output"],
+  "templates": [
+    {
+      "id": "support.reply",
+      "version": "2026-07-12",
+      "messages": [
+        {
+          "role": "system",
+          "content": "You are a concise support assistant."
+        },
+        {
+          "role": "user",
+          "content": "Write a reply to {{ customerName }} about {{ topic }}."
+        }
+      ],
+      "requiredVariables": ["customerName", "topic"],
+      "metadata": { "owner": "support" },
+      "variables": {
+        "customerName": "Avery",
+        "topic": "refund status"
+      },
+      "expectedMessages": [
+        {
+          "role": "system",
+          "content": "You are a concise support assistant."
+        },
+        {
+          "role": "user",
+          "content": "Write a reply to Avery about refund status."
+        }
+      ],
+      "expectedLineage": {
+        "templateId": "support.reply",
+        "templateVersion": "2026-07-12",
+        "variables": {
+          "customerName": "Avery",
+          "topic": "refund status"
+        },
+        "ragChunks": []
+      },
+      "missingVariables": ["topic"]
+    }
+  ],
+  "suite": {
+    "id": "support-smoke",
+    "cases": [
+      {
+        "id": "refund-pass",
+        "templateId": "support.reply",
+        "variables": {
+          "customerName": "Avery",
+          "topic": "refund status"
+        },
+        "mockOutput": "Hello Avery, your refund status is approved.",
+        "assertions": [
+          { "type": "contains", "value": "refund status" },
+          { "type": "not_contains", "value": "card number" }
+        ],
+        "expected": { "passed": true, "score": 1.0 }
+      },
+      {
+        "id": "refund-fail",
+        "templateId": "support.reply",
+        "variables": {
+          "customerName": "Avery",
+          "topic": "refund status"
+        },
+        "mockOutput": "Hello Avery, I need your card number to continue.",
+        "assertions": [
+          { "type": "contains", "value": "Avery" },
+          { "type": "not_contains", "value": "card number" }
+        ],
+        "expected": { "passed": false, "score": 0.5 }
+      }
+    ],
+    "expectedReport": {
+      "suiteId": "support-smoke",
+      "totalCases": 2,
+      "passedCases": 1,
+      "failedCases": 1,
+      "score": 0.75
+    }
+  }
+}

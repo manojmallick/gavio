@@ -6,10 +6,10 @@
   <parent>
     <groupId>io.github.manojmallick</groupId>
     <artifactId>gavio-parent</artifactId>
-    <version>1.3.0</version>
+    <version>1.4.0</version>
   </parent>
 
   <artifactId>gavio-core</artifactId>
   <name>Gavio Core</name>
-  <description>Gateway, request/response model, interceptor chain, pricing and reliability policy SPI. Zero runtime dependencies.</description>
+  <description>Gateway, request/response model, interceptor chain, prompt registry, evals, pricing and reliability policy SPI. Zero runtime dependencies.</description>
 </project>
