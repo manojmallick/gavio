@@ -52,6 +52,21 @@ interceptors, with **identical behaviour across three languages** — enforced b
 
 ---
 
+## Version map
+
+The package line stays normal semver: v0.11.0 through v0.14.0 completed the
+last pre-1.0 product milestones, then v1.0.0 became the stable release.
+
+| Version | Focus | Main shipped surface |
+|---|---|---|
+| `0.11.0` | Cost Intelligence | Tenant/feature/user attribution, cost reports, retry overhead, cache savings, scoped budget fallback |
+| `0.12.0` | Policy Pack architecture | Core and FinTech policy-pack manifests plus custom regex-rule packs |
+| `0.13.0` | Adapter & positioning | OpenRouter adapter, first-class runtime context, AI Request Runtime / Inspector positioning |
+| `0.14.0` | Tool Runtime | Tool schema validation, freshness checks, conflict detection, confidence, provenance |
+| `1.0.0` | Stable release gate | Lockstep SDK versions, API stability, 24-month 1.x LTS policy, release hygiene checks |
+
+---
+
 ## Architecture
 
 Gavio is a thin core (`Gateway` + `InterceptorChain` + the request/response
@@ -116,19 +131,24 @@ pipeline in reverse order:
 <td>
 
 ```python
+import asyncio
+
 from gavio import Gateway
 from gavio.interceptors.pii import PiiGuard
 
-gw = (Gateway.builder()
-      .dev_mode(True)
-      .use(PiiGuard())
-      .build())
+async def main():
+    gw = (Gateway.builder()
+          .dev_mode(True)
+          .use(PiiGuard())
+          .build())
 
-r = await gw.complete(messages=[
-  {"role": "user",
-   "content": "mail jan@example.com"}])
-print(r.content)        # PII restored
-print(r.audit.pii_entity_types)
+    r = await gw.complete(messages=[
+      {"role": "user",
+       "content": "mail jan@example.com"}])
+    print(r.content)        # PII restored
+    print(r.audit.pii_entity_types)
+
+asyncio.run(main())
 ```
 
 </td>
@@ -152,16 +172,24 @@ console.log(r.audit.piiEntityTypes)
 <td>
 
 ```java
+import io.gavio.Gateway;
+import io.gavio.GavioRequest;
+import io.gavio.GavioResponse;
+import io.gavio.interceptors.audit.AuditRecord;
+import io.gavio.interceptors.pii.PiiGuard;
+
 Gateway gw = Gateway.builder()
     .devMode(true)
     .use(new PiiGuard())
     .build();
 
-var r = gw.complete(GavioRequest.builder()
+GavioResponse r = gw.complete(GavioRequest.builder()
     .message("user", "mail jan@example.com")
     .build()).join();
+
+AuditRecord audit = (AuditRecord) r.audit();
 System.out.println(r.content());
-System.out.println(r.audit().piiEntityTypes());
+System.out.println(audit.piiEntityTypes());
 ```
 
 </td>
@@ -170,6 +198,9 @@ System.out.println(r.audit().piiEntityTypes());
 
 All three print the reply with the email **restored**, and an audit record
 showing `EMAIL` was detected and redacted before the (mock) provider ever saw it.
+The Java snippet uses `gavio-core`, `gavio-interceptor-pii`, and
+`gavio-interceptor-audit`; the complete runnable project is
+[examples/java/01-quickstart](./examples/java/01-quickstart/).
 
 ---
 
@@ -177,9 +208,31 @@ showing `EMAIL` was detected and redacted before the (mock) provider ever saw it
 
 | Language | Command | Docs |
 |---|---|---|
-| **Python** 3.10+ | `pip install gavio` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
-| **JavaScript** (Node 18+) | `npm install gavio` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:1.0.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Python** 3.10+ | `pip install gavio==1.0.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
+| **JavaScript** (Node 18+) | `npm install gavio@1.0.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:1.0.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+
+---
+
+## Examples
+
+Runnable examples live in [examples/](./examples/). Each row is the same
+scenario implemented per SDK wherever that surface exists, so the APIs can be
+compared side by side.
+
+| # | Scenario | Python | JavaScript | Java | Needs a key? |
+|---|---|---|---|---|---|
+| 01 | Quickstart — PII redact + restore, audit, cost | [py](./examples/python/01-quickstart/) | [js](./examples/javascript/01-quickstart/) | [java](./examples/java/01-quickstart/) | no |
+| 02 | Production gateway — audit, PII guard, timeout, retry | [py](./examples/python/02-production-gateway/) | [js](./examples/javascript/02-production-gateway/) | [java](./examples/java/02-production-gateway/) | optional |
+| 03 | Custom scanner — write and test a `PiiScanner` | [py](./examples/python/03-custom-scanner/) | [js](./examples/javascript/03-custom-scanner/) | [java](./examples/java/03-custom-scanner/) | no |
+| 04 | Production core stack — audit chain, PII, rate limit, guardrails, cache | [py](./examples/python/04-production-stack/) | — | — | no |
+| 05 | Inspector & multi-agent tracing — waterfall, PII diff, agent DAG, sessions | [py](./examples/python/05-inspector/) | [js](./examples/javascript/05-inspector/) | — | no |
+| 06 | Policy Packs — core PII + FinTech + custom regex pack | [py](./examples/python/06-policy-packs/) | [js](./examples/javascript/06-policy-packs/) | [java](./examples/java/06-policy-packs/) | no |
+| 07 | Tool Runtime — schema, freshness, conflicts, confidence, provenance | [py](./examples/python/07-tool-runtime/) | [js](./examples/javascript/07-tool-runtime/) | [java](./examples/java/07-tool-runtime/) | no |
+
+Example 02 uses a real provider if `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is
+set; otherwise it falls back to the mock provider. All other examples run with
+no API key and no network.
 
 ---
 
@@ -192,11 +245,11 @@ published to its native registry.
 
 The **reference implementation**. Async-first (`await gw.complete(...)`), sync
 wrapper (`complete_sync`), full type hints + `py.typed`. Zero mandatory deps;
-`gavio[redis]` adds a distributed cache backend, other optional extras
-(`gavio[presidio]`, …) land in later versions.
+optional extras include `gavio[redis]`, `gavio[presidio]`, `gavio[otel]`,
+`gavio[elasticsearch]`, `gavio[pgvector]`, and `gavio[ocr]`.
 
 ```bash
-pip install gavio
+pip install gavio==1.0.0
 ```
 
 → **[Full Python guide](./docs/packages/python.md)** · [package README](./packages/gavio-py/README.md)
@@ -208,7 +261,7 @@ with per-subpath `exports` for tree-shaking. Native `fetch`, `node:crypto`.
 Node 18+, Deno, Bun.
 
 ```bash
-npm install gavio
+npm install gavio@1.0.0
 ```
 
 → **[Full JavaScript guide](./docs/packages/javascript.md)** · [package README](./packages/gavio-js/README.md)
@@ -222,10 +275,22 @@ family (`gavio-interceptor-pii`, `-audit`, `-reliability`, `-cache`,
 `-ollama`), and `gavio-testing`. Immutable records + builders,
 `CompletableFuture` async, Java 17+.
 
+Quickstart stack:
+
 ```xml
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
+  <version>1.0.0</version>
+</dependency>
+<dependency>
+  <groupId>io.github.manojmallick</groupId>
+  <artifactId>gavio-interceptor-pii</artifactId>
+  <version>1.0.0</version>
+</dependency>
+<dependency>
+  <groupId>io.github.manojmallick</groupId>
+  <artifactId>gavio-interceptor-audit</artifactId>
   <version>1.0.0</version>
 </dependency>
 ```
@@ -359,6 +424,7 @@ gavio/
 │   ├── gavio-py/             Python SDK  (PyPI: gavio)
 │   ├── gavio-js/             JS/TS SDK   (npm: gavio)
 │   └── gavio-java/           Java SDK    (Maven: io.github.manojmallick:gavio-*)
+├── examples/                 runnable cross-SDK examples
 ├── docs/                     documentation
 └── .github/workflows/        ci.yml (test all 3) · release.yml (publish all 3)
 ```
