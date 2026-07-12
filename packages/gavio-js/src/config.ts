@@ -7,6 +7,7 @@
  */
 
 import { readFileSync } from 'node:fs'
+import { loadControlPlaneConfig } from './control-plane.js'
 import { ConfigurationError } from './errors.js'
 import { Gateway } from './gateway.js'
 import { auditInterceptor } from './interceptors/audit/index.js'
@@ -37,12 +38,24 @@ function expand(obj: unknown): unknown {
   return obj
 }
 
-export function buildFromConfig(config: Cfg): Gateway {
+export async function buildFromConfig(config: Cfg): Promise<Gateway> {
   const gatewayOptions: Cfg = {}
   if (config['provider']) gatewayOptions['provider'] = config['provider']
   if (config['model']) gatewayOptions['model'] = config['model']
   if (config['devMode'] ?? config['dev_mode']) gatewayOptions['devMode'] = true
   if (config['dryRun'] ?? config['dry_run']) gatewayOptions['dryRun'] = true
+  const controlPlane = (config['controlPlane'] ?? config['control_plane']) as Cfg | undefined
+  if (controlPlane !== undefined) {
+    const cachePath = controlPlane['cachePath'] ?? controlPlane['cache_path']
+    gatewayOptions['controlPlaneConfig'] = await loadControlPlaneConfig({
+      url: String(controlPlane['url']),
+      runtimeKey: String(controlPlane['runtimeKey'] ?? controlPlane['runtime_key']),
+      policySource: String(controlPlane['policySource'] ?? controlPlane['policy_source']),
+      cachePath: typeof cachePath === 'string' ? cachePath : undefined,
+      failMode: (controlPlane['failMode'] ?? controlPlane['fail_mode'] ?? 'open') as never,
+      timeoutMs: Number(controlPlane['timeoutMs'] ?? controlPlane['timeout_ms'] ?? 2000),
+    })
+  }
 
   let gw = new Gateway(gatewayOptions)
   const ic = (config['interceptors'] as Record<string, Cfg> | undefined) ?? {}

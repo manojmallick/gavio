@@ -10,6 +10,7 @@ See https://gavio.io for documentation. MIT licensed.
 from __future__ import annotations
 
 from .context import InterceptorContext
+from .control_plane import ControlPlaneClient, ControlPlaneError, load_control_plane_config
 from .exceptions import (
     BudgetExceededError,
     ConfigurationError,
@@ -60,6 +61,9 @@ __all__ = [
     "GavioRuntimeExporter",
     "JsonlRuntimeExporter",
     "OtelSpanExporter",
+    "ControlPlaneClient",
+    "ControlPlaneError",
+    "load_control_plane_config",
     "PromptTemplate",
     "RenderedPrompt",
     "PromptRegistry",
