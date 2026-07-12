@@ -1,6 +1,7 @@
 /** Gateway — the entry point. Wires interceptors around a provider adapter. */
 
 import { InterceptorContext } from './context.js'
+import type { ControlPlaneRuntimeConfig } from './control-plane.js'
 import { ConfigurationError, ProviderError } from './errors.js'
 import type { GavioRuntimeExporter } from './exporters/index.js'
 import { auditInterceptor, isAuditInterceptor } from './interceptors/audit/index.js'
@@ -42,6 +43,8 @@ export interface GatewayOptions {
    * with no HTTP server unless `inspect` is also configured.
    */
   exporters?: GavioRuntimeExporter[]
+  /** Runtime config loaded from the optional self-hosted control plane. */
+  controlPlaneConfig?: ControlPlaneRuntimeConfig
 }
 
 export interface CompleteOptions {
@@ -95,6 +98,7 @@ export class Gateway {
   private readonly exporters: GavioRuntimeExporter[]
   private readonly interceptors: Interceptor[] = []
   private readonly inspectorInstance: Inspector | null
+  readonly controlPlaneConfig: ControlPlaneRuntimeConfig | null
 
   constructor(options: GatewayOptions = {}) {
     this.providerHint = options.provider ? coerceProvider(options.provider) : undefined
@@ -104,6 +108,7 @@ export class Gateway {
     this.dryRunMode = options.dryRun ?? false
     this.pricing = options.pricing ?? new PricingProvider()
     this.exporters = options.exporters ?? []
+    this.controlPlaneConfig = options.controlPlaneConfig ?? null
     this.inspectorInstance = this.buildInspector(options.inspect)
     if (this.inspectorInstance !== null) {
       // /api/replay re-fires through this gateway's full pipeline (F-DX-11).

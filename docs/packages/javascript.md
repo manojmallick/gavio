@@ -276,6 +276,29 @@ const gw = new Gateway({
 })
 ```
 
+## Self-hosted Control Plane
+
+Control Plane support (v1.7.0) loads runtime config from an optional
+self-hosted server and caches the last successful config for offline
+fail-open/fail-closed behavior.
+
+```typescript
+import { Gateway } from 'gavio'
+
+const gw = await Gateway.fromConfig({
+  devMode: true,
+  control_plane: {
+    url: 'http://127.0.0.1:8787',
+    runtime_key: runtimeKey,
+    policy_source: 'project:prod-support',
+    fail_mode: 'open',
+  },
+})
+```
+
+Use `ControlPlaneClient` or `loadControlPlaneConfig` directly when you need to
+inspect or preload the fetched config before constructing a gateway.
+
 ## Prompt Registry + Evals
 
 Prompt Registry + Evals (v1.4.0, `F-EVAL-01/02`) renders versioned chat

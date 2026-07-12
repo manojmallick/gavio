@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gavio Control Plane</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #f6f7f9;
+        color: #1b1f24;
+      }
+      body {
+        margin: 0;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-bottom: 1px solid #d9dee5;
+        background: #ffffff;
+      }
+      main {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+      }
+      h2 {
+        margin: 0 0 12px;
+        font-size: 16px;
+      }
+      .status {
+        font-size: 13px;
+        color: #52606d;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        gap: 16px;
+      }
+      section {
+        padding: 16px 0;
+        border-bottom: 1px solid #dfe4ea;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        background: #ffffff;
+      }
+      th,
+      td {
+        text-align: left;
+        border-bottom: 1px solid #e6ebf0;
+        padding: 10px;
+        vertical-align: top;
+      }
+      th {
+        color: #52606d;
+        font-weight: 600;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      button {
+        appearance: none;
+        border: 1px solid #b8c0cc;
+        background: #ffffff;
+        color: #1b1f24;
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: #65758b;
+      }
+      .empty {
+        color: #65758b;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Gavio Control Plane</h1>
+      <div class="status" id="status">checking</div>
+    </header>
+    <main>
+      <section>
+        <div class="grid" id="counts"></div>
+      </section>
+      <section>
+        <h2>Active Policy Rollouts</h2>
+        <div id="rollouts" class="empty"></div>
+      </section>
+      <section>
+        <h2>Recent Events</h2>
+        <div id="events" class="empty"></div>
+      </section>
+      <section>
+        <h2>Admin Audit</h2>
+        <div id="audit" class="empty"></div>
+      </section>
+    </main>
+    <script>
+      const resources = [
+        ["projects", "/api/projects"],
+        ["environments", "/api/environments"],
+        ["keys", "/api/keys"],
+        ["policies", "/api/policies"],
+        ["rollouts", "/api/policy-rollouts"],
+        ["budgets", "/api/budgets"],
+        ["events", "/api/events"],
+        ["audit", "/api/audit-records"],
+      ];
+
+      async function get(path) {
+        const response = await fetch(path);
+        if (!response.ok) throw new Error(path);
+        return response.json();
+      }
+
+      function table(items, columns) {
+        if (!items.length) return '<div class="empty">No records yet.</div>';
+        return `<table><thead><tr>${columns.map((c) => `<th>${c}</th>`).join("")}</tr></thead><tbody>` +
+          items
+            .map((item) => `<tr>${columns.map((c) => `<td><code>${escapeHtml(item[c] ?? "")}</code></td>`).join("")}</tr>`)
+            .join("") +
+          "</tbody></table>";
+      }
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[ch]);
+      }
+
+      async function refresh() {
+        const health = await get("/health");
+        document.getElementById("status").textContent = health.ok ? "online" : "offline";
+        const data = Object.fromEntries(
+          await Promise.all(resources.map(async ([name, path]) => [name, (await get(path)).items])),
+        );
+        document.getElementById("counts").innerHTML = resources
+          .map(([name]) => `<div><strong>${data[name].length}</strong><br /><span class="empty">${name}</span></div>`)
+          .join("");
+        document.getElementById("rollouts").innerHTML = table(data.rollouts, ["id", "projectId", "environment", "policySource", "policyId", "status"]);
+        document.getElementById("events").innerHTML = table(data.events.slice(-20).reverse(), ["id", "traceId", "tenant", "feature", "provider", "model", "risk"]);
+        document.getElementById("audit").innerHTML = table(data.audit.slice(-20).reverse(), ["id", "actor", "action", "resource", "resourceId"]);
+      }
+
+      refresh().catch((error) => {
+        document.getElementById("status").textContent = `error: ${error.message}`;
+      });
+    </script>
+  </body>
+</html>

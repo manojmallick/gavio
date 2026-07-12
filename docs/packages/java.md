@@ -25,19 +25,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.6.0</version>
+  <version>1.7.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.6.0</version>
+  <version>1.7.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:1.6.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:1.6.0")
+implementation("io.github.manojmallick:gavio-core:1.7.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:1.7.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -307,6 +307,22 @@ Gateway gw = Gateway.builder()
     .exporter(new OtelSpanExporter(Path.of("otel-spans.jsonl"), "checkout-api"))
     .build();
 ```
+
+## Self-hosted Control Plane
+
+Control Plane support (v1.7.0) loads runtime config from an optional
+self-hosted server and caches the last successful config for offline
+fail-open/fail-closed behavior.
+
+```java
+Gateway gw = Gateway.builder()
+    .devMode(true)
+    .controlPlane("http://127.0.0.1:8787", runtimeKey, "project:prod-support")
+    .build();
+```
+
+Use `io.gavio.controlplane.ControlPlaneClient` directly when you need to inspect
+or preload the fetched config before constructing a gateway.
 
 ## Prompt Registry + Evals
 

@@ -38,6 +38,7 @@ public final class Gateway {
     private final List<ExecutorPolicy> policies;
     private final InterceptorChain chain;
     private final Inspector inspector;
+    private final Map<String, Object> controlPlaneConfig;
 
     Gateway(ProviderAdapter adapter, String model, List<Interceptor> interceptors, boolean dryRun) {
         this(adapter, model, interceptors, dryRun, null);
@@ -45,10 +46,16 @@ public final class Gateway {
 
     Gateway(ProviderAdapter adapter, String model, List<Interceptor> interceptors,
             boolean dryRun, Inspector inspector) {
+        this(adapter, model, interceptors, dryRun, inspector, null);
+    }
+
+    Gateway(ProviderAdapter adapter, String model, List<Interceptor> interceptors,
+            boolean dryRun, Inspector inspector, Map<String, Object> controlPlaneConfig) {
         this.adapter = adapter;
         this.model = model;
         this.dryRun = dryRun;
         this.inspector = inspector;
+        this.controlPlaneConfig = controlPlaneConfig;
         this.policies = new ArrayList<>();
         List<Interceptor> regular = new ArrayList<>();
         for (Interceptor i : interceptors) {
@@ -98,6 +105,11 @@ public final class Gateway {
     /** The inspector wired at build time, or null when inspection is disabled (F-DX-09). */
     public Inspector inspector() {
         return inspector;
+    }
+
+    /** Runtime config loaded from the optional self-hosted control plane, or null. */
+    public Map<String, Object> controlPlaneConfig() {
+        return controlPlaneConfig;
     }
 
     private TraceEmitter newEmitter() {

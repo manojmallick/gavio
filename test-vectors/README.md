@@ -17,6 +17,7 @@ offending SDK's test-vector run goes red.
 | [`pii/fintech-detection.json`](./pii/fintech-detection.json) | FinTech policy pack cases — run a `PiiGuard` configured with only `fintechScanners()` over `text`, collect the sorted entity types, compare to `expectedTypes`. Exercises context-gated SWIFT/BIC and ABA routing-number checksum. |
 | [`policy-packs/manifest.json`](./policy-packs/manifest.json) | Policy Pack architecture cases (F-PACK-01/02/05) — verify core and FinTech pack manifests, scanner lists, and custom regex-rule pack detection across SDKs. |
 | [`policy-packs/catalog.json`](./policy-packs/catalog.json) | Policy Pack Catalog cases — verify catalog listing, signed manifest loading, overrides, suppression rules, and domain pack detection across SDKs. |
+| [`control-plane/runtime-config.json`](./control-plane/runtime-config.json) | Self-hosted control-plane cases — verify runtime config shape, policy source loading, event search filters, RBAC denial, metadata stripping, and offline cache fallback. |
 | [`runtime-events/export-redaction.json`](./runtime-events/export-redaction.json) | Runtime exporter privacy contract (F-EXP-01) — verify metadata-only export strips content-bearing event fields while preserving trace and decision metadata. |
 | [`otel/spans.json`](./otel/spans.json) | OTel bridge cases (F-OBS-07) — map runtime events into OpenTelemetry-style spans with parent links, status, timestamps, attributes, and metadata-only privacy. |
 | [`prompts/registry-evals.json`](./prompts/registry-evals.json) | Prompt Registry + Evals cases (`F-EVAL-01/02`) — render versioned prompt templates, validate missing variables, attach metadata-only lineage, score eval cases, and keep raw outputs out of reports. |
@@ -70,6 +71,17 @@ offending SDK's test-vector run goes red.
     "overrides": { "detectors": { "account_number": { "severity": "critical" } } }
   },
   "domainCases": [{ "pack": "healthcare", "expectedTypes": ["MEDICAL_RECORD_NUMBER"] }]
+}
+```
+
+`control-plane/runtime-config.json`:
+```json
+{
+  "runtimeConfigCase": {
+    "policySource": "project:prod-support",
+    "expected": { "projectId": "proj_support", "policyPack": "support" }
+  },
+  "offlineCacheCase": { "firstLoad": "control_plane", "secondLoad": "cache" }
 }
 ```
 
@@ -135,9 +147,9 @@ offending SDK's test-vector run goes red.
 
 | SDK | Test that consumes these vectors |
 |---|---|
-| Python | `packages/gavio-py/tests/unit/test_vectors.py` · `packages/gavio-py/tests/unit/test_policy_packs.py` · `packages/gavio-py/tests/unit/test_inspector_agentic.py` · `packages/gavio-py/tests/unit/test_runtime_exporters.py` · `packages/gavio-py/tests/unit/test_otel_exporter.py` · `packages/gavio-py/tests/unit/test_cost_governance_v2.py` · `packages/gavio-py/tests/unit/test_prompt_registry_evals.py` · `packages/gavio-py/tests/unit/test_tool_runtime.py` |
-| JavaScript | `packages/gavio-js/tests/unit/test-vectors.test.ts` · `packages/gavio-js/tests/unit/policy-packs.test.ts` · `packages/gavio-js/tests/unit/inspector-api-vectors.test.ts` · `packages/gavio-js/tests/unit/runtime-exporters.test.ts` · `packages/gavio-js/tests/unit/otel-exporter.test.ts` · `packages/gavio-js/tests/unit/cost-governance-v2.test.ts` · `packages/gavio-js/tests/unit/prompt-registry-evals.test.ts` · `packages/gavio-js/tests/unit/tool-runtime.test.ts` |
-| Java | `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/TestVectorsTest.java` (PII) · `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/interceptors/pii/policy/PolicyPackTest.java` (policy packs) · `packages/gavio-java/gavio-interceptor-guardrails/src/test/java/io/gavio/vectors/LicenseVectorsTest.java` (license) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/ToolRuntimeInterceptorTest.java` (Tool Runtime) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/inspector/InspectorApiVectorsTest.java` (Inspector) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/RuntimeExporterTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/OtelSpanExporterTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/prompts/PromptRegistryEvalTest.java` · `packages/gavio-java/gavio-interceptor-governance/src/test/java/io/gavio/interceptors/governance/CostGovernanceV2Test.java` |
+| Python | `packages/gavio-py/tests/unit/test_vectors.py` · `packages/gavio-py/tests/unit/test_policy_packs.py` · `packages/gavio-py/tests/unit/test_inspector_agentic.py` · `packages/gavio-py/tests/unit/test_runtime_exporters.py` · `packages/gavio-py/tests/unit/test_otel_exporter.py` · `packages/gavio-py/tests/unit/test_cost_governance_v2.py` · `packages/gavio-py/tests/unit/test_prompt_registry_evals.py` · `packages/gavio-py/tests/unit/test_tool_runtime.py` · `packages/gavio-py/tests/unit/test_control_plane.py` |
+| JavaScript | `packages/gavio-js/tests/unit/test-vectors.test.ts` · `packages/gavio-js/tests/unit/policy-packs.test.ts` · `packages/gavio-js/tests/unit/inspector-api-vectors.test.ts` · `packages/gavio-js/tests/unit/runtime-exporters.test.ts` · `packages/gavio-js/tests/unit/otel-exporter.test.ts` · `packages/gavio-js/tests/unit/cost-governance-v2.test.ts` · `packages/gavio-js/tests/unit/prompt-registry-evals.test.ts` · `packages/gavio-js/tests/unit/tool-runtime.test.ts` · `packages/gavio-js/tests/unit/control-plane.test.ts` |
+| Java | `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/TestVectorsTest.java` (PII) · `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/interceptors/pii/policy/PolicyPackTest.java` (policy packs) · `packages/gavio-java/gavio-interceptor-guardrails/src/test/java/io/gavio/vectors/LicenseVectorsTest.java` (license) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/ToolRuntimeInterceptorTest.java` (Tool Runtime) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/inspector/InspectorApiVectorsTest.java` (Inspector) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/RuntimeExporterTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/OtelSpanExporterTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/prompts/PromptRegistryEvalTest.java` · `packages/gavio-java/gavio-interceptor-governance/src/test/java/io/gavio/interceptors/governance/CostGovernanceV2Test.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/ControlPlaneClientTest.java` |
 
 ## Ground truth
 

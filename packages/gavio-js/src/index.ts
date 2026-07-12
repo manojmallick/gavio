@@ -10,6 +10,18 @@
 
 export { VERSION } from './version.js'
 
+export {
+  ControlPlaneClient,
+  ControlPlaneError,
+  loadControlPlaneConfig,
+  unavailableConfig,
+} from './control-plane.js'
+export type {
+  ControlPlaneFailMode,
+  ControlPlaneOptions,
+  ControlPlaneRuntimeConfig,
+} from './control-plane.js'
+
 export { Gateway } from './gateway.js'
 export type { GatewayOptions, CompleteOptions, EmbedOptions } from './gateway.js'
 

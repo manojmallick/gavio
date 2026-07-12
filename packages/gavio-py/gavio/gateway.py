@@ -47,11 +47,13 @@ class Gateway:
         *,
         dry_run: bool = False,
         inspector: Inspector | None = None,
+        control_plane_config: dict[str, Any] | None = None,
     ) -> None:
         self._adapter = adapter
         self._model = model
         self._dry_run = dry_run
         self._inspector = inspector
+        self._control_plane_config = control_plane_config
         if inspector is not None:
             # /api/replay re-fires through this gateway — full chain, never bypassed.
             inspector.replay_handler = self.complete
@@ -86,6 +88,11 @@ class Gateway:
     def inspector(self) -> Inspector | None:
         """The Gavio Inspector, or None when inspection is disabled (default)."""
         return self._inspector
+
+    @property
+    def control_plane_config(self) -> dict[str, Any] | None:
+        """Runtime config loaded from the optional self-hosted control plane."""
+        return self._control_plane_config
 
     async def complete(
         self,
@@ -276,6 +283,7 @@ class GatewayBuilder:
         self._pricing = PricingProvider()
         self._inspect: InspectorConfig | None = None
         self._exporters: list[GavioRuntimeExporter] = []
+        self._control_plane_client: Any | None = None
 
     def provider(self, provider: Provider | str) -> GatewayBuilder:
         self._provider = Provider.coerce(provider)
@@ -327,10 +335,36 @@ class GatewayBuilder:
         self._exporters.append(exporter)
         return self
 
+    def control_plane(
+        self,
+        url: str,
+        runtime_key: str,
+        policy_source: str,
+        *,
+        cache_path: str | None = None,
+        fail_mode: str = "open",
+        timeout_seconds: float = 2.0,
+    ) -> GatewayBuilder:
+        """Load runtime config from an optional self-hosted control plane."""
+        from .control_plane import ControlPlaneClient
+
+        self._control_plane_client = ControlPlaneClient(
+            url,
+            runtime_key,
+            policy_source,
+            cache_path=cache_path,
+            fail_mode=fail_mode,  # type: ignore[arg-type]
+            timeout_seconds=timeout_seconds,
+        )
+        return self
+
     def build(self) -> Gateway:
         adapter = self._resolve_adapter()
         model = self._model or _default_model(adapter)
         interceptors = list(self._interceptors)
+        control_plane_config = (
+            self._control_plane_client.load_config() if self._control_plane_client else None
+        )
 
         # Dev mode auto-wires a stdout audit sink if none was added.
         if self._dev_mode and not any(isinstance(i, AuditInterceptor) for i in interceptors):
@@ -340,7 +374,14 @@ class GatewayBuilder:
         if inspector is not None:
             for exporter in self._exporters:
                 inspector.bus.subscribe(exporter.export_event)
-        return Gateway(adapter, model, interceptors, dry_run=self._dry_run, inspector=inspector)
+        return Gateway(
+            adapter,
+            model,
+            interceptors,
+            dry_run=self._dry_run,
+            inspector=inspector,
+            control_plane_config=control_plane_config,
+        )
 
     def _build_inspector(
         self,

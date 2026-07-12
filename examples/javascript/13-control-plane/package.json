@@ -1,0 +1,8 @@
+{
+  "name": "gavio-example-control-plane",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node control-plane.mjs" },
+  "dependencies": { "gavio": "^1.7.0" }
+}

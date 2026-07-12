@@ -62,6 +62,16 @@ def build_from_config(config: dict) -> Any:
         builder.provider(config["provider"])
     if config.get("model"):
         builder.model(config["model"])
+    if isinstance(config.get("control_plane"), dict):
+        c = config["control_plane"]
+        builder.control_plane(
+            c["url"],
+            c["runtime_key"],
+            c["policy_source"],
+            cache_path=c.get("cache_path"),
+            fail_mode=c.get("fail_mode", "open"),
+            timeout_seconds=float(c.get("timeout_seconds", 2.0)),
+        )
 
     ic = config.get("interceptors", {})
 

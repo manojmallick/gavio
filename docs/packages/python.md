@@ -296,6 +296,31 @@ Existing runtime-event JSONL can be converted through the CLI:
 gavio events convert --from runtime-events.jsonl --to otel-json --service-name checkout-api
 ```
 
+## Self-hosted Control Plane
+
+Control Plane support (v1.7.0) loads runtime config from an optional
+self-hosted server and caches the last successful config for offline
+fail-open/fail-closed behavior.
+
+```python
+from gavio import Gateway
+
+gw = (
+    Gateway.builder()
+    .dev_mode(True)
+    .control_plane(
+        "http://127.0.0.1:8787",
+        runtime_key,
+        "project:prod-support",
+        fail_mode="open",
+    )
+    .build()
+)
+```
+
+Use `ControlPlaneClient` or `load_control_plane_config` directly when you need
+to inspect or preload the fetched config before constructing a gateway.
+
 ## Prompt Registry + Evals
 
 Prompt Registry + Evals (v1.4.0, `F-EVAL-01/02`) renders versioned chat

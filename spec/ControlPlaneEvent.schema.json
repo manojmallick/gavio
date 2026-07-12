@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.dev/spec/ControlPlaneEvent.schema.json",
+  "title": "Gavio Control Plane Audit/Event Record",
+  "type": "object",
+  "required": ["id", "kind", "createdAt"],
+  "additionalProperties": true,
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "kind": { "type": "string", "minLength": 1 },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "traceId": { "type": "string" },
+    "tenant": { "type": "string" },
+    "feature": { "type": "string" },
+    "model": { "type": "string" },
+    "provider": { "type": "string" },
+    "risk": { "type": ["string", "number", "null"] },
+    "actor": { "type": "string" },
+    "action": { "type": "string" },
+    "resource": { "type": "string" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "not": {
+        "anyOf": [
+          { "required": ["messages"] },
+          { "required": ["content"] },
+          { "required": ["diff"] }
+        ]
+      }
+    }
+  }
+}

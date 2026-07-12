@@ -1,0 +1,17 @@
+{
+  "name": "@gavio/control-plane",
+  "version": "1.7.0",
+  "private": true,
+  "description": "Self-hosted Gavio control plane for local and private deployments.",
+  "type": "module",
+  "bin": {
+    "gavio-control-plane": "./bin/gavio-control-plane.mjs"
+  },
+  "scripts": {
+    "start": "node bin/gavio-control-plane.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

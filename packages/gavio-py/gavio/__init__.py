@@ -1,6 +1,6 @@
 """Gavio — AI request runtime and inspector for production systems.
 
-Stable public API surface (v1.6.0):
+Stable public API surface (v1.7.0):
 
     from gavio import Gateway, GavioRequest, GavioResponse, Provider
 
@@ -10,6 +10,7 @@ See https://gavio.io for documentation. MIT licensed.
 from __future__ import annotations
 
 from .context import InterceptorContext
+from .control_plane import ControlPlaneClient, ControlPlaneError, load_control_plane_config
 from .exceptions import (
     BudgetExceededError,
     ConfigurationError,
@@ -39,7 +40,7 @@ from .types import (
     TokenUsage,
 )
 
-__version__ = "1.6.0"
+__version__ = "1.7.0"
 
 __all__ = [
     "__version__",
@@ -60,6 +61,9 @@ __all__ = [
     "GavioRuntimeExporter",
     "JsonlRuntimeExporter",
     "OtelSpanExporter",
+    "ControlPlaneClient",
+    "ControlPlaneError",
+    "load_control_plane_config",
     "PromptTemplate",
     "RenderedPrompt",
     "PromptRegistry",

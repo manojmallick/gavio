@@ -21,22 +21,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.6.0</version>
+  <version>1.7.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.6.0</version>
+  <version>1.7.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>1.6.0</version>
+  <version>1.7.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>1.6.0</version>
+  <version>1.7.0</version>
 </dependency>
 ```
 
@@ -169,6 +169,20 @@ exporter strips `messages`, `content`, and `diff` by default, even when the
 local Inspector is in full capture mode. Observability + OTel (v1.3.0) maps
 the same stream into OpenTelemetry-style span JSON (`F-OBS-07`).
 
+## Self-hosted Control Plane
+
+```java
+Gateway gw = Gateway.builder()
+    .devMode(true)
+    .controlPlane("http://127.0.0.1:8787", runtimeKey, "project:prod-support")
+    .build();
+```
+
+Control Plane support (v1.7.0) loads runtime config from an optional
+self-hosted server, caches the last successful config, and can fail open or
+closed during outages. The same surface is available through
+`io.gavio.controlplane.ControlPlaneClient`.
+
 ## Prompt Registry + Evals
 
 ```java
@@ -225,6 +239,9 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
 - **Runtime export** — metadata-safe JSONL runtime events (`F-EXP-01`) and
   OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
   eval integrations.
+- **Control Plane** — optional self-hosted runtime config with policy rollout,
+  budget config, audit search, config snapshots, SDK cache fallback, and
+  `io.gavio.controlplane.ControlPlaneClient` (v1.7.0).
 - **Quality** — `GuardrailsInterceptor` with `JsonSchemaValidator` and regex
   validators (`F-QUA-01/02`), composite `RiskScorer` (`F-QUA-06`).
 - **Inspector** — dev-time visualizer (`F-DX-09/10`), agent call graphs and
@@ -249,7 +266,7 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `1.6.0`.
+All artifacts share the `io.github.manojmallick` group id and version `1.7.0`.
 
 | Artifact | Contains |
 |---|---|

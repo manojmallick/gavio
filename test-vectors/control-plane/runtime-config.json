@@ -1,0 +1,52 @@
+{
+  "roles": {
+    "canWritePolicy": ["owner", "admin"],
+    "readOnly": ["auditor", "read-only"],
+    "deniedMutationRole": "auditor"
+  },
+  "runtimeConfigCase": {
+    "policySource": "project:prod-support",
+    "runtimeKeyPrefix": "gav_rt_",
+    "expected": {
+      "schemaVersion": "1.0",
+      "projectId": "proj_support",
+      "environment": "prod",
+      "policyPack": "support",
+      "budgetLimitUsd": 25,
+      "cacheFailMode": "open"
+    }
+  },
+  "searchCase": {
+    "filters": {
+      "trace": "trace-001",
+      "tenant": "acme",
+      "feature": "support-chat",
+      "model": "gpt-4o",
+      "provider": "openai",
+      "risk": "high"
+    },
+    "event": {
+      "id": "evt_001",
+      "kind": "runtime.event",
+      "traceId": "trace-001",
+      "tenant": "acme",
+      "feature": "support-chat",
+      "model": "gpt-4o",
+      "provider": "openai",
+      "risk": "high",
+      "metadata": {
+        "decision": {
+          "action": "flag"
+        },
+        "content": "must be stripped"
+      }
+    },
+    "forbiddenMetadataKeys": ["messages", "content", "diff"]
+  },
+  "offlineCacheCase": {
+    "failMode": "open",
+    "firstLoad": "control_plane",
+    "secondLoad": "cache",
+    "expectedPolicySource": "project:prod-support"
+  }
+}

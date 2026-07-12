@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.dev/spec/ControlPlaneRuntimeConfig.schema.json",
+  "title": "Gavio Control Plane Runtime Config",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "configVersion",
+    "projectId",
+    "environment",
+    "policySource",
+    "policy",
+    "budgets",
+    "rollout",
+    "cache"
+  ],
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "configVersion": { "type": "string", "minLength": 1 },
+    "projectId": { "type": "string", "minLength": 1 },
+    "environment": { "type": "string", "minLength": 1 },
+    "policySource": { "type": "string", "minLength": 1 },
+    "policy": {
+      "type": "object",
+      "required": ["id", "name", "rules"],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "policyPack": { "type": "string" },
+        "rules": {
+          "type": "array",
+          "items": { "type": "object" }
+        }
+      }
+    },
+    "budgets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "scopeType", "limitUsd"],
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "scopeType": {
+            "type": "string",
+            "enum": ["project", "environment", "tenant", "feature", "user"]
+          },
+          "scopeId": { "type": "string" },
+          "limitUsd": { "type": "number", "minimum": 0 },
+          "window": { "type": "string" },
+          "action": { "type": "string" }
+        }
+      }
+    },
+    "rollout": {
+      "type": "object",
+      "required": ["id", "policyId", "status"],
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "policyId": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["active", "paused", "rolled_back"] },
+        "percentage": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "cache": {
+      "type": "object",
+      "required": ["ttlSeconds", "failMode"],
+      "additionalProperties": true,
+      "properties": {
+        "ttlSeconds": { "type": "integer", "minimum": 0 },
+        "failMode": { "type": "string", "enum": ["open", "closed"] },
+        "loadedFrom": { "type": "string", "enum": ["control_plane", "cache", "unavailable"] }
+      }
+    }
+  }
+}

@@ -1,6 +1,8 @@
 package io.gavio;
 
 import io.gavio.GavioException.ConfigurationException;
+import io.gavio.controlplane.ControlPlaneClient;
+import io.gavio.controlplane.ControlPlaneOptions;
 import io.gavio.inspector.CaptureMode;
 import io.gavio.inspector.Inspector;
 import io.gavio.inspector.InspectorConfig;
@@ -13,6 +15,7 @@ import io.gavio.spi.AuditFactory;
 import io.gavio.types.Provider;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 
 /** Fluent builder for {@link Gateway}. */
@@ -27,6 +30,7 @@ public final class GavioBuilder {
     private PricingProvider pricing = new PricingProvider();
     private InspectorConfig inspectorConfig;
     private final List<GavioRuntimeExporter> exporters = new ArrayList<>();
+    private ControlPlaneClient controlPlaneClient;
 
     public GavioBuilder provider(Provider provider) {
         this.provider = provider;
@@ -93,10 +97,23 @@ public final class GavioBuilder {
         return this;
     }
 
+    /** Load runtime config from an optional self-hosted Gavio control plane. */
+    public GavioBuilder controlPlane(String url, String runtimeKey, String policySource) {
+        return controlPlane(ControlPlaneOptions.builder(url, runtimeKey, policySource).build());
+    }
+
+    /** Load runtime config from an optional self-hosted Gavio control plane. */
+    public GavioBuilder controlPlane(ControlPlaneOptions options) {
+        this.controlPlaneClient = new ControlPlaneClient(options);
+        return this;
+    }
+
     public Gateway build() {
         ProviderAdapter resolved = resolveAdapter();
         String resolvedModel = model != null ? model : defaultModel(resolved);
         List<Interceptor> chain = new ArrayList<>(interceptors);
+        Map<String, Object> controlPlaneConfig =
+                controlPlaneClient == null ? null : controlPlaneClient.loadConfig();
 
         // Dev mode auto-wires a stdout audit interceptor if one is on the
         // classpath and none was added (parity with the Python builder).
@@ -116,7 +133,7 @@ public final class GavioBuilder {
                 inspector.bus().subscribe(exporter::exportEvent);
             }
         }
-        return new Gateway(resolved, resolvedModel, chain, dryRun, inspector);
+        return new Gateway(resolved, resolvedModel, chain, dryRun, inspector, controlPlaneConfig);
     }
 
     /**

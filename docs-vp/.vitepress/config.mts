@@ -67,7 +67,7 @@ export default defineConfig({
     nav: [
       { text: 'Docs', link: '/guide/getting-started', activeMatch: '/guide/' },
       {
-        text: 'v1.6.0',
+        text: 'v1.7.0',
         items: [
           { text: 'Changelog', link: 'https://github.com/manojmallick/gavio/blob/main/CHANGELOG.md' },
           { text: 'Releasing', link: 'https://github.com/manojmallick/gavio/blob/main/RELEASING.md' },
@@ -86,6 +86,7 @@ export default defineConfig({
           { text: 'Inspector', link: '/guide/inspector' },
           { text: 'Runtime Events', link: '/guide/runtime-events' },
           { text: 'Prompt Registry + Evals', link: '/guide/prompt-registry-evals' },
+          { text: 'Control Plane', link: '/guide/control-plane' },
           { text: 'Integrations', link: '/guide/integrations' },
           { text: 'Stability', link: '/guide/stability' },
         ],
