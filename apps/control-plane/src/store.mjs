@@ -3,18 +3,24 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
 const CONTENT_KEYS = new Set(['messages', 'content', 'diff'])
+const SENSITIVE_IDENTITY_KEYS = new Set(['clientSecret', 'client_secret', 'privateKey', 'private_key', 'signingSecret'])
+const RETAINED_RESOURCES = Object.freeze(['events', 'auditRecords', 'configSnapshots'])
 
 const RESOURCE_NAMES = Object.freeze([
   'projects',
   'environments',
   'keys',
+  'adminKeys',
   'teams',
+  'identityProviders',
   'policies',
   'policyRollouts',
+  'policyApprovals',
   'budgets',
   'events',
   'auditRecords',
   'configSnapshots',
+  'retentionPolicies',
 ])
 
 const MIGRATIONS = Object.freeze([
@@ -153,10 +159,11 @@ class JsonFileControlPlaneStore {
   }
 
   async create(resource, input, actor = 'owner') {
-    const item = withDefaults(resource, input)
-    if (resource === 'events' || resource === 'auditRecords') {
+    let item = withDefaults(resource, input)
+    if (resource === 'events' || resource === 'auditRecords' || resource === 'policyApprovals') {
       item.metadata = sanitizeMetadata(item.metadata ?? {})
     }
+    if (resource === 'identityProviders') item = sanitizeIdentityProvider(item)
     this.state[resource].push(item)
     if (isAdminResource(resource)) {
       await this.appendAdminAudit(actor, 'create', resource, item.id)
@@ -178,13 +185,34 @@ class JsonFileControlPlaneStore {
     return { ...redactKey(item), token }
   }
 
+  async createAdminKey(input, actor = 'owner') {
+    const token = `gav_admin_${randomUUID().replaceAll('-', '')}`
+    const item = withDefaults('adminKeys', {
+      ...input,
+      prefix: token.slice(0, 18),
+      keyHash: hashRuntimeKey(token),
+    })
+    this.state.adminKeys.push(item)
+    await this.appendAdminAudit(actor, 'create', 'adminKeys', item.id)
+    await this.save()
+    return { ...redactKey(item), token }
+  }
+
   async listKeys() {
     return this.state.keys.map(redactKey)
+  }
+
+  async listAdminKeys() {
+    return this.state.adminKeys.map(redactKey)
   }
 
   async verifyRuntimeKey(token) {
     const keyHash = hashRuntimeKey(token)
     return this.state.keys.find((item) => item.keyHash === keyHash && item.status !== 'revoked')
+  }
+
+  async verifyAdminKey(token, scope) {
+    return verifyScopedAdminKey(this.state.adminKeys, token, scope)
   }
 
   async runtimeConfig(policySource, token, failMode = 'open') {
@@ -205,6 +233,35 @@ class JsonFileControlPlaneStore {
     }
     await this.save()
     return snapshot
+  }
+
+  async approvePolicyRollout(rolloutId, input = {}, actor = 'owner') {
+    const rollout = this.state.policyRollouts.find((item) => item.id === rolloutId)
+    if (!rollout) throw httpError(404, `policy rollout ${rolloutId} not found`)
+    const approval = withDefaults('policyApprovals', {
+      rolloutId,
+      actor: input.actor ?? actor,
+      decision: input.decision ?? 'approved',
+      metadata: sanitizeMetadata(input.metadata ?? {}),
+    })
+    this.state.policyApprovals.push(approval)
+    const approvals = this.state.policyApprovals.filter((item) => item.rolloutId === rolloutId)
+    const updated = applyRolloutApprovalState(rollout, approvals)
+    Object.assign(rollout, updated)
+    await this.appendAdminAudit(actor, 'approve', 'policyRollouts', rolloutId)
+    await this.save()
+    return { approval, rollout: updated }
+  }
+
+  async auditExport(filters = {}) {
+    return buildAuditExport(this.state.auditRecords, filters)
+  }
+
+  async applyRetention(input = {}, actor = 'owner') {
+    const result = applyRetentionToState(this.state, input)
+    await this.appendAdminAudit(actor, result.dryRun ? 'retention.evaluate' : 'retention.apply', 'retentionPolicies', 'active')
+    await this.save()
+    return result
   }
 
   async appendAdminAudit(actor, action, resource, resourceId) {
@@ -242,10 +299,11 @@ class DurableControlPlaneStore {
   }
 
   async create(resource, input, actor = 'owner') {
-    const item = withDefaults(resource, input)
-    if (resource === 'events' || resource === 'auditRecords') {
+    let item = withDefaults(resource, input)
+    if (resource === 'events' || resource === 'auditRecords' || resource === 'policyApprovals') {
       item.metadata = sanitizeMetadata(item.metadata ?? {})
     }
+    if (resource === 'identityProviders') item = sanitizeIdentityProvider(item)
     await this.adapter.upsertRecord(resource, item)
     if (isAdminResource(resource)) {
       await this.appendAdminAudit(actor, 'create', resource, item.id)
@@ -265,8 +323,24 @@ class DurableControlPlaneStore {
     return { ...redactKey(item), token }
   }
 
+  async createAdminKey(input, actor = 'owner') {
+    const token = `gav_admin_${randomUUID().replaceAll('-', '')}`
+    const item = withDefaults('adminKeys', {
+      ...input,
+      prefix: token.slice(0, 18),
+      keyHash: hashRuntimeKey(token),
+    })
+    await this.adapter.upsertRecord('adminKeys', item)
+    await this.appendAdminAudit(actor, 'create', 'adminKeys', item.id)
+    return { ...redactKey(item), token }
+  }
+
   async listKeys() {
     return (await this.adapter.listRecords('keys')).map(redactKey)
+  }
+
+  async listAdminKeys() {
+    return (await this.adapter.listRecords('adminKeys')).map(redactKey)
   }
 
   async verifyRuntimeKey(token) {
@@ -274,6 +348,10 @@ class DurableControlPlaneStore {
     return (await this.adapter.listRecords('keys')).find(
       (item) => item.keyHash === keyHash && item.status !== 'revoked',
     )
+  }
+
+  async verifyAdminKey(token, scope) {
+    return verifyScopedAdminKey(await this.adapter.listRecords('adminKeys'), token, scope)
   }
 
   async runtimeConfig(policySource, token, failMode = 'open') {
@@ -293,6 +371,45 @@ class DurableControlPlaneStore {
       await this.appendAdminAudit(actor, 'create', 'configSnapshots', snapshot.id)
     }
     return snapshot
+  }
+
+  async approvePolicyRollout(rolloutId, input = {}, actor = 'owner') {
+    const rollout = (await this.adapter.listRecords('policyRollouts')).find((item) => item.id === rolloutId)
+    if (!rollout) throw httpError(404, `policy rollout ${rolloutId} not found`)
+    const approval = withDefaults('policyApprovals', {
+      rolloutId,
+      actor: input.actor ?? actor,
+      decision: input.decision ?? 'approved',
+      metadata: sanitizeMetadata(input.metadata ?? {}),
+    })
+    await this.adapter.upsertRecord('policyApprovals', approval)
+    const approvals = [...(await this.adapter.listRecords('policyApprovals')), approval].filter(
+      (item, index, items) => item.rolloutId === rolloutId && items.findIndex((candidate) => candidate.id === item.id) === index,
+    )
+    const updated = applyRolloutApprovalState(rollout, approvals)
+    await this.adapter.upsertRecord('policyRollouts', updated)
+    await this.appendAdminAudit(actor, 'approve', 'policyRollouts', rolloutId)
+    return { approval, rollout: updated }
+  }
+
+  async auditExport(filters = {}) {
+    return buildAuditExport(await this.adapter.listRecords('auditRecords'), filters)
+  }
+
+  async applyRetention(input = {}, actor = 'owner') {
+    const state = emptyState()
+    for (const resource of ['retentionPolicies', ...RETAINED_RESOURCES]) {
+      state[resource] = await this.adapter.listRecords(resource)
+    }
+    const result = applyRetentionToState(state, input)
+    if (!result.dryRun) {
+      for (const item of result.items) {
+        if (!item.applied) continue
+        for (const id of item.expiredIds) await this.adapter.deleteRecord(item.resource, id)
+      }
+    }
+    await this.appendAdminAudit(actor, result.dryRun ? 'retention.evaluate' : 'retention.apply', 'retentionPolicies', 'active')
+    return result
   }
 
   async appendAdminAudit(actor, action, resource, resourceId) {
@@ -385,6 +502,10 @@ class SqliteAdapter {
     return rows.map((row) => JSON.parse(row.document))
   }
 
+  async deleteRecord(resource, id) {
+    this.database.prepare('DELETE FROM gavio_control_plane_records WHERE resource = ? AND id = ?').run(resource, id)
+  }
+
   async migrationVersions() {
     return this.database
       .prepare('SELECT version FROM gavio_control_plane_migrations ORDER BY version ASC')
@@ -463,6 +584,10 @@ class PostgresAdapter {
       [resource],
     )
     return result.rows.map((row) => (typeof row.document === 'string' ? JSON.parse(row.document) : row.document))
+  }
+
+  async deleteRecord(resource, id) {
+    await this.client.query('DELETE FROM gavio_control_plane_records WHERE resource = $1 AND id = $2', [resource, id])
   }
 
   async migrationVersions() {
@@ -603,13 +728,17 @@ function withDefaults(resource, input) {
     projects: 'proj',
     environments: 'env',
     keys: 'key',
+    adminKeys: 'adminkey',
     teams: 'team',
+    identityProviders: 'idp',
     policies: 'pol',
     policyRollouts: 'rollout',
+    policyApprovals: 'approval',
     budgets: 'budget',
     events: 'evt',
     auditRecords: 'audit',
     configSnapshots: 'snap',
+    retentionPolicies: 'retention',
   }[resource]
   const item = {
     id: input.id ?? nextVersion(idPrefix),
@@ -618,9 +747,28 @@ function withDefaults(resource, input) {
     ...input,
   }
   if (resource === 'keys') item.status = item.status ?? 'active'
-  if (resource === 'policyRollouts') item.status = item.status ?? 'active'
+  if (resource === 'adminKeys') {
+    item.status = item.status ?? 'active'
+    item.scopes = normalizeScopes(item.scopes)
+  }
+  if (resource === 'identityProviders') {
+    item.status = item.status ?? 'active'
+    item.protocol = String(item.protocol ?? 'oidc').toLowerCase()
+  }
+  if (resource === 'policyRollouts') {
+    item.requiredApprovals = Number(item.requiredApprovals ?? (item.requiresApproval ? 1 : 0))
+    item.requiresApproval = Boolean(item.requiresApproval || item.requiredApprovals > 0)
+    item.status = item.status ?? (item.requiresApproval ? 'pending_approval' : 'active')
+    if (item.requiresApproval && item.status === 'active' && item.requiredApprovals > 0) item.status = 'pending_approval'
+  }
+  if (resource === 'policyApprovals') item.decision = item.decision ?? 'approved'
   if (resource === 'events') item.kind = item.kind ?? 'runtime.event'
   if (resource === 'auditRecords') item.kind = item.kind ?? 'admin.audit'
+  if (resource === 'retentionPolicies') {
+    item.status = item.status ?? 'active'
+    item.resource = item.resource ?? 'auditRecords'
+    item.maxAgeDays = Number(item.maxAgeDays ?? 90)
+  }
   return item
 }
 
@@ -633,8 +781,120 @@ function redactKey(item) {
   return safe
 }
 
+function normalizeScopes(scopes) {
+  const values = Array.isArray(scopes) ? scopes : scopes ? [scopes] : ['admin:read']
+  return [...new Set(values.map((scope) => String(scope).trim()).filter(Boolean))].sort()
+}
+
+function verifyScopedAdminKey(records, token, scope) {
+  const keyHash = hashRuntimeKey(token)
+  const now = Date.now()
+  const key = records.find((item) => {
+    if (item.keyHash !== keyHash || item.status === 'revoked') return false
+    if (item.expiresAt && Date.parse(item.expiresAt) <= now) return false
+    return hasScope(item.scopes ?? [], scope)
+  })
+  return key ?? null
+}
+
+function hasScope(scopes, scope) {
+  if (!scope) return true
+  const values = normalizeScopes(scopes)
+  if (values.includes('*') || values.includes(scope)) return true
+  const [prefix] = String(scope).split(':')
+  return values.includes(`${prefix}:*`)
+}
+
+function sanitizeIdentityProvider(item) {
+  const out = {}
+  for (const [key, value] of Object.entries(item)) {
+    if (SENSITIVE_IDENTITY_KEYS.has(key)) {
+      out[`${key}Hash`] = hashRuntimeKey(value)
+      continue
+    }
+    out[key] = value
+  }
+  return out
+}
+
+function applyRolloutApprovalState(rollout, approvals) {
+  const approvedCount = approvals.filter((item) => item.decision === 'approved').length
+  const requiredApprovals = Number(rollout.requiredApprovals ?? (rollout.requiresApproval ? 1 : 0))
+  const updated = {
+    ...rollout,
+    requiredApprovals,
+    approvalCount: approvedCount,
+    updatedAt: new Date().toISOString(),
+  }
+  if (requiredApprovals > 0 && approvedCount >= requiredApprovals && rollout.status !== 'rolled_back') {
+    updated.status = 'active'
+    updated.approvedAt = updated.approvedAt ?? updated.updatedAt
+  }
+  return updated
+}
+
 function isAdminResource(resource) {
   return !['events', 'auditRecords', 'configSnapshots'].includes(resource)
+}
+
+function buildAuditExport(records, filters) {
+  const items = searchRecords(records, filters).map((record) => ({
+    ...record,
+    metadata: sanitizeMetadata(record.metadata ?? {}),
+  }))
+  return {
+    schemaVersion: 'gavio.enterprise-admin.v1',
+    exportedAt: new Date().toISOString(),
+    filters,
+    items,
+  }
+}
+
+function applyRetentionToState(state, input = {}) {
+  const dryRun = input.dryRun !== false
+  const now = Date.parse(input.now ?? new Date().toISOString())
+  const policies = (state.retentionPolicies ?? []).filter((policy) => policy.status !== 'disabled')
+  const items = []
+  const expiredByResource = Object.fromEntries(RETAINED_RESOURCES.map((resource) => [resource, new Set()]))
+
+  for (const policy of policies) {
+    const resources = retentionResources(policy.resource)
+    const maxAgeDays = Number(policy.maxAgeDays ?? 90)
+    const cutoff = now - maxAgeDays * 24 * 60 * 60 * 1000
+    for (const resource of resources) {
+      const expiredIds = (state[resource] ?? [])
+        .filter((record) => Date.parse(record.createdAt ?? record.updatedAt ?? new Date().toISOString()) < cutoff)
+        .map((record) => record.id)
+      for (const id of expiredIds) expiredByResource[resource].add(id)
+      items.push({
+        policyId: policy.id,
+        resource,
+        maxAgeDays,
+        expiredIds,
+        expiredCount: expiredIds.length,
+        applied: !dryRun,
+      })
+    }
+  }
+
+  if (!dryRun) {
+    for (const [resource, ids] of Object.entries(expiredByResource)) {
+      state[resource] = (state[resource] ?? []).filter((record) => !ids.has(record.id))
+    }
+  }
+
+  return {
+    schemaVersion: 'gavio.enterprise-admin.v1',
+    dryRun,
+    evaluatedAt: new Date(now).toISOString(),
+    items,
+  }
+}
+
+function retentionResources(resource) {
+  if (resource === 'all') return RETAINED_RESOURCES
+  if (RETAINED_RESOURCES.includes(resource)) return [resource]
+  return []
 }
 
 function matchesBudgetScope(budget, projectId, environment) {
@@ -692,4 +952,10 @@ function recordParams(resource, item) {
 
 function stringOrNull(value) {
   return value === undefined || value === null ? null : String(value)
+}
+
+function httpError(status, message) {
+  const error = new Error(message)
+  error.status = status
+  return error
 }

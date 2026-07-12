@@ -19,6 +19,10 @@ time and stored as SHA-256 hashes. Events and audit records are metadata-first:
 content-bearing fields such as `messages`, `content`, and `diff` are stripped
 before persistence.
 
+Enterprise Admin v2 adds OIDC/SAML-lite identity-provider metadata, scoped
+admin API keys, rollout approvals, audit export, and retention controls without
+adding external service dependencies.
+
 ## Storage modes
 
 ```bash
@@ -55,3 +59,34 @@ Authorization: Bearer gav_rt_...
 
 The response matches `spec/ControlPlaneRuntimeConfig.schema.json` and can be
 cached by SDK clients for offline fail-open or fail-closed behavior.
+
+## Enterprise Admin v2
+
+Create scoped admin keys with `POST /api/admin-keys`. The plaintext
+`gav_admin_...` token is returned once, the stored record keeps only a prefix
+and SHA-256 hash, and later list responses redact the hash.
+
+Useful scopes:
+
+- `policy:write` creates policies and policy rollouts.
+- `policy:approve` approves rollout gates.
+- `audit:export` exports filtered audit records as JSON or JSONL.
+- `retention:write` creates and applies retention policies.
+- `identity:write` creates OIDC/SAML-lite provider metadata.
+- `*` grants full admin control for private automation.
+
+Approval-gated rollouts start as `pending_approval` until enough approval
+records exist:
+
+```text
+POST /api/policy-rollouts/:id/approvals
+Authorization: Bearer gav_admin_...
+```
+
+Retention can be evaluated safely before deletion:
+
+```text
+POST /api/retention/apply
+Authorization: Bearer gav_admin_...
+{ "dryRun": true }
+```
