@@ -19,6 +19,10 @@ public final class PolicyPack {
     private final PolicyAction defaultAction;
     private final RedactionStrategy redactionStrategy;
     private final List<String> auditLabels;
+    private final Map<String, String> compatibility;
+    private final PolicyPackSignature signature;
+    private final String schema;
+    private final String schemaVersion;
 
     public PolicyPack(
             String id,
@@ -31,6 +35,25 @@ public final class PolicyPack {
             PolicyAction defaultAction,
             RedactionStrategy redactionStrategy,
             List<String> auditLabels) {
+        this(id, name, version, domain, description, detectors, scanners, defaultAction,
+                redactionStrategy, auditLabels, Map.of(), null, null, null);
+    }
+
+    public PolicyPack(
+            String id,
+            String name,
+            String version,
+            String domain,
+            String description,
+            List<PolicyDetector> detectors,
+            List<PiiScanner> scanners,
+            PolicyAction defaultAction,
+            RedactionStrategy redactionStrategy,
+            List<String> auditLabels,
+            Map<String, String> compatibility,
+            PolicyPackSignature signature,
+            String schema,
+            String schemaVersion) {
         this.id = id;
         this.name = name;
         this.version = version;
@@ -41,6 +64,10 @@ public final class PolicyPack {
         this.defaultAction = defaultAction;
         this.redactionStrategy = redactionStrategy;
         this.auditLabels = List.copyOf(auditLabels);
+        this.compatibility = Map.copyOf(compatibility);
+        this.signature = signature;
+        this.schema = schema;
+        this.schemaVersion = schemaVersion;
     }
 
     public String id() {
@@ -83,6 +110,58 @@ public final class PolicyPack {
         return auditLabels;
     }
 
+    public Map<String, String> compatibility() {
+        return compatibility;
+    }
+
+    public PolicyPackSignature signature() {
+        return signature;
+    }
+
+    public boolean verifySignature() {
+        return signature != null
+                && "sha256".equals(signature.algorithm())
+                && signature.value() != null
+                && PolicyPacks.canonicalManifestDigest(manifest()).equals(signature.value());
+    }
+
+    public PolicyPack withOverrides(Map<String, Object> overrides) {
+        Map<String, Object> out = manifest();
+        if (overrides.containsKey("defaultAction")) {
+            out.put("defaultAction", overrides.get("defaultAction"));
+        }
+        if (overrides.containsKey("redactionStrategy")) {
+            out.put("redactionStrategy", overrides.get("redactionStrategy"));
+        }
+        if (overrides.containsKey("auditLabels")) {
+            out.put("auditLabels", overrides.get("auditLabels"));
+        }
+        applyDetectorOverrides(out, overrides);
+        out.remove("signature");
+        return PolicyPacks.fromManifest(out);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void applyDetectorOverrides(Map<String, Object> manifest, Map<String, Object> overrides) {
+        Object rawOverrides = overrides.get("detectors");
+        if (!(rawOverrides instanceof Map<?, ?> detectorOverrides)) {
+            return;
+        }
+        Object rawDetectors = manifest.get("detectors");
+        if (!(rawDetectors instanceof List<?> detectors)) {
+            return;
+        }
+        for (Object rawDetector : detectors) {
+            Map<String, Object> detector = (Map<String, Object>) rawDetector;
+            Object rawOverride = detectorOverrides.get(detector.get("name"));
+            if (rawOverride instanceof Map<?, ?> override) {
+                for (Map.Entry<?, ?> entry : override.entrySet()) {
+                    detector.put(entry.getKey().toString(), entry.getValue());
+                }
+            }
+        }
+    }
+
     public Map<String, Object> manifest() {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("id", id);
@@ -98,6 +177,18 @@ public final class PolicyPack {
             detectorManifests.add(detector.manifest());
         }
         out.put("detectors", detectorManifests);
+        if (schema != null) {
+            out.put("$schema", schema);
+        }
+        if (schemaVersion != null) {
+            out.put("schemaVersion", schemaVersion);
+        }
+        if (!compatibility.isEmpty()) {
+            out.put("compatibility", compatibility);
+        }
+        if (signature != null) {
+            out.put("signature", signature.manifest());
+        }
         return out;
     }
 }

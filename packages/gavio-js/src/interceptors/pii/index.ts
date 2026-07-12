@@ -1,6 +1,6 @@
 /** PII guard public surface. */
 
-export { piiGuard, resolveOverlaps } from './guard.js'
+export { piiGuard, piiGuardFromPolicyPack, resolveOverlaps } from './guard.js'
 export type { PiiGuardOptions } from './guard.js'
 export { ScanContext } from './context.js'
 export { ScannerRegistry, scannerTier } from './scanner.js'
@@ -18,15 +18,22 @@ export {
   corePolicyPack,
   customPolicyPack,
   fintechPolicyPack,
+  listPolicyPacks,
+  loadPolicyPack,
+  loadPolicyPackPath,
+  policyPackFromManifest,
   policyPackScanners,
   regexRuleScanner,
 } from './policy-pack.js'
 export type {
   CustomPolicyPackOptions,
   PolicyAction,
+  PolicyPackOverrides,
   PolicyPack,
   PolicyPackDetector,
   PolicyPackManifest,
+  PolicyPackSignature,
+  PolicySeverity,
   RedactionStrategy,
   RegexPolicyRule,
 } from './policy-pack.js'

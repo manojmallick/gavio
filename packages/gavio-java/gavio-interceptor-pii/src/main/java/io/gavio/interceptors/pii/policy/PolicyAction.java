@@ -21,6 +21,15 @@ public enum PolicyAction {
         return wireValue;
     }
 
+    public static PolicyAction fromWire(String value) {
+        for (PolicyAction action : values()) {
+            if (action.wireValue.equals(value)) {
+                return action;
+            }
+        }
+        throw new IllegalArgumentException("unknown policy action: " + value);
+    }
+
     @Override
     public String toString() {
         return wireValue;

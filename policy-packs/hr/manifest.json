@@ -1,0 +1,44 @@
+{
+  "$schema": "../../spec/PolicyPackManifest.schema.json",
+  "schemaVersion": "1.0",
+  "id": "gavio.hr",
+  "name": "HR",
+  "version": "1.0.0",
+  "domain": "hr",
+  "description": "Employee, payroll, and recruiting identifiers.",
+  "compatibility": { "gavio": ">=1.6.0 <2.0.0" },
+  "defaultAction": "redact",
+  "redactionStrategy": "tokenize",
+  "auditLabels": ["PII", "HR_IDENTIFIER"],
+  "detectors": [
+    {
+      "name": "employee_id",
+      "entityType": "EMPLOYEE_ID",
+      "type": "regex",
+      "action": "redact",
+      "label": "HR_IDENTIFIER",
+      "confidence": 0.92,
+      "redactionStrategy": "tokenize",
+      "pattern": "\\bEMP-[0-9]{6}\\b",
+      "replacementPrefix": "EMPLOYEE_ID",
+      "suppressionPatterns": ["\\bEMP-000000\\b"]
+    },
+    {
+      "name": "candidate_id",
+      "entityType": "CANDIDATE_ID",
+      "type": "regex",
+      "action": "flag",
+      "label": "HR_IDENTIFIER",
+      "confidence": 0.84,
+      "redactionStrategy": "hash",
+      "pattern": "\\bCAN-[A-Z0-9]{8}\\b",
+      "replacementPrefix": "CANDIDATE_ID"
+    }
+  ],
+  "signature": {
+    "algorithm": "sha256",
+    "value": "f360f560227796a575fdcf6e628316e7b53cd94cea86908ec0fa8de70a123906",
+    "keyId": "gavio-catalog-v1",
+    "signedAt": "2026-07-12T00:00:00Z"
+  }
+}

@@ -5,6 +5,8 @@ import io.gavio.GavioRequest;
 import io.gavio.GavioResponse;
 import io.gavio.interceptors.Interceptor;
 import io.gavio.interceptors.InterceptorContext;
+import io.gavio.interceptors.pii.policy.PolicyPack;
+import io.gavio.interceptors.pii.policy.PolicyPacks;
 import io.gavio.interceptors.pii.scanners.DefaultScanners;
 import io.gavio.types.Message;
 import io.gavio.types.PiiMode;
@@ -210,6 +212,10 @@ public final class PiiGuard implements Interceptor {
 
     public static Builder builder() {
         return new Builder();
+    }
+
+    public static PiiGuard fromPolicyPack(PolicyPack... packs) {
+        return builder().scanners(PolicyPacks.scanners(packs)).build();
     }
 
     /** Fluent builder for {@link PiiGuard}. */

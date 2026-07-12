@@ -16,6 +16,7 @@ offending SDK's test-vector run goes red.
 | [`pii/image-detection.json`](./pii/image-detection.json) | Image PII cases (F-SEC-09) — a stubbed `ModalityScanner` yields `ocrText` + `entityTypes`; the modality guard runs the text scanners over the OCR text, unions the direct detections, and compares the sorted entity types to `expectedTypes`. Image bytes are stubbed so the contract is deterministic across SDKs. |
 | [`pii/fintech-detection.json`](./pii/fintech-detection.json) | FinTech policy pack cases — run a `PiiGuard` configured with only `fintechScanners()` over `text`, collect the sorted entity types, compare to `expectedTypes`. Exercises context-gated SWIFT/BIC and ABA routing-number checksum. |
 | [`policy-packs/manifest.json`](./policy-packs/manifest.json) | Policy Pack architecture cases (F-PACK-01/02/05) — verify core and FinTech pack manifests, scanner lists, and custom regex-rule pack detection across SDKs. |
+| [`policy-packs/catalog.json`](./policy-packs/catalog.json) | Policy Pack Catalog cases — verify catalog listing, signed manifest loading, overrides, suppression rules, and domain pack detection across SDKs. |
 | [`runtime-events/export-redaction.json`](./runtime-events/export-redaction.json) | Runtime exporter privacy contract (F-EXP-01) — verify metadata-only export strips content-bearing event fields while preserving trace and decision metadata. |
 | [`otel/spans.json`](./otel/spans.json) | OTel bridge cases (F-OBS-07) — map runtime events into OpenTelemetry-style spans with parent links, status, timestamps, attributes, and metadata-only privacy. |
 | [`prompts/registry-evals.json`](./prompts/registry-evals.json) | Prompt Registry + Evals cases (`F-EVAL-01/02`) — render versioned prompt templates, validate missing variables, attach metadata-only lineage, score eval cases, and keep raw outputs out of reports. |
@@ -57,6 +58,18 @@ offending SDK's test-vector run goes red.
     "rules": [{ "entityType": "EMPLOYEE_ID", "pattern": "\\bEMP-[0-9]{6}\\b" }],
     "cases": [{ "text": "EMP-123456", "expectedTypes": ["EMPLOYEE_ID"] }]
   }
+}
+```
+
+`policy-packs/catalog.json`:
+```json
+{
+  "catalogNames": ["core", "finance"],
+  "overrideCase": {
+    "pack": "finance",
+    "overrides": { "detectors": { "account_number": { "severity": "critical" } } }
+  },
+  "domainCases": [{ "pack": "healthcare", "expectedTypes": ["MEDICAL_RECORD_NUMBER"] }]
 }
 ```
 

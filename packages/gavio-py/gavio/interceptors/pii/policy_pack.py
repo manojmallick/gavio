@@ -6,9 +6,12 @@ metadata, or UI surfaces. The scanners still plug into ``PiiGuard`` unchanged.
 
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 from dataclasses import dataclass, field
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from .context import ScanContext
@@ -49,15 +52,37 @@ class RedactionStrategy(str, Enum):
 
 
 @dataclass(frozen=True)
+class PolicyPackSignature:
+    algorithm: str = "sha256"
+    value: str | None = None
+    key_id: str | None = None
+    signed_at: str | None = None
+
+    def manifest(self) -> dict[str, Any]:
+        out: dict[str, Any] = {
+            "algorithm": self.algorithm,
+            "value": self.value,
+        }
+        if self.key_id is not None:
+            out["keyId"] = self.key_id
+        if self.signed_at is not None:
+            out["signedAt"] = self.signed_at
+        return out
+
+
+@dataclass(frozen=True)
 class PolicyDetector:
     name: str
     entity_type: str
     detector_type: str = "scanner"
     action: PolicyAction | str = PolicyAction.REDACT
     label: str | None = None
+    severity: str | None = None
     confidence: float = 1.0
     redaction_strategy: RedactionStrategy | str = RedactionStrategy.TOKENIZE
     pattern: str | None = None
+    replacement_prefix: str | None = None
+    suppression_patterns: tuple[str, ...] = field(default_factory=tuple)
 
     def manifest(self) -> dict[str, Any]:
         out: dict[str, Any] = {
@@ -70,8 +95,14 @@ class PolicyDetector:
         }
         if self.label is not None:
             out["label"] = self.label
+        if self.severity is not None:
+            out["severity"] = self.severity
         if self.pattern is not None:
             out["pattern"] = self.pattern
+        if self.replacement_prefix is not None:
+            out["replacementPrefix"] = self.replacement_prefix
+        if self.suppression_patterns:
+            out["suppressionPatterns"] = list(self.suppression_patterns)
         return out
 
 
@@ -85,6 +116,8 @@ class RegexPolicyRule:
     action: PolicyAction | str | None = None
     redaction_strategy: RedactionStrategy | str | None = None
     label: str | None = None
+    severity: str | None = None
+    suppression_patterns: tuple[str, ...] = field(default_factory=tuple)
 
 
 class RegexRuleScanner(PiiScanner):
@@ -93,6 +126,9 @@ class RegexRuleScanner(PiiScanner):
     def __init__(self, rule: RegexPolicyRule) -> None:
         self._rule = rule
         self._pattern = re.compile(rule.pattern)
+        self._suppressions = tuple(
+            re.compile(pattern) for pattern in rule.suppression_patterns
+        )
 
     @property
     def entity_type(self) -> str:
@@ -101,6 +137,8 @@ class RegexRuleScanner(PiiScanner):
     def scan(self, text: str, ctx: ScanContext) -> list[PiiMatch]:
         out: list[PiiMatch] = []
         for match in self._pattern.finditer(text):
+            if any(pattern.search(match.group(0)) for pattern in self._suppressions):
+                continue
             idx = ctx.next_index(self.entity_type)
             prefix = self._rule.replacement_prefix or self.entity_type
             out.append(
@@ -128,9 +166,13 @@ class PolicyPack:
     default_action: PolicyAction | str = PolicyAction.REDACT
     redaction_strategy: RedactionStrategy | str = RedactionStrategy.TOKENIZE
     audit_labels: tuple[str, ...] = field(default_factory=tuple)
+    compatibility: dict[str, str] = field(default_factory=dict)
+    signature: PolicyPackSignature | None = None
+    schema: str | None = None
+    schema_version: str | None = None
 
     def manifest(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "id": self.id,
             "name": self.name,
             "version": self.version,
@@ -141,9 +183,55 @@ class PolicyPack:
             "auditLabels": list(self.audit_labels),
             "detectors": [detector.manifest() for detector in self.detectors],
         }
+        if self.schema is not None:
+            out["$schema"] = self.schema
+        if self.schema_version is not None:
+            out["schemaVersion"] = self.schema_version
+        if self.compatibility:
+            out["compatibility"] = dict(self.compatibility)
+        if self.signature is not None:
+            out["signature"] = self.signature.manifest()
+        return out
 
     def scanner_list(self) -> list[PiiScanner]:
         return list(self.scanners)
+
+    @classmethod
+    def load(cls, name: str) -> PolicyPack:
+        """Load a catalog policy pack by name, e.g. ``finance``."""
+        return load_policy_pack(name)
+
+    @classmethod
+    def load_path(cls, path: str | Path) -> PolicyPack:
+        """Load a policy pack from a directory or manifest JSON file."""
+        return load_policy_pack_path(path)
+
+    def verify_signature(self) -> bool:
+        if self.signature is None or self.signature.algorithm != "sha256":
+            return False
+        expected = self.signature.value
+        if not expected:
+            return False
+        return self.signature_value() == expected
+
+    def signature_value(self) -> str:
+        return _canonical_manifest_digest(self.manifest())
+
+    def with_overrides(self, overrides: dict[str, Any]) -> PolicyPack:
+        manifest = self.manifest()
+        detector_overrides: dict[str, Any] = overrides.get("detectors", {})
+        if "defaultAction" in overrides:
+            manifest["defaultAction"] = overrides["defaultAction"]
+        if "redactionStrategy" in overrides:
+            manifest["redactionStrategy"] = overrides["redactionStrategy"]
+        if "auditLabels" in overrides:
+            manifest["auditLabels"] = list(overrides["auditLabels"])
+        for detector in manifest["detectors"]:
+            override = detector_overrides.get(detector["name"])
+            if override:
+                detector.update(override)
+        manifest.pop("signature", None)
+        return _pack_from_manifest(manifest)
 
 
 def _detector(
@@ -231,9 +319,12 @@ def custom_policy_pack(
             detector_type="regex",
             action=rule.action or default_action,
             label=rule.label,
+            severity=rule.severity,
             confidence=rule.confidence,
             redaction_strategy=rule.redaction_strategy or redaction_strategy,
             pattern=rule.pattern,
+            replacement_prefix=rule.replacement_prefix,
+            suppression_patterns=tuple(rule.suppression_patterns),
         )
         for rule in rules
     )
@@ -256,3 +347,163 @@ def policy_pack_scanners(*packs: PolicyPack) -> list[PiiScanner]:
     for pack in packs:
         scanners.extend(pack.scanners)
     return scanners
+
+
+def list_policy_packs() -> list[str]:
+    root = _catalog_root()
+    return sorted(
+        path.parent.relative_to(root).as_posix()
+        for path in root.rglob("manifest.json")
+    )
+
+
+def load_policy_pack(name: str) -> PolicyPack:
+    path = _catalog_root() / name / "manifest.json"
+    if not path.is_file():
+        raise FileNotFoundError(f"unknown policy pack: {name}")
+    return load_policy_pack_path(path)
+
+
+def load_policy_pack_path(path: str | Path) -> PolicyPack:
+    manifest_path = Path(path)
+    if manifest_path.is_dir():
+        manifest_path = manifest_path / "manifest.json"
+    return _pack_from_manifest(json.loads(manifest_path.read_text()))
+
+
+def _pack_from_manifest(manifest: dict[str, Any]) -> PolicyPack:
+    default_action = manifest.get("defaultAction", PolicyAction.REDACT.value)
+    redaction_strategy = manifest.get(
+        "redactionStrategy", RedactionStrategy.TOKENIZE.value
+    )
+    detectors: list[PolicyDetector] = []
+    scanners: list[PiiScanner] = []
+    for item in manifest.get("detectors", []):
+        detector = _detector_from_manifest(item, default_action, redaction_strategy)
+        detectors.append(detector)
+        scanners.extend(_scanners_from_detector(detector))
+    signature = _signature_from_manifest(manifest.get("signature"))
+    return PolicyPack(
+        id=manifest["id"],
+        name=manifest["name"],
+        version=manifest["version"],
+        domain=manifest["domain"],
+        description=manifest.get("description", ""),
+        detectors=tuple(detectors),
+        scanners=tuple(scanners),
+        default_action=default_action,
+        redaction_strategy=redaction_strategy,
+        audit_labels=tuple(manifest.get("auditLabels", ())),
+        compatibility=dict(manifest.get("compatibility", {})),
+        signature=signature,
+        schema=manifest.get("$schema"),
+        schema_version=manifest.get("schemaVersion"),
+    )
+
+
+def _detector_from_manifest(
+    item: dict[str, Any],
+    default_action: PolicyAction | str,
+    default_strategy: RedactionStrategy | str,
+) -> PolicyDetector:
+    return PolicyDetector(
+        name=item["name"],
+        entity_type=item["entityType"],
+        detector_type=item.get("type", "scanner"),
+        action=item.get("action", default_action),
+        label=item.get("label"),
+        severity=item.get("severity"),
+        confidence=float(item.get("confidence", 1.0)),
+        redaction_strategy=item.get("redactionStrategy", default_strategy),
+        pattern=item.get("pattern"),
+        replacement_prefix=item.get("replacementPrefix"),
+        suppression_patterns=tuple(item.get("suppressionPatterns", ())),
+    )
+
+
+def _signature_from_manifest(value: Any) -> PolicyPackSignature | None:
+    if not isinstance(value, dict):
+        return None
+    return PolicyPackSignature(
+        algorithm=value.get("algorithm", "sha256"),
+        value=value.get("value"),
+        key_id=value.get("keyId"),
+        signed_at=value.get("signedAt"),
+    )
+
+
+def _scanners_from_detector(detector: PolicyDetector) -> list[PiiScanner]:
+    if detector.detector_type == "regex":
+        if detector.pattern is None:
+            raise ValueError(f"regex policy detector {detector.name} is missing pattern")
+        rule = RegexPolicyRule(
+            name=detector.name,
+            entity_type=detector.entity_type,
+            pattern=detector.pattern,
+            confidence=detector.confidence,
+            replacement_prefix=detector.replacement_prefix,
+            action=detector.action,
+            redaction_strategy=detector.redaction_strategy,
+            label=detector.label,
+            severity=detector.severity,
+            suppression_patterns=detector.suppression_patterns,
+        )
+        return [RegexRuleScanner(rule)]
+    scanner = _BUILTIN_SCANNERS.get(detector.name) or _BUILTIN_SCANNERS.get(
+        detector.entity_type
+    )
+    if scanner is None:
+        raise ValueError(f"unknown policy-pack scanner detector: {detector.name}")
+    return [scanner()]
+
+
+def _canonical_manifest_digest(manifest: dict[str, Any]) -> str:
+    payload = json.loads(json.dumps(manifest))
+    if isinstance(payload.get("signature"), dict):
+        payload["signature"]["value"] = None
+    encoded = json.dumps(
+        _normalize_canonical_json(payload), sort_keys=True, separators=(",", ":")
+    ).encode()
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _normalize_canonical_json(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: _normalize_canonical_json(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_normalize_canonical_json(item) for item in value]
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    return value
+
+
+def _catalog_root() -> Path:
+    for base in (Path.cwd(), *Path(__file__).resolve().parents):
+        candidate = base / "policy-packs"
+        if candidate.is_dir():
+            return candidate
+    raise FileNotFoundError("could not locate policy-packs catalog")
+
+
+_BUILTIN_SCANNERS = {
+    "secret": SecretScanner,
+    "SECRET": SecretScanner,
+    "email": EmailScanner,
+    "EMAIL": EmailScanner,
+    "iban": IbanScanner,
+    "IBAN": IbanScanner,
+    "bsn": BsnScanner,
+    "BSN": BsnScanner,
+    "credit_card": CreditCardScanner,
+    "CREDIT_CARD": CreditCardScanner,
+    "ssn": SsnScanner,
+    "SSN": SsnScanner,
+    "phone": PhoneScanner,
+    "PHONE": PhoneScanner,
+    "ip_address": IpAddressScanner,
+    "IP_ADDRESS": IpAddressScanner,
+    "swift_bic": SwiftBicScanner,
+    "SWIFT_BIC": SwiftBicScanner,
+    "routing_number": RoutingNumberScanner,
+    "ROUTING_NUMBER": RoutingNumberScanner,
+}

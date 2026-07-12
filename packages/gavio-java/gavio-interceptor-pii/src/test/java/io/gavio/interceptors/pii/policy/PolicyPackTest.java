@@ -1,7 +1,10 @@
 package io.gavio.interceptors.pii.policy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.gavio.interceptors.pii.PiiGuard;
 import io.gavio.interceptors.pii.PiiScanner;
 import io.gavio.interceptors.pii.ScanContext;
 import io.gavio.interceptors.pii.scanners.DefaultScanners;
@@ -22,13 +25,18 @@ class PolicyPackTest {
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> vectors() throws IOException {
-        return Json.parseObject(Files.readString(vectorsPath()));
+        return Json.parseObject(Files.readString(vectorsPath("manifest.json")));
     }
 
-    private static Path vectorsPath() {
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> catalogVectors() throws IOException {
+        return Json.parseObject(Files.readString(vectorsPath("catalog.json")));
+    }
+
+    private static Path vectorsPath(String file) {
         Path dir = Path.of("").toAbsolutePath();
         while (dir != null) {
-            Path candidate = dir.resolve("test-vectors/policy-packs/manifest.json");
+            Path candidate = dir.resolve("test-vectors/policy-packs/" + file);
             if (Files.isRegularFile(candidate)) {
                 return candidate;
             }
@@ -47,6 +55,10 @@ class PolicyPackTest {
 
     private static List<String> scannerEntityTypes(List<PiiScanner> scanners) {
         return scanners.stream().map(PiiScanner::entityType).toList();
+    }
+
+    private static List<String> strings(Object value) {
+        return ((List<?>) value).stream().map(Object::toString).toList();
     }
 
     private static List<String> detect(String text, List<PiiScanner> scanners) {
@@ -128,6 +140,75 @@ class PolicyPackTest {
                     assertEquals(
                             ((List<Object>) c.get("expectedTypes")).stream().map(Object::toString).toList(),
                             detect(c.get("text").toString(), PolicyPacks.scanners(pack)))));
+        }
+        return tests.stream();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void catalogPolicyPackListAndManifests() throws IOException {
+        Map<String, Object> vectors = catalogVectors();
+        assertEquals(strings(vectors.get("catalogNames")), PolicyPacks.listCatalog());
+        Map<String, Object> signature = (Map<String, Object>) vectors.get("signature");
+        for (Object obj : (List<Object>) vectors.get("catalogPacks")) {
+            Map<String, Object> expected = (Map<String, Object>) obj;
+            PolicyPack pack = PolicyPacks.load(expected.get("name").toString());
+            Map<String, Object> manifest = pack.manifest();
+            assertEquals(expected.get("id"), manifest.get("id"));
+            assertEquals(expected.get("domain"), manifest.get("domain"));
+            assertEquals(expected.get("auditLabels"), manifest.get("auditLabels"));
+            assertEquals(expected.get("detectorEntityTypes"), detectorEntityTypes(manifest));
+            assertEquals(signature.get("algorithm"), ((Map<String, Object>) manifest.get("signature")).get("algorithm"));
+            assertTrue(pack.verifySignature());
+            assertTrue(PiiGuard.fromPolicyPack(pack).dryRunSafe());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void catalogSignatureFailsClosedForMutatedManifest() throws IOException {
+        Map<String, Object> vectors = catalogVectors();
+        Map<String, Object> signature = (Map<String, Object>) vectors.get("signature");
+        Map<String, Object> manifest = PolicyPacks.load("finance").manifest();
+        ((Map<String, Object>) manifest.get("signature")).put("value", signature.get("badValue"));
+        Path path = Files.createTempFile("gavio-policy-pack-", ".json");
+        Files.writeString(path, Json.write(manifest));
+        assertFalse(PolicyPacks.loadPath(path).verifySignature());
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void catalogOverridesUpdateDetectorMetadata() throws IOException {
+        Map<String, Object> c = (Map<String, Object>) catalogVectors().get("overrideCase");
+        PolicyPack pack = PolicyPacks.load(c.get("pack").toString())
+                .withOverrides((Map<String, Object>) c.get("overrides"));
+        Map<String, Object> detector = ((List<Map<String, Object>>) (Object) pack.manifest().get("detectors")).stream()
+                .filter(item -> item.get("name").equals(c.get("detector")))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(c.get("expectedAction"), detector.get("action"));
+        assertEquals(c.get("expectedSeverity"), detector.get("severity"));
+        assertEquals(c.get("expectedRedactionStrategy"), detector.get("redactionStrategy"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void catalogSuppressionRulesAreApplied() throws IOException {
+        Map<String, Object> c = (Map<String, Object>) catalogVectors().get("suppressionCase");
+        PolicyPack pack = PolicyPacks.load(c.get("pack").toString());
+        assertEquals(strings(c.get("expectedTypes")), detect(c.get("text").toString(), PolicyPacks.scanners(pack)));
+    }
+
+    @SuppressWarnings("unchecked")
+    @TestFactory
+    Stream<DynamicTest> catalogDomainPolicyPackVectors() throws IOException {
+        List<DynamicTest> tests = new ArrayList<>();
+        for (Object obj : (List<Object>) catalogVectors().get("domainCases")) {
+            Map<String, Object> c = (Map<String, Object>) obj;
+            tests.add(DynamicTest.dynamicTest("catalog-policy-pack:" + c.get("pack"), () -> {
+                PolicyPack pack = PolicyPacks.load(c.get("pack").toString());
+                assertEquals(strings(c.get("expectedTypes")), detect(c.get("text").toString(), PolicyPacks.scanners(pack)));
+            }));
         }
         return tests.stream();
     }

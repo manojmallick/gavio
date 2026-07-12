@@ -17,6 +17,15 @@ public enum RedactionStrategy {
         return wireValue;
     }
 
+    public static RedactionStrategy fromWire(String value) {
+        for (RedactionStrategy strategy : values()) {
+            if (strategy.wireValue.equals(value)) {
+                return strategy;
+            }
+        }
+        throw new IllegalArgumentException("unknown redaction strategy: " + value);
+    }
+
     @Override
     public String toString() {
         return wireValue;

@@ -1,0 +1,62 @@
+{
+  "$schema": "../../spec/PolicyPackManifest.schema.json",
+  "schemaVersion": "1.0",
+  "id": "gavio.healthcare",
+  "name": "Healthcare",
+  "version": "1.0.0",
+  "domain": "healthcare",
+  "description": "Patient identifiers used in clinical and payer workflows.",
+  "compatibility": { "gavio": ">=1.6.0 <2.0.0" },
+  "defaultAction": "redact",
+  "redactionStrategy": "tokenize",
+  "auditLabels": ["PII", "PHI"],
+  "detectors": [
+    {
+      "name": "email",
+      "entityType": "EMAIL",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PHI",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "phone",
+      "entityType": "PHONE",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PHI",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "medical_record_number",
+      "entityType": "MEDICAL_RECORD_NUMBER",
+      "type": "regex",
+      "action": "redact",
+      "label": "PHI",
+      "confidence": 0.93,
+      "redactionStrategy": "tokenize",
+      "pattern": "\\bMRN-[0-9]{6,10}\\b",
+      "replacementPrefix": "MRN",
+      "suppressionPatterns": ["\\bMRN-000000\\b"]
+    },
+    {
+      "name": "insurance_member_id",
+      "entityType": "INSURANCE_MEMBER_ID",
+      "type": "regex",
+      "action": "flag",
+      "label": "PHI",
+      "confidence": 0.86,
+      "redactionStrategy": "hash",
+      "pattern": "\\bMEM-[A-Z0-9]{8,12}\\b",
+      "replacementPrefix": "MEMBER_ID"
+    }
+  ],
+  "signature": {
+    "algorithm": "sha256",
+    "value": "ead439ac02dc49f768ffb1a5f8318e8d4afd95a59755434c242f5eae4e866726",
+    "keyId": "gavio-catalog-v1",
+    "signedAt": "2026-07-12T00:00:00Z"
+  }
+}

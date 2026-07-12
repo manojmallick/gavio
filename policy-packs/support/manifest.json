@@ -1,0 +1,62 @@
+{
+  "$schema": "../../spec/PolicyPackManifest.schema.json",
+  "schemaVersion": "1.0",
+  "id": "gavio.support",
+  "name": "Customer Support",
+  "version": "1.0.0",
+  "domain": "support",
+  "description": "Customer support ticket, account, email, and phone identifiers.",
+  "compatibility": { "gavio": ">=1.6.0 <2.0.0" },
+  "defaultAction": "redact",
+  "redactionStrategy": "tokenize",
+  "auditLabels": ["PII", "SUPPORT_IDENTIFIER"],
+  "detectors": [
+    {
+      "name": "email",
+      "entityType": "EMAIL",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PII",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "phone",
+      "entityType": "PHONE",
+      "type": "scanner",
+      "action": "redact",
+      "label": "PII",
+      "confidence": 1.0,
+      "redactionStrategy": "tokenize"
+    },
+    {
+      "name": "support_ticket",
+      "entityType": "SUPPORT_TICKET",
+      "type": "regex",
+      "action": "flag",
+      "label": "SUPPORT_IDENTIFIER",
+      "confidence": 0.88,
+      "redactionStrategy": "hash",
+      "pattern": "\\bTICKET-[0-9]{7}\\b",
+      "replacementPrefix": "TICKET",
+      "suppressionPatterns": ["\\bTICKET-0000000\\b"]
+    },
+    {
+      "name": "customer_id",
+      "entityType": "CUSTOMER_ID",
+      "type": "regex",
+      "action": "flag",
+      "label": "SUPPORT_IDENTIFIER",
+      "confidence": 0.84,
+      "redactionStrategy": "hash",
+      "pattern": "\\bCUS-[A-Z0-9]{8}\\b",
+      "replacementPrefix": "CUSTOMER_ID"
+    }
+  ],
+  "signature": {
+    "algorithm": "sha256",
+    "value": "7512a96c453b96a9b0c7380198c7c5f523a5e3e2c4d9e84bc6090b18e5d987a8",
+    "keyId": "gavio-catalog-v1",
+    "signedAt": "2026-07-12T00:00:00Z"
+  }
+}

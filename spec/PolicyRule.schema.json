@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/PolicyRule.v1.json",
+  "title": "PolicyRule",
+  "description": "One detector entry inside a Gavio Policy Pack manifest.",
+  "type": "object",
+  "required": [
+    "name",
+    "entityType",
+    "type",
+    "action",
+    "confidence",
+    "redactionStrategy"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "name": { "type": "string", "minLength": 1 },
+    "entityType": { "type": "string", "minLength": 1 },
+    "type": { "type": "string", "enum": ["scanner", "regex"] },
+    "action": {
+      "type": "string",
+      "enum": ["allow", "flag", "redact", "mask", "hash", "block", "route", "require-approval"]
+    },
+    "label": { "type": "string", "minLength": 1 },
+    "severity": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"],
+      "default": "medium"
+    },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "redactionStrategy": {
+      "type": "string",
+      "enum": ["tokenize", "mask", "hash", "redact"]
+    },
+    "pattern": {
+      "type": "string",
+      "description": "Required when type is regex. Uses the SDK host language regular expression syntax."
+    },
+    "replacementPrefix": {
+      "type": "string",
+      "description": "Optional token prefix for regex-generated replacements."
+    },
+    "suppressionPatterns": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": [],
+      "description": "Regex patterns that suppress known false positives for this detector."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "type": { "const": "regex" } },
+        "required": ["type"]
+      },
+      "then": { "required": ["pattern"] }
+    }
+  ]
+}

@@ -73,6 +73,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     convert.add_argument("--service-name", default="gavio")
 
+    policy = subcommands.add_parser("policy", help="Policy Pack catalog tools.")
+    policy_subcommands = policy.add_subparsers(dest="policy_command", required=True)
+    policy_subcommands.add_parser("list", help="List Policy Packs in the catalog.")
+    validate = policy_subcommands.add_parser(
+        "validate", help="Load a Policy Pack and verify its manifest signature."
+    )
+    validate.add_argument("path_or_name", metavar="PATH_OR_NAME")
+    sign = policy_subcommands.add_parser(
+        "sign", help="Print the canonical SHA-256 signature value for a Policy Pack."
+    )
+    sign.add_argument("path_or_name", metavar="PATH_OR_NAME")
+
     args = parser.parse_args(argv)
     if args.command == "inspect":
         return _inspect(args)
@@ -80,6 +92,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cost_report(args)
     if args.command == "events" and args.events_command == "convert":
         return _events_convert(args)
+    if args.command == "policy":
+        return _policy(args)
     return 2
 
 
@@ -142,6 +156,37 @@ def _events_convert(args: argparse.Namespace) -> int:
         print(f"gavio events convert: {error}", file=sys.stderr)
         return 1
     return 2
+
+
+def _policy(args: argparse.Namespace) -> int:
+    from .interceptors.pii import PolicyPack, list_policy_packs, load_policy_pack
+
+    try:
+        if args.policy_command == "list":
+            for name in list_policy_packs():
+                print(name)
+            return 0
+        pack = _load_policy_pack_arg(args.path_or_name, PolicyPack, load_policy_pack)
+        if args.policy_command == "validate":
+            if not pack.verify_signature():
+                print(f"gavio policy validate: invalid signature for {pack.id}", file=sys.stderr)
+                return 1
+            print(f"ok {pack.id} {pack.version}")
+            return 0
+        if args.policy_command == "sign":
+            print(pack.signature_value())
+            return 0
+    except (OSError, ValueError, FileNotFoundError, json.JSONDecodeError) as error:
+        print(f"gavio policy {args.policy_command}: {error}", file=sys.stderr)
+        return 1
+    return 2
+
+
+def _load_policy_pack_arg(path_or_name: str, policy_pack_cls: Any, load_by_name: Any) -> Any:
+    path = Path(path_or_name).expanduser()
+    if path.exists():
+        return policy_pack_cls.load_path(path)
+    return load_by_name(path_or_name)
 
 
 def _summary_from_jsonl_record(

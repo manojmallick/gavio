@@ -13,10 +13,12 @@ public final class RegexRuleScanner implements PiiScanner {
 
     private final RegexPolicyRule rule;
     private final Pattern pattern;
+    private final List<Pattern> suppressions;
 
     public RegexRuleScanner(RegexPolicyRule rule) {
         this.rule = rule;
         this.pattern = Pattern.compile(rule.pattern());
+        this.suppressions = rule.suppressionPatterns().stream().map(Pattern::compile).toList();
     }
 
     @Override
@@ -29,6 +31,9 @@ public final class RegexRuleScanner implements PiiScanner {
         List<PiiMatch> out = new ArrayList<>();
         Matcher matcher = pattern.matcher(text);
         while (matcher.find()) {
+            if (suppressed(matcher.group())) {
+                continue;
+            }
             int idx = ctx.nextIndex(entityType());
             String prefix = rule.replacementPrefix() != null
                     ? rule.replacementPrefix() : entityType();
@@ -42,5 +47,14 @@ public final class RegexRuleScanner implements PiiScanner {
                     .build());
         }
         return out;
+    }
+
+    private boolean suppressed(String value) {
+        for (Pattern suppression : suppressions) {
+            if (suppression.matcher(value).find()) {
+                return true;
+            }
+        }
+        return false;
     }
 }

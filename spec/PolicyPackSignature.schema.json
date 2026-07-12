@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/PolicyPackSignature.v1.json",
+  "title": "PolicyPackSignature",
+  "description": "Deterministic signature metadata for a Gavio Policy Pack manifest.",
+  "type": "object",
+  "required": ["algorithm", "value"],
+  "additionalProperties": false,
+  "properties": {
+    "algorithm": {
+      "type": "string",
+      "enum": ["sha256"],
+      "description": "sha256 is computed over canonical JSON with signature.value set to null."
+    },
+    "value": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "keyId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "signedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

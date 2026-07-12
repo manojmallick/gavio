@@ -17,6 +17,9 @@ serialise to shapes valid against these schemas.
 | [`ToolPermission.schema.json`](./ToolPermission.schema.json) | Tool Runtime v2 permission scope |
 | [`ToolCallRecord.schema.json`](./ToolCallRecord.schema.json) | Tool Runtime v2 observed tool-call input/output record |
 | [`ToolApproval.schema.json`](./ToolApproval.schema.json) | Tool Runtime v2 approval record |
+| [`PolicyPackManifest.schema.json`](./PolicyPackManifest.schema.json) | Signed domain Policy Pack catalog manifest |
+| [`PolicyRule.schema.json`](./PolicyRule.schema.json) | One detector/rule entry inside a Policy Pack manifest |
+| [`PolicyPackSignature.schema.json`](./PolicyPackSignature.schema.json) | Deterministic Policy Pack manifest signature metadata |
 | [`BudgetPolicy.schema.json`](./BudgetPolicy.schema.json) | Cost Governance v2 scoped budget policy |
 | [`BudgetDecision.schema.json`](./BudgetDecision.schema.json) | Cost Governance v2 allow/warn/block/fallback decision |
 | [`CostReport.schema.json`](./CostReport.schema.json) | Cost Governance v2 spend, overhead, savings, and budget report |

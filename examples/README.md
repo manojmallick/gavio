@@ -14,6 +14,7 @@ implemented per SDK, so you can compare the APIs side by side.
 | 07 | **Tool Runtime** — schema, freshness, conflicts, permissions, approvals, replay | [py](./python/07-tool-runtime/) | [js](./javascript/07-tool-runtime/) | [java](./java/07-tool-runtime/) | no |
 | 08 | **Runtime Export** — metadata-safe runtime events and JSONL export | [py](./python/08-runtime-export/) | [js](./javascript/08-runtime-export/) | [java](./java/08-runtime-export/) | no |
 | 09 | **Prompt Registry + Evals** — versioned templates and metadata-safe eval reports | [py](./python/09-prompt-registry-evals/) | [js](./javascript/09-prompt-registry-evals/) | [java](./java/09-prompt-registry-evals/) | no |
+| 12 | **Domain Policy Pack Catalog** — signed domain packs, overrides, suppression | [py](./python/12-domain-policy-packs/) | [js](./javascript/12-domain-policy-packs/) | [java](./java/12-domain-policy-packs/) | no |
 
 Only example 02 needs a key — it uses a real provider if `ANTHROPIC_API_KEY` or
 `OPENAI_API_KEY` is set, and otherwise falls back to the mock provider so it
@@ -43,4 +44,4 @@ cd examples/java/01-quickstart
 mvn -q compile exec:java
 ```
 
-All examples target the `1.5.0` package line.
+All examples target the `1.6.0` package line.
