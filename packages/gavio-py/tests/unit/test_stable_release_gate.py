@@ -61,10 +61,10 @@ def _copy_gate_fixture(dst: Path) -> None:
 def test_stable_release_gate_passes_current_repo():
     gate = _load_gate()
 
-    result = gate.run_gate(REPO_ROOT, expected_version="2.1.0")
+    result = gate.run_gate(REPO_ROOT, expected_version="2.2.0")
 
     assert result.failures == ()
-    assert result.version == "2.1.0"
+    assert result.version == "2.2.0"
 
 
 def test_stable_release_gate_reports_python_runtime_version_drift(tmp_path: Path):
@@ -73,11 +73,11 @@ def test_stable_release_gate_reports_python_runtime_version_drift(tmp_path: Path
     init_path = tmp_path / "packages/gavio-py/gavio/__init__.py"
     init_path.write_text(
         init_path.read_text(encoding="utf-8").replace(
-            '__version__ = "2.1.0"', '__version__ = "0.14.0"'
+            '__version__ = "2.2.0"', '__version__ = "0.14.0"'
         ),
         encoding="utf-8",
     )
 
-    result = gate.run_gate(tmp_path, expected_version="2.1.0")
+    result = gate.run_gate(tmp_path, expected_version="2.2.0")
 
     assert any("Python runtime __version__" in failure for failure in result.failures)

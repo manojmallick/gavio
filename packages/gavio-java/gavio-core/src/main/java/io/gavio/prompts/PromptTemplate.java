@@ -21,6 +21,7 @@ public final class PromptTemplate {
     private final List<Message> messages;
     private final List<String> requiredVariables;
     private final Map<String, Object> metadata;
+    private final PromptApproval approval;
 
     public PromptTemplate(
             String id,
@@ -28,11 +29,22 @@ public final class PromptTemplate {
             List<Message> messages,
             List<String> requiredVariables,
             Map<String, Object> metadata) {
+        this(id, version, messages, requiredVariables, metadata, null);
+    }
+
+    public PromptTemplate(
+            String id,
+            String version,
+            List<Message> messages,
+            List<String> requiredVariables,
+            Map<String, Object> metadata,
+            PromptApproval approval) {
         this.id = id;
         this.version = version;
         this.messages = List.copyOf(messages);
         this.requiredVariables = List.copyOf(requiredVariables == null ? List.of() : requiredVariables);
         this.metadata = Map.copyOf(metadata == null ? Map.of() : metadata);
+        this.approval = approval;
     }
 
     public String id() {
@@ -55,6 +67,10 @@ public final class PromptTemplate {
         return metadata;
     }
 
+    public PromptApproval approval() {
+        return approval;
+    }
+
     @SuppressWarnings("unchecked")
     public static PromptTemplate fromMap(Map<String, Object> data) {
         List<Message> messages = new ArrayList<>();
@@ -72,12 +88,16 @@ public final class PromptTemplate {
         Map<String, Object> metadata = data.get("metadata") instanceof Map<?, ?> m
                 ? (Map<String, Object>) m
                 : Map.of();
+        PromptApproval approval = data.get("approval") instanceof Map<?, ?> a
+                ? PromptApproval.fromMap((Map<String, Object>) a)
+                : null;
         return new PromptTemplate(
                 String.valueOf(data.get("id")),
                 String.valueOf(data.get("version")),
                 messages,
                 required,
-                metadata);
+                metadata,
+                approval);
     }
 
     public Set<String> placeholders() {
@@ -125,7 +145,14 @@ public final class PromptTemplate {
         out.put("messages", msg);
         out.put("requiredVariables", requiredVariables);
         out.put("metadata", metadata);
+        if (approval != null) {
+            out.put("approval", approval.toMap());
+        }
         return out;
+    }
+
+    public PromptDiff diff(PromptTemplate other) {
+        return PromptDiff.between(this, other);
     }
 
     private static void collectPlaceholders(String value, Set<String> out) {

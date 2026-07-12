@@ -214,7 +214,7 @@ import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
 const bundle = buildProductionTrustBundle({
   bundleId: 'trust-prod-support-2026-07-12',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '2.1.0', tag: 'v2.1.0' },
+  release: { version: '2.2.0', tag: 'v2.2.0' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',
@@ -262,6 +262,10 @@ Prompt Registry + Evals (v1.4.0) adds versioned prompt templates,
 metadata-only lineage, deterministic pass/fail reports, and SHA-256 output
 hashes instead of raw model output (`F-EVAL-01/02`).
 
+JavaScript v2.2.0 adds Prompt Registry v2 manifests with signed file loading,
+semantic-version selectors, approval metadata, and metadata-safe diffs
+(`F-EVAL-04`).
+
 ## What's inside
 
 Every feature is an interceptor you compose explicitly — no hidden magic.
@@ -287,7 +291,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   DAG tracing via `agentId`/`parentTraceId` (`F-OBS-03`), prompt lineage
   (`F-OBS-04`), Prometheus metrics (`F-OBS-08`), stdout sink.
 - **Prompt Registry + Evals** — `PromptRegistry`, `PromptTemplate`, and
-  `EvalSuite` via `gavio/prompts` (`F-EVAL-01/02`).
+  `EvalSuite` via `gavio/prompts`, plus signed manifests, semantic-version
+  selectors, approvals, and metadata-safe prompt diffs (`F-EVAL-01/02/04`).
 - **Runtime export** — metadata-safe JSONL runtime events (`F-EXP-01`) and
   OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
   eval integrations.

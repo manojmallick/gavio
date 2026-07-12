@@ -94,6 +94,90 @@ class PromptRegistryEvalTest {
         }
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void promptRegistryV2LoadsSignedFileAndResolvesSemverRanges() throws Exception {
+        Map<String, Object> vector = loadV2Vector();
+        Map<String, Object> manifest = (Map<String, Object>) vector.get("manifest");
+        Map<String, Object> expected = (Map<String, Object>) vector.get("expected");
+        String secret = (String) vector.get("signatureSecret");
+        Path manifestPath = Files.createTempFile("gavio-prompts", ".json");
+        Files.writeString(manifestPath, Json.write(manifest));
+
+        assertTrue(PromptManifests.verifySignature(manifest, secret));
+
+        PromptRegistry registry = PromptRegistry.fromFile(manifestPath, secret);
+
+        assertEquals(expected.get("latestVersion"), registry.get("support.reply").version());
+        assertEquals(expected.get("caretVersion"), registry.get("support.reply", "^1.0.0").version());
+        assertEquals(expected.get("tildeVersion"), registry.get("support.reply", "~1.1.0").version());
+        assertEquals(expected.get("rangeVersion"), registry.get("support.reply", ">=1.0.0 <2.0.0").version());
+        assertEquals("pending", registry.get("support.reply").approval().status());
+
+        RenderedPrompt rendered = registry.render("support.reply", Map.of(
+                "customerName", "Avery",
+                "topic", "refund status",
+                "orderId", "A-100"));
+        assertEquals(expected.get("renderedMessage"), rendered.messages().get(rendered.messages().size() - 1).content());
+
+        Map<String, Object> signedRoundTrip = registry.toSignedManifest(
+                (String) vector.get("registryId"),
+                (Map<String, Object>) vector.get("metadata"),
+                secret,
+                (String) ((Map<String, Object>) manifest.get("signature")).get("keyId"));
+        assertEquals(
+                ((Map<String, Object>) manifest.get("signature")).get("value"),
+                ((Map<String, Object>) signedRoundTrip.get("signature")).get("value"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void promptRegistryV2DiffIsMetadataSafe() throws Exception {
+        Map<String, Object> vector = loadV2Vector();
+        Map<String, Object> manifest = (Map<String, Object>) vector.get("manifest");
+        Map<String, Object> expected = (Map<String, Object>) vector.get("expected");
+        List<Map<String, Object>> rawTemplates = (List<Map<String, Object>>) manifest.get("templates");
+
+        PromptDiff diff = PromptDiff.between(
+                PromptTemplate.fromMap(rawTemplates.get(0)),
+                PromptTemplate.fromMap(rawTemplates.get(1)));
+        List<Map<String, Object>> changes = (List<Map<String, Object>>) diff.toMap().get("changes");
+
+        assertEquals(expected.get("diffPaths"), changes.stream().map(change -> change.get("path")).toList());
+        assertTrue(changes.stream()
+                .filter(change -> String.valueOf(change.get("path")).startsWith("messages["))
+                .allMatch(change -> change.containsKey("beforeHash") || change.containsKey("afterHash")));
+        String serialized = Json.write(diff.toMap());
+        for (String content : (List<String>) expected.get("contentKeys")) {
+            assertFalse(serialized.contains(content));
+        }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void promptRegistryV2RejectsBadSemverAndSignsDeterministically() throws Exception {
+        Map<String, Object> vector = loadV2Vector();
+        Map<String, Object> manifest = (Map<String, Object>) vector.get("manifest");
+        Map<String, Object> badManifest = new java.util.LinkedHashMap<>(manifest);
+        Map<String, Object> badTemplate =
+                new java.util.LinkedHashMap<>(((List<Map<String, Object>>) manifest.get("templates")).get(0));
+        badTemplate.put("version", "2026-07-12");
+        badManifest.put("templates", List.of(badTemplate));
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> PromptRegistry.fromManifest(badManifest, null, true));
+
+        Map<String, Object> unsigned = new java.util.LinkedHashMap<>(manifest);
+        unsigned.remove("signature");
+        Map<String, Object> signed = PromptManifests.sign(
+                unsigned,
+                (String) vector.get("signatureSecret"),
+                (String) ((Map<String, Object>) manifest.get("signature")).get("keyId"));
+
+        assertEquals(manifest.get("signature"), signed.get("signature"));
+    }
+
     @SuppressWarnings("unchecked")
     private static List<Message> messages(Object raw) {
         List<Message> messages = new ArrayList<>();
@@ -105,6 +189,10 @@ class PromptRegistryEvalTest {
 
     private static Map<String, Object> loadVector() throws Exception {
         return Json.parseObject(Files.readString(repoRoot().resolve("test-vectors/prompts/registry-evals.json")));
+    }
+
+    private static Map<String, Object> loadV2Vector() throws Exception {
+        return Json.parseObject(Files.readString(repoRoot().resolve("test-vectors/prompts/registry-v2.json")));
     }
 
     private static Path repoRoot() {

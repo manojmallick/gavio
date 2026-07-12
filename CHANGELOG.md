@@ -15,6 +15,35 @@ Nothing yet.
 
 ---
 
+## [2.2.0] — 2026-07-12
+
+### Summary
+**Prompt Registry v2.** v2.2.0 adds a file-backed prompt registry workflow
+across Python, JavaScript, and Java. SDKs can load signed prompt manifests,
+resolve semantic-version selectors, carry approval metadata, and produce
+metadata-safe prompt diffs that hash message content instead of exposing raw
+prompt text. Feature ID `F-EVAL-04`. Feature PR #87 (#86).
+
+Tests: Python 307 · JavaScript typecheck/build/306 tests green · Java modules
+green · docs build green · stable release gate green · Prompt Registry v2
+example smoke green. Inspector benchmarks were not rerun because this release
+changes prompt registry manifests/docs and example coverage, not Inspector
+runtime overhead.
+
+### Added
+- **Prompt Registry v2 (all SDKs, `F-EVAL-04`)** — added file-backed prompt
+  manifests with semantic-version template selection, approval metadata,
+  metadata-safe prompt diffs, deterministic HMAC-SHA256 manifest signatures,
+  shared v2 vectors, schema coverage, docs, and an offline Python example.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site pages, stable gate fixtures, package/runtime versions, and
+  trust/platform examples to the `2.2.0` release line while keeping historical
+  feature "since" labels intact.
+
+---
+
 ## [2.1.0] — 2026-07-12
 
 ### Summary
@@ -1226,7 +1255,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/manojmallick/gavio/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/manojmallick/gavio/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/manojmallick/gavio/compare/v1.9.0...v2.0.0
 [1.9.0]: https://github.com/manojmallick/gavio/compare/v1.8.0...v1.9.0

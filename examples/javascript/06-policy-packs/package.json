@@ -4,5 +4,5 @@
   "private": true,
   "type": "module",
   "scripts": { "start": "node policy-packs.mjs" },
-  "dependencies": { "gavio": "^2.1.0" }
+  "dependencies": { "gavio": "^2.2.0" }
 }

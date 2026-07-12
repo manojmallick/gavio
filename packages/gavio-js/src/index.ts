@@ -68,13 +68,28 @@ export type {
 } from './platform-runtime.js'
 
 export {
+  PROMPT_MANIFEST_SCHEMA_VERSION,
+  PROMPT_MANIFEST_SIGNATURE_ALGORITHM,
   PromptTemplate,
   PromptRegistry,
   EvalAssertion,
   EvalCase,
   EvalSuite,
+  canonicalPromptManifest,
+  diffPromptTemplates,
+  promptManifestDigest,
+  signPromptManifest,
+  validateSemanticVersion,
+  verifyPromptManifestSignature,
 } from './prompts/index.js'
 export type {
+  PromptApprovalInit,
+  PromptDiff,
+  PromptDiffChange,
+  PromptDiffChangeType,
+  PromptManifest,
+  PromptManifestSignature,
+  PromptRegistryManifestOptions,
   PromptTemplateInit,
   RenderedPrompt,
   EvalAssertionInit,

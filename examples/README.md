@@ -21,6 +21,7 @@ implemented per SDK, so you can compare the APIs side by side.
 | 20 | **Platform Runtime Profile** — metadata-only production readiness profile and deterministic gaps | [py](./python/20-platform-runtime/) | — | — | no |
 | 21 | **Eval CI Gate** — `gavio eval run`, YAML/JSON suites, baseline comparison, JSON/JUnit reports | [py](./python/21-eval-ci-gate/) | — | — | no |
 | 22 | **Platform Feature Tour** — all major v2.x surfaces in one offline project | [py](./python/22-platform-feature-tour/) | — | — | no |
+| 23 | **Prompt Registry v2** — signed manifests, semver selectors, approvals, metadata-safe diffs | [py](./python/23-prompt-registry-v2/) | — | — | no |
 
 Only example 02 needs a key — it uses a real provider if `ANTHROPIC_API_KEY` or
 `OPENAI_API_KEY` is set, and otherwise falls back to the mock provider so it
@@ -38,7 +39,7 @@ smallest runnable project for one feature family.
 | Reliability, timeout, retry, guardrails, cache | `02`, `04` | `22` |
 | Cost governance, runtime labels, budget reporting | `04`, `08`, `13` | `22` |
 | Runtime events, JSONL export, OTel spans, metrics | `05`, `08`, `15` | `22` |
-| Prompt registry, eval reports, CI-style gates | `09`, `21` | `22` |
+| Prompt registry, eval reports, CI-style gates | `09`, `21`, `23` | `22` |
 | Tool runtime, permissions, approvals, MCP metadata | `07` | `22` |
 | Control plane, trust bundle, platform profile | `13`, `14`, `20` | `22` |
 | Ecosystem integration metadata and recipes | `15` | `22` |
@@ -67,6 +68,6 @@ cd examples/java/01-quickstart
 mvn -q compile exec:java
 ```
 
-Most language-specific package examples target the `2.1.0` package line. The
-integration catalog examples run from this repository branch and from the 2.1
+Most language-specific package examples target the `2.2.0` package line. The
+integration catalog examples run from this repository branch and from the 2.2
 package line once released.
