@@ -68,6 +68,6 @@ cd examples/java/01-quickstart
 mvn -q compile exec:java
 ```
 
-Most language-specific package examples target the `2.2.0` package line. The
+Most language-specific package examples target the `2.3.0` package line. The
 integration catalog examples run from this repository branch and from the 2.2
 package line once released.

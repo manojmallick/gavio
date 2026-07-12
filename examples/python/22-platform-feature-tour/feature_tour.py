@@ -280,7 +280,7 @@ def build_trust_and_platform(
     trust = build_production_trust_bundle(
         bundle_id="trust-platform-tour-2026-07-12",
         generated_at="2026-07-12T12:00:00Z",
-        release={"version": "2.2.0", "tag": "v2.2.0", "commit": "522fa73"},
+        release={"version": "2.3.0", "tag": "v2.3.0", "commit": "d0c8971"},
         runtime={
             "environment": "dev",
             "policySource": "project:prod-support",
@@ -320,7 +320,7 @@ def build_trust_and_platform(
     profile = build_platform_runtime_profile(
         profile_id="platform-feature-tour",
         generated_at="2026-07-12T12:00:00Z",
-        sdk={"name": "gavio", "version": "2.2.0"},
+        sdk={"name": "gavio", "version": "2.3.0"},
         runtime={
             "environment": "dev",
             "provider": "mock",
