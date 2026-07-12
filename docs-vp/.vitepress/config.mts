@@ -12,7 +12,7 @@ export default defineConfig({
   title: 'Gavio',
   titleTemplate: ':title · Gavio — AI request runtime',
   description:
-    'AI request runtime and inspector for production systems. PII protection, audit trails, reliability, cost intelligence, policy packs, and tool runtime checks as composable interceptors.',
+    'AI request runtime and inspector for production systems. PII protection, audit trails, reliability, cost intelligence, cost governance, policy packs, and tool runtime checks as composable interceptors.',
 
   appearance: 'dark',
   cleanUrls: true,
@@ -33,7 +33,7 @@ export default defineConfig({
       {
         name: 'keywords',
         content:
-          'ai request runtime, ai inspector, llm runtime, pii redaction, pii guard, llm audit, ai observability, ai reliability, retry fallback, cost intelligence, policy packs, tool runtime, openai, anthropic, gavio',
+          'ai request runtime, ai inspector, llm runtime, pii redaction, pii guard, llm audit, ai observability, ai reliability, retry fallback, cost intelligence, cost governance, budget policy, policy packs, tool runtime, openai, anthropic, gavio',
       },
     ],
     ['meta', { property: 'og:type', content: 'website' }],
@@ -44,7 +44,7 @@ export default defineConfig({
       {
         property: 'og:description',
         content:
-          'PII protection, audit trails, reliability, cost intelligence, policy packs, and tool runtime checks as composable interceptors.',
+          'PII protection, audit trails, reliability, cost intelligence, cost governance, policy packs, and tool runtime checks as composable interceptors.',
       },
     ],
     ['meta', { property: 'og:url', content: HOSTNAME + '/' }],
@@ -55,7 +55,7 @@ export default defineConfig({
       {
         name: 'twitter:description',
         content:
-          'PII protection, audit, reliability, cost intelligence, policy packs, and tool runtime checks across Python, Java, and JavaScript.',
+          'PII protection, audit, reliability, cost intelligence, cost governance, policy packs, and tool runtime checks across Python, Java, and JavaScript.',
       },
     ],
     ['link', { rel: 'canonical', href: HOSTNAME + '/' }],
@@ -67,7 +67,7 @@ export default defineConfig({
     nav: [
       { text: 'Docs', link: '/guide/getting-started', activeMatch: '/guide/' },
       {
-        text: 'v1.1.0',
+        text: 'v1.2.0',
         items: [
           { text: 'Changelog', link: 'https://github.com/manojmallick/gavio/blob/main/CHANGELOG.md' },
           { text: 'Releasing', link: 'https://github.com/manojmallick/gavio/blob/main/RELEASING.md' },

@@ -24,19 +24,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:1.1.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:1.1.0")
+implementation("io.github.manojmallick:gavio-core:1.2.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:1.2.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -145,6 +145,21 @@ GavioRequest request = GavioRequest.builder()
 
 Those labels can be used with `/api/stats?group_by=tenant` and
 `/api/cost-report?group_by=feature`.
+
+Cost Governance v2 (v1.2.0) adds policy/decision contracts and budget-aware
+reports:
+
+```java
+var policy = new BudgetPolicyV2(
+    "tenant-monthly", "tenant", "acme", "monthly", 500.0, 0.8,
+    "fallback", List.of(), "gpt-4o-mini", Map.of());
+
+Gateway gw = Gateway.builder()
+    .use(BudgetPolicyControl.builder(policy)
+        .estimatedRequestCostUsd(0.02)
+        .build())
+    .build();
+```
 
 ### Tool Runtime (v0.14.0)
 

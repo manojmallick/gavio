@@ -201,6 +201,26 @@ await gw.complete({
 Those labels can be used with `/api/stats?group_by=tenant` and
 `/api/cost-report?group_by=feature`.
 
+Cost Governance v2 (v1.2.0) adds policy/decision contracts and budget-aware
+reports:
+
+```typescript
+import { budgetPolicyControl, type BudgetPolicy } from 'gavio/interceptors/governance'
+
+const policy: BudgetPolicy = {
+  id: 'tenant-monthly',
+  scopeType: 'tenant',
+  scopeValue: 'acme',
+  window: 'monthly',
+  limitUsd: 500,
+  hardLimitAction: 'fallback',
+  fallbackModel: 'gpt-4o-mini',
+}
+
+const gw = new Gateway({ devMode: true })
+  .use(budgetPolicyControl({ policy, estimatedRequestCostUsd: 0.02 }))
+```
+
 ## Embeddings
 
 `gw.embed({ texts })` (`F-SEC-10`, since v0.9.0) runs embedding inputs through

@@ -15,6 +15,48 @@ Nothing yet.
 
 ---
 
+## [1.2.0] — 2026-07-12
+
+### Summary
+**Cost Governance v2.** v1.2.0 turns Cost Intelligence into a production
+governance surface: canonical budget policy and decision contracts, shared
+budget vectors, budget-aware report rollups, in-memory budget stores, and
+budget policy controls now ship across Python, JavaScript, and Java. Feature
+PR #67 (#66).
+
+Tests: Python 265 · JavaScript 272 · Java modules green · docs build green ·
+stable release gate green · Inspector benchmarks green (Python 1.52%/3.33%,
+JavaScript -0.07%/0.15%, Java 1.08%/1.30% metadata/full p50 overhead).
+
+### Added
+- **Budget policy and decision contracts** — added
+  `spec/BudgetPolicy.schema.json`, `spec/BudgetDecision.schema.json`, and
+  `spec/CostReport.schema.json` for Cost Governance v2 policy, decision, and
+  report payloads.
+- **Shared Cost Governance v2 vectors** — added
+  `test-vectors/cost-governance/budget-decisions.json` and
+  `test-vectors/cost-governance/cost-report.json` for allow, warn, block,
+  fallback, downgrade, dry-run, budget remaining, and forecast rollups.
+- **Budget policy controls (all SDKs)** — Python exposes `BudgetPolicy`,
+  `BudgetDecision`, `InMemoryBudgetStore`, `BudgetPolicyControl`, and
+  `evaluate_budget`; JavaScript exposes `BudgetPolicy`,
+  `InMemoryBudgetStore`, `budgetPolicyControl`, and `evaluateBudget`; Java
+  exposes `BudgetPolicyV2`, `BudgetDecision`, `InMemoryBudgetStore`,
+  `BudgetPolicyControl`, and `BudgetPolicyEvaluator`.
+- **Cost governance reports (all SDKs)** — added helpers that extend Cost
+  Intelligence reports with `budgetLimitUsd`, `budgetRemainingUsd`,
+  `forecastWindowSpendUsd`, and budget status rollups.
+- **Cost report CLI (Python)** — added `gavio cost report --audit ...` with
+  optional `--group-by`, `--since`, `--budget-policy`, and
+  `--usage-elapsed-ratio` arguments for JSONL-friendly report generation.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, stable gate fixtures, and package/runtime versions to the `1.2.0`
+  release line while keeping historical feature "since" labels intact.
+
+---
+
 ## [1.1.0] — 2026-07-12
 
 ### Summary
@@ -825,7 +867,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/manojmallick/gavio/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/manojmallick/gavio/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/manojmallick/gavio/compare/v0.14.0...v1.0.0
 [0.14.0]: https://github.com/manojmallick/gavio/compare/v0.13.0...v0.14.0

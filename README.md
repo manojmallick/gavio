@@ -46,10 +46,10 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
 
-> **Status:** v1.0.0 is the stable release gate: Gavio now has an API stability
-> guarantee, a 24-month 1.x LTS policy, and release automation that checks
-> lockstep SDK versions before publishing. See [STABILITY.md](./STABILITY.md)
-> and the [CHANGELOG](./CHANGELOG.md).
+> **Status:** v1.2.0 is the current stable package line. Gavio has an API
+> stability guarantee, a 24-month 1.x LTS policy, and release automation that
+> checks lockstep SDK versions before publishing. See
+> [STABILITY.md](./STABILITY.md) and the [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -66,6 +66,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `0.14.0` | Tool Runtime | Tool schema validation, freshness checks, conflict detection, confidence, provenance |
 | `1.0.0` | Stable release gate | Lockstep SDK versions, API stability, 24-month 1.x LTS policy, release hygiene checks |
 | `1.1.0` | Positioning + Integration Foundation | Metadata-safe runtime event/export contract, JSONL exporters, integration docs, runtime export examples |
+| `1.2.0` | Cost Governance v2 | Budget policy/decision contracts, budget stores, fallback/downgrade/dry-run decisions, budget-aware reports, CLI report |
 
 ---
 
@@ -120,6 +121,7 @@ pipeline in reverse order:
 - **AI Request Inspector** — opt-in live traces, per-interceptor waterfall, replay, agent DAGs, RED stats, and production audit-store views.
 - **Runtime Event Export** — metadata-safe JSONL event stream for gateways, observability systems, and eval workflows.
 - **Cost Intelligence** — tenant/feature/user attribution, `/api/cost-report`, retry overhead, cache savings, and scoped budget fallback.
+- **Cost Governance v2** — budget policy/decision contracts, projected-spend controls, fallback/downgrade/dry-run actions, budget-aware reports, and `gavio cost report`.
 - **Domain-aware Policy Packs** — core and FinTech manifests plus custom regex-rule packs that keep detector metadata, actions, audit labels, and redaction strategy together.
 - **Tool Runtime** — validate tool inputs/outputs, freshness, conflicts, confidence, and provenance before tool results re-enter model context.
 - **Runtime context** — interceptors can now read first-class `tenant`, `feature`, `cost`, `retry`, `tools`, and `policy` fields derived from request metadata.
@@ -211,9 +213,9 @@ The Java snippet uses `gavio-core`, `gavio-interceptor-pii`, and
 
 | Language | Command | Docs |
 |---|---|---|
-| **Python** 3.10+ | `pip install gavio==1.1.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
-| **JavaScript** (Node 18+) | `npm install gavio@1.1.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:1.1.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Python** 3.10+ | `pip install gavio==1.2.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
+| **JavaScript** (Node 18+) | `npm install gavio@1.2.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:1.2.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -253,7 +255,7 @@ optional extras include `gavio[redis]`, `gavio[presidio]`, `gavio[otel]`,
 `gavio[elasticsearch]`, `gavio[pgvector]`, and `gavio[ocr]`.
 
 ```bash
-pip install gavio==1.1.0
+pip install gavio==1.2.0
 ```
 
 → **[Full Python guide](./docs/packages/python.md)** · [package README](./packages/gavio-py/README.md)
@@ -265,7 +267,7 @@ with per-subpath `exports` for tree-shaking. Native `fetch`, `node:crypto`.
 Node 18+, Deno, Bun.
 
 ```bash
-npm install gavio@1.1.0
+npm install gavio@1.2.0
 ```
 
 → **[Full JavaScript guide](./docs/packages/javascript.md)** · [package README](./packages/gavio-js/README.md)
@@ -285,17 +287,17 @@ Quickstart stack:
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 
@@ -334,6 +336,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Budget caps (soft/hard), rate limiting, model RBAC | `F-GOV-02/03/04` | 0.2.0 |
 | **Cost-optimiser routing** — reroute simple prompts to a cheaper model | `F-GOV-06` | **0.5.0** |
 | **Cost Intelligence** — tenant/feature/user attribution, cost reports, retry overhead, cache savings, scoped budget fallback | `F-COST-01/02/04` | **0.11.0** |
+| **Cost Governance v2** — policy/decision contracts, projected-spend controls, fallback/downgrade/dry-run actions, budget-aware reports | `F-COST-05` | **1.2.0** |
 
 ### ⚡ Caching
 
@@ -377,6 +380,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Tool Runtime — schema validation, freshness, conflict detection, provenance | `F-TOOL-01/02/03/04` | 0.14.0 |
 | Stable release gate — lockstep version checks, release hygiene, API stability and LTS policy | — | 1.0.0 |
 | Runtime event/export contract — metadata-safe JSONL exporters and integration recipes | `F-EXP-01` | 1.1.0 |
+| Cost Governance v2 CLI — `gavio cost report` over JSONL records and budget policies | `F-COST-05` | 1.2.0 |
 | **Providers** — OpenAI · Anthropic · Gemini · Azure OpenAI · Ollama · Mock (all stdlib HTTP, no vendor SDKs) | — | 0.1–0.2 |
 | **OpenRouter provider adapter** — direct OpenAI-compatible integration with attribution headers | `F-ADP-02` | 0.13.0 |
 

@@ -5,7 +5,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.gavio.examples</groupId>
   <artifactId>runtime-export-demo</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
   <properties>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
@@ -15,17 +15,17 @@
     <dependency>
       <groupId>io.github.manojmallick</groupId>
       <artifactId>gavio-core</artifactId>
-      <version>1.1.0</version>
+      <version>1.2.0</version>
     </dependency>
     <dependency>
       <groupId>io.github.manojmallick</groupId>
       <artifactId>gavio-interceptor-pii</artifactId>
-      <version>1.1.0</version>
+      <version>1.2.0</version>
     </dependency>
     <dependency>
       <groupId>io.github.manojmallick</groupId>
       <artifactId>gavio-interceptor-audit</artifactId>
-      <version>1.1.0</version>
+      <version>1.2.0</version>
     </dependency>
   </dependencies>
   <build>

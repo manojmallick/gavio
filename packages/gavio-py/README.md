@@ -159,7 +159,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   Redis backends (`F-CACHE-01/02/03/04`).
 - **Cost & governance** — per-request cost tracking (`F-GOV-01`), budget caps
   (`F-GOV-02`), rate limiting (`F-GOV-03`), per-role model policy (`F-GOV-04`),
-  cost-optimiser routing (`F-GOV-06`).
+  cost-optimiser routing (`F-GOV-06`), Cost Governance v2 budget policies,
+  decisions, reports, and `gavio cost report` (v1.2.0).
 - **Observability** — audit-by-default with SHA-256 content hashes, never raw
   text (`F-OBS-01`), tamper-evident hash chain (`F-OBS-02`), multi-agent DAG
   tracing via `agent_id`/`parent_trace_id` (`F-OBS-03`), prompt lineage

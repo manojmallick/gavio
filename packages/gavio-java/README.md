@@ -21,22 +21,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 
@@ -182,7 +182,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   in-memory and Redis backends (`F-CACHE-01/02/03/04`).
 - **Cost & governance** — per-request cost tracking via `PricingProvider`
   (`F-GOV-01`), `CostControl` budget caps (`F-GOV-02`), `RateLimiter`
-  (`F-GOV-03`), `ModelPolicy` (`F-GOV-04`), `CostRouter` (`F-GOV-06`).
+  (`F-GOV-03`), `ModelPolicy` (`F-GOV-04`), `CostRouter` (`F-GOV-06`), Cost
+  Governance v2 budget policies, decisions, and reports (v1.2.0).
 - **Observability** — `AuditInterceptor` with SHA-256 content hashes, never raw
   text (`F-OBS-01`), tamper-evident hash chain (`F-OBS-02`), multi-agent DAG
   tracing via `agentId`/`parentTraceId` (`F-OBS-03`), prompt lineage
@@ -214,7 +215,7 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `1.1.0`.
+All artifacts share the `io.github.manojmallick` group id and version `1.2.0`.
 
 | Artifact | Contains |
 |---|---|
@@ -223,7 +224,7 @@ All artifacts share the `io.github.manojmallick` group id and version `1.1.0`.
 | `gavio-interceptor-audit` | AuditInterceptor, AuditSink, AuditRecord, hash chain, StdoutSink |
 | `gavio-interceptor-reliability` | RetryInterceptor, FallbackChain, CircuitBreaker, LoadBalancer, TimeoutPolicy |
 | `gavio-interceptor-cache` | SemanticCache, memory/Redis backends, vector backends |
-| `gavio-interceptor-governance` | CostControl, RateLimiter, ModelPolicy, CostRouter |
+| `gavio-interceptor-governance` | CostControl, RateLimiter, ModelPolicy, CostRouter, BudgetPolicyControl, CostGovernanceReport |
 | `gavio-interceptor-guardrails` | GuardrailsInterceptor, JsonSchemaValidator, regex validators |
 | `gavio-interceptor-metrics` | MetricsInterceptor, PrometheusMetrics |
 | `gavio-interceptor-quality` | RiskScorer |
