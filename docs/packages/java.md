@@ -60,6 +60,7 @@ implementation("io.github.manojmallick:gavio-interceptor-pii:0.12.0")
 | `gavio-provider-anthropic` | `AnthropicAdapter` |
 | `gavio-provider-gemini` | `GeminiAdapter` |
 | `gavio-provider-azure` | `AzureOpenAiAdapter` |
+| `gavio-provider-openrouter` | `OpenRouterAdapter` |
 | `gavio-provider-ollama` | `OllamaAdapter` (local, free) |
 | `gavio-testing` | `GavioTestKit`, `MockProvider`, `GavioAssertions` |
 
@@ -186,11 +187,26 @@ var guard = PiiGuard.builder()
 | OpenAI | `OPENAI` | `OPENAI_API_KEY` |
 | Gemini | `GEMINI` | `GEMINI_API_KEY` |
 | Azure OpenAI | `AZURE_OPENAI` | `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT` |
+| OpenRouter | `OPENROUTER` | `OPENROUTER_API_KEY` |
 | Ollama | `OLLAMA` | — (local; `OLLAMA_HOST`) |
 | Mock | dev mode / `MockProvider` | — |
 
-Gemini, Azure OpenAI, and Ollama were added in **v0.2.0** (add the matching
-`gavio-provider-*` artifact).
+Gemini, Azure OpenAI, and Ollama were added in **v0.2.0**; OpenRouter was added
+in **v0.13.0** (add the matching `gavio-provider-*` artifact).
+
+OpenRouter accepts direct adapter options for custom base URLs and optional
+attribution headers:
+
+```java
+Gateway gw = Gateway.builder()
+    .adapter(OpenRouterAdapter.builder()
+        .apiKey(System.getenv("OPENROUTER_API_KEY"))
+        .httpReferer("https://app.example")
+        .appTitle("Gavio")
+        .build())
+    .model("openai/gpt-4o")
+    .build();
+```
 
 Adapters use `java.net.http.HttpClient` (async `sendAsync`) with a hand-rolled
 JSON reader/writer — no external JSON dependency.

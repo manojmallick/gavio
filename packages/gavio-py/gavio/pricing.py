@@ -20,6 +20,8 @@ _DEFAULT_PRICES: dict[str, tuple[float, float]] = {
     # OpenAI
     "gpt-4o": (0.0025, 0.010),
     "gpt-4o-mini": (0.00015, 0.0006),
+    "openai/gpt-4o": (0.0025, 0.010),
+    "openai/gpt-4o-mini": (0.00015, 0.0006),
     "o1": (0.015, 0.060),
     "o1-mini": (0.0011, 0.0044),
     # Anthropic

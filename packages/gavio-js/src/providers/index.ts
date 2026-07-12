@@ -10,6 +10,7 @@ import { geminiAdapter } from './gemini.js'
 import { mockProvider } from './mock.js'
 import { ollamaAdapter } from './ollama.js'
 import { openaiAdapter } from './openai.js'
+import { openrouterAdapter } from './openrouter.js'
 
 export type { ProviderAdapter } from './base.js'
 export { BaseProviderAdapter } from './base.js'
@@ -17,6 +18,8 @@ export { mockProvider } from './mock.js'
 export type { MockProviderOptions } from './mock.js'
 export { openaiAdapter } from './openai.js'
 export type { OpenAIAdapterOptions } from './openai.js'
+export { openrouterAdapter } from './openrouter.js'
+export type { OpenRouterAdapterOptions } from './openrouter.js'
 export { anthropicAdapter } from './anthropic.js'
 export type { AnthropicAdapterOptions } from './anthropic.js'
 export { geminiAdapter } from './gemini.js'
@@ -43,6 +46,8 @@ export function buildAdapter(
       return geminiAdapter(opts)
     case Provider.AZURE_OPENAI:
       return azureOpenaiAdapter(opts)
+    case Provider.OPENROUTER:
+      return openrouterAdapter(opts)
     case Provider.OLLAMA:
       return ollamaAdapter(opts)
     case Provider.MOCK:

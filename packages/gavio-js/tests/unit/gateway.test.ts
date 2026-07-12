@@ -9,6 +9,7 @@ import { mockProvider } from '../../src/providers/mock.js'
 import { ServerError } from '../../src/errors.js'
 import type { AuditSink } from '../../src/interceptors/audit/sink.js'
 import type { AuditRecord } from '../../src/interceptors/audit/record.js'
+import type { Interceptor } from '../../src/interceptors/base.js'
 
 describe('Gateway dev mode roundtrip', () => {
   it('auto-wires mock provider + audit and restores PII', async () => {
@@ -92,5 +93,40 @@ describe('Gateway dry-run', () => {
     })
     // mock echoes the (un-redacted) prompt back
     expect(res.content).toContain('NL91ABNA0417164300')
+  })
+})
+
+describe('Gateway runtime context', () => {
+  it('derives first-class runtime fields from request metadata', async () => {
+    let captured: Parameters<NonNullable<Interceptor['before']>>[1] | null = null
+    const capture: Interceptor = {
+      name: 'runtime_capture',
+      before(request, ctx) {
+        captured = ctx
+        return request
+      },
+    }
+    const gw = new Gateway({ devMode: true }).use(capture)
+    await gw.complete({
+      messages: [{ role: 'user', content: 'hi' }],
+      metadata: {
+        tenant: 'acme',
+        feature: 'support',
+        costDimensions: { workflow: 'triage' },
+        retry: { attempt: 1 },
+        tools: { allowed: ['search'] },
+        policy: { pack: 'fintech' },
+      },
+    })
+
+    expect(captured).not.toBeNull()
+    expect(captured!.tenant).toBe('acme')
+    expect(captured!.feature).toBe('support')
+    expect(captured!.cost['tenant']).toBe('acme')
+    expect(captured!.cost['feature']).toBe('support')
+    expect((captured!.cost['dimensions'] as Record<string, unknown>)['workflow']).toBe('triage')
+    expect(captured!.retry['attempt']).toBe(1)
+    expect(captured!.tools['allowed']).toEqual(['search'])
+    expect(captured!.policy['pack']).toBe('fintech')
   })
 })

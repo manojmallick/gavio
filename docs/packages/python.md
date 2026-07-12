@@ -130,11 +130,12 @@ PiiGuard(scanners=policy_pack_scanners(core_policy_pack(), fintech, custom))
 | OpenAI | `"openai"` / `Provider.OPENAI` | `OPENAI_API_KEY` | `gpt-4o` (default) |
 | Gemini | `"gemini"` / `Provider.GEMINI` | `GEMINI_API_KEY` | e.g. `gemini-2.0-flash` |
 | Azure OpenAI | `"azure_openai"` / `Provider.AZURE_OPENAI` | `AZURE_OPENAI_API_KEY` + `AZURE_OPENAI_ENDPOINT` | your deployment name |
+| OpenRouter | `"openrouter"` / `Provider.OPENROUTER` | `OPENROUTER_API_KEY` | `openai/gpt-4o` (default) |
 | Ollama | `"ollama"` / `Provider.OLLAMA` | — (local; `OLLAMA_HOST`) | any pulled model, e.g. `llama3.2` — cost $0 |
 | Mock | `"mock"` / dev mode | — | `mock` |
 
-Gemini, Azure OpenAI, and Ollama were added in **v0.2.0**; every adapter uses
-stdlib HTTP (no vendor SDK).
+Gemini, Azure OpenAI, and Ollama were added in **v0.2.0**; OpenRouter was added
+in **v0.13.0**. Every adapter uses stdlib HTTP (no vendor SDK).
 
 Full adapter config:
 
@@ -143,6 +144,21 @@ from gavio.providers.anthropic import AnthropicAdapter
 
 gw = (Gateway.builder()
       .adapter(AnthropicAdapter(api_key="sk-ant-…", timeout_seconds=30))
+      .build())
+```
+
+OpenRouter accepts direct adapter options for custom base URLs and optional
+attribution headers:
+
+```python
+from gavio.providers.openrouter import OpenRouterAdapter
+
+gw = (Gateway.builder()
+      .adapter(OpenRouterAdapter(
+          api_key="sk-or-...",
+          http_referer="https://app.example",
+          app_title="Gavio"))
+      .model("openai/gpt-4o")
       .build())
 ```
 

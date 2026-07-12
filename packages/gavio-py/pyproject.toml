@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "gavio"
 version = "0.12.0"
-description = "The open standard AI gateway for production systems — PII protection, audit trails, reliability, and cost control as composable interceptors."
+description = "AI request runtime and inspector for production systems — PII protection, audit trails, reliability, cost intelligence, and policy packs as composable interceptors."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

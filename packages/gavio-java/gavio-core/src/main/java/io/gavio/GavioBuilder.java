@@ -168,9 +168,40 @@ public final class GavioBuilder {
             throw new ConfigurationException(
                     "No provider configured. Call .provider(...), .adapter(...), or .devMode(true).");
         }
+        ProviderAdapter moduleAdapter = resolveProviderModule(provider);
+        if (moduleAdapter != null) {
+            return moduleAdapter;
+        }
         throw new ConfigurationException(
-                "Provider '" + provider.value() + "' has no built-in adapter wiring; "
-                        + "pass an explicit .adapter(...) (e.g. OpenAiAdapter / AnthropicAdapter).");
+                "Provider '" + provider.value() + "' has no adapter module on the classpath; "
+                        + "add the matching gavio-provider-* artifact or pass an explicit .adapter(...).");
+    }
+
+    private ProviderAdapter resolveProviderModule(Provider provider) {
+        String className = switch (provider.value()) {
+            case "openai" -> "io.gavio.providers.openai.OpenAiAdapter";
+            case "anthropic" -> "io.gavio.providers.anthropic.AnthropicAdapter";
+            case "gemini" -> "io.gavio.providers.gemini.GeminiAdapter";
+            case "azure_openai" -> "io.gavio.providers.azure.AzureOpenAiAdapter";
+            case "ollama" -> "io.gavio.providers.ollama.OllamaAdapter";
+            case "openrouter" -> "io.gavio.providers.openrouter.OpenRouterAdapter";
+            default -> null;
+        };
+        if (className == null) {
+            return null;
+        }
+        try {
+            Class<?> adapterClass = Class.forName(className);
+            Object builder = adapterClass.getMethod("builder").invoke(null);
+            builder.getClass().getMethod("pricing", PricingProvider.class).invoke(builder, pricing);
+            return (ProviderAdapter) builder.getClass().getMethod("build").invoke(builder);
+        } catch (ClassNotFoundException e) {
+            return null;
+        } catch (ReflectiveOperationException | ClassCastException e) {
+            throw new ConfigurationException(
+                    "Failed to build provider '" + provider.value() + "' from " + className + ": "
+                            + e.getMessage());
+        }
     }
 
     private static AuditFactory loadAuditFactory() {
@@ -184,6 +215,7 @@ public final class GavioBuilder {
         return switch (adapter.providerName()) {
             case "openai" -> "gpt-4o";
             case "anthropic" -> "claude-sonnet-4-6";
+            case "openrouter" -> "openai/gpt-4o";
             default -> "mock";
         };
     }

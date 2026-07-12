@@ -105,11 +105,7 @@ public final class Gateway {
     }
 
     public CompletableFuture<GavioResponse> complete(GavioRequest request) {
-        InterceptorContext ctx = new InterceptorContext(request.traceId())
-                .agentId(request.agentId())
-                .parentTraceId(request.parentTraceId())
-                .sessionId(request.sessionId())
-                .dryRun(dryRun);
+        InterceptorContext ctx = InterceptorContext.fromRequest(request, dryRun);
         TraceEmitter emitter = newEmitter();
         Executor executor = buildExecutor(ctx, adapter::complete, emitter);
         return chain.execute(request, ctx, executor, emitter);
@@ -148,11 +144,7 @@ public final class Gateway {
      * the streaming path.
      */
     public Flow.Publisher<String> stream(GavioRequest request) {
-        InterceptorContext ctx = new InterceptorContext(request.traceId())
-                .agentId(request.agentId())
-                .parentTraceId(request.parentTraceId())
-                .sessionId(request.sessionId())
-                .dryRun(dryRun);
+        InterceptorContext ctx = InterceptorContext.fromRequest(request, dryRun);
         long started = System.nanoTime();
         Executor bufferingExecutor = req -> StreamBuffer.collect(adapter.stream(req))
                 .thenApply(buffer -> adapter.buildStreamResponse(req, buffer.text(), started));
@@ -228,11 +220,7 @@ public final class Gateway {
         }
         builder.metadata("call_type", "embedding");
         GavioRequest request = builder.build();
-        InterceptorContext ctx = new InterceptorContext(request.traceId())
-                .agentId(request.agentId())
-                .parentTraceId(request.parentTraceId())
-                .sessionId(request.sessionId())
-                .dryRun(dryRun);
+        InterceptorContext ctx = InterceptorContext.fromRequest(request, dryRun);
         TraceEmitter emitter = newEmitter();
         Executor executor = buildExecutor(ctx, adapter::embed, emitter);
         return chain.execute(request, ctx, executor, emitter);

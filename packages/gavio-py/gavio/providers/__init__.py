@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from ..exceptions import ConfigurationError
 from ..pricing import PricingProvider
 from ..types import Provider
@@ -12,6 +14,7 @@ from .gemini import GeminiAdapter
 from .mock import MockProvider
 from .ollama import OllamaAdapter
 from .openai import OpenAIAdapter
+from .openrouter import OpenRouterAdapter
 
 __all__ = [
     "Provider",
@@ -22,16 +25,20 @@ __all__ = [
     "GeminiAdapter",
     "AzureOpenAIAdapter",
     "OllamaAdapter",
+    "OpenRouterAdapter",
     "build_adapter",
 ]
 
+AdapterFactory = Callable[..., ProviderAdapter]
+
 # Provider -> adapter factory.
 # v0.1.0: OpenAI, Anthropic, Mock. v0.2.0 adds Gemini, Azure OpenAI, Ollama.
-_REGISTRY = {
+_REGISTRY: dict[Provider, AdapterFactory] = {
     Provider.OPENAI: OpenAIAdapter,
     Provider.ANTHROPIC: AnthropicAdapter,
     Provider.GEMINI: GeminiAdapter,
     Provider.AZURE_OPENAI: AzureOpenAIAdapter,
+    Provider.OPENROUTER: OpenRouterAdapter,
     Provider.OLLAMA: OllamaAdapter,
     Provider.MOCK: MockProvider,
 }

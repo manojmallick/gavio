@@ -18,6 +18,7 @@ class Provider(str, Enum):
     ANTHROPIC = "anthropic"
     GEMINI = "gemini"
     AZURE_OPENAI = "azure_openai"
+    OPENROUTER = "openrouter"
     OLLAMA = "ollama"
     BEDROCK = "bedrock"
     COHERE = "cohere"

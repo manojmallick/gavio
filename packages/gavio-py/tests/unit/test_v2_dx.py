@@ -7,10 +7,11 @@ import json
 
 import pytest
 
-from gavio import Gateway
+from gavio import Gateway, GavioRequest, Provider
 from gavio.exceptions import PromptInjectionError
 from gavio.interceptors.injection import PromptInjectionGuard
 from gavio.interceptors.reliability import LoadBalancer
+from gavio.providers import OpenRouterAdapter, build_adapter
 from gavio.providers.mock import MockProvider
 from gavio.shim.openai import GavioOpenAI
 
@@ -120,3 +121,64 @@ def test_config_disabled_interceptor_skipped():
         {"dev_mode": True, "interceptors": {"pii_guard": {"enabled": False}}}
     )
     assert gw is not None  # builds without pii_guard
+
+
+# ── OpenRouter adapter (F-ADP-02) ────────────────────────────────────────────
+def test_openrouter_adapter_registry_and_headers():
+    adapter = OpenRouterAdapter(
+        api_key="k",
+        base_url="https://router.example/v1/",
+        http_referer="https://app.example",
+        app_title="Gavio",
+    )
+    assert adapter.provider_name == "openrouter"
+    assert adapter.url() == "https://router.example/v1/chat/completions"
+    assert adapter.headers()["Authorization"] == "Bearer k"
+    assert adapter.headers()["HTTP-Referer"] == "https://app.example"
+    assert adapter.headers()["X-OpenRouter-Title"] == "Gavio"
+
+    built = build_adapter("openrouter")
+    assert built.provider_name == "openrouter"
+    gw = Gateway.builder().provider("openrouter").build()
+    assert gw.provider_name == "openrouter"
+    assert gw.model == "openai/gpt-4o"
+
+
+async def test_openrouter_adapter_payload_and_response_metadata(monkeypatch):
+    captured = {}
+
+    async def fake_post_json(url, payload, headers, timeout):
+        captured["url"] = url
+        captured["payload"] = payload
+        captured["headers"] = headers
+        captured["timeout"] = timeout
+        return {
+            "choices": [{"message": {"content": "ok"}}],
+            "usage": {"prompt_tokens": 1000, "completion_tokens": 500},
+            "model": "openai/gpt-4o",
+        }
+
+    monkeypatch.setattr("gavio.providers.openrouter.post_json", fake_post_json)
+    adapter = OpenRouterAdapter(
+        api_key="k",
+        http_referer="https://app.example",
+        app_title="Gavio",
+    )
+    request = GavioRequest(
+        messages=[{"role": "user", "content": "hi"}],
+        model="openai/gpt-4o",
+        provider=Provider.OPENROUTER,
+    )
+
+    response = await adapter.complete(request)
+
+    assert captured["url"] == "https://openrouter.ai/api/v1/chat/completions"
+    assert captured["payload"]["model"] == "openai/gpt-4o"
+    assert captured["payload"]["messages"] == [{"role": "user", "content": "hi"}]
+    assert captured["payload"]["max_tokens"] == 1024
+    assert captured["headers"]["Authorization"] == "Bearer k"
+    assert captured["headers"]["HTTP-Referer"] == "https://app.example"
+    assert response.provider == "openrouter"
+    assert response.model == "openai/gpt-4o"
+    assert response.model_version == "openai/gpt-4o"
+    assert response.cost_usd > 0

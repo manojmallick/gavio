@@ -5,9 +5,24 @@ from __future__ import annotations
 import pytest
 
 from gavio import ConfigurationError, Gateway, Provider
+from gavio.context import InterceptorContext
+from gavio.interceptors.base import Interceptor
 from gavio.interceptors.pii import PiiGuard
 from gavio.interceptors.reliability import RetryInterceptor, TimeoutPolicy
 from gavio.providers.mock import MockProvider
+
+
+class RuntimeCapture(Interceptor):
+    def __init__(self) -> None:
+        self.ctx: InterceptorContext | None = None
+
+    @property
+    def name(self) -> str:
+        return "runtime_capture"
+
+    async def before(self, request, ctx):
+        self.ctx = ctx
+        return request
 
 
 async def test_dev_mode_roundtrip_with_pii_restore():
@@ -98,3 +113,29 @@ async def test_dry_run_does_not_redact():
     )
     # In dry-run the request is never modified, so the echo keeps the raw email.
     assert "jan@example.com" in resp.content
+
+
+async def test_runtime_context_derives_first_class_metadata():
+    capture = RuntimeCapture()
+    gw = Gateway.builder().dev_mode(True).use(capture).build()
+    await gw.complete(
+        messages=[{"role": "user", "content": "hi"}],
+        metadata={
+            "tenant": "acme",
+            "feature": "support",
+            "costDimensions": {"workflow": "triage"},
+            "retry": {"attempt": 1},
+            "tools": {"allowed": ["search"]},
+            "policy": {"pack": "fintech"},
+        },
+    )
+
+    assert capture.ctx is not None
+    assert capture.ctx.tenant == "acme"
+    assert capture.ctx.feature == "support"
+    assert capture.ctx.cost["tenant"] == "acme"
+    assert capture.ctx.cost["feature"] == "support"
+    assert capture.ctx.cost["dimensions"]["workflow"] == "triage"
+    assert capture.ctx.retry["attempt"] == 1
+    assert capture.ctx.tools["allowed"] == ["search"]
+    assert capture.ctx.policy["pack"] == "fintech"

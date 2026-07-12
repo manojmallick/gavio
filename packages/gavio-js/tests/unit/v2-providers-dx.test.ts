@@ -1,15 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import { Gateway } from '../../src/gateway.js'
+import { GavioRequest } from '../../src/request.js'
 import { buildAdapter } from '../../src/providers/index.js'
 import { geminiAdapter, geminiToContents } from '../../src/providers/gemini.js'
 import { azureOpenaiAdapter } from '../../src/providers/azure-openai.js'
 import { ollamaAdapter } from '../../src/providers/ollama.js'
+import { openrouterAdapter } from '../../src/providers/openrouter.js'
 import { GavioOpenAI } from '../../src/shim/openai.js'
 
 describe('v0.2.0 providers', () => {
   it('registry resolves gemini/azure/ollama', () => {
     expect(buildAdapter('gemini').providerName).toBe('gemini')
     expect(buildAdapter('azure_openai').providerName).toBe('azure_openai')
+    expect(buildAdapter('openrouter').providerName).toBe('openrouter')
     expect(buildAdapter('ollama').providerName).toBe('ollama')
   })
 
@@ -41,7 +44,72 @@ describe('v0.2.0 providers', () => {
     expect(await geminiAdapter({ apiKey: 'k' }).healthCheck()).toBe(true)
     expect(await geminiAdapter({}).healthCheck()).toBe(false)
     expect(await azureOpenaiAdapter({ apiKey: 'k', endpoint: 'https://x' }).healthCheck()).toBe(true)
+    expect(await openrouterAdapter({ apiKey: 'k' }).healthCheck()).toBe(true)
     expect(await ollamaAdapter().healthCheck()).toBe(true)
+  })
+
+  it('openrouter builds url and attribution headers', () => {
+    const adapter = openrouterAdapter({
+      apiKey: 'k',
+      baseUrl: 'https://router.example/v1/',
+      httpReferer: 'https://app.example',
+      appTitle: 'Gavio',
+    })
+    expect(adapter.url()).toBe('https://router.example/v1/chat/completions')
+    expect(adapter.headers()['Authorization']).toBe('Bearer k')
+    expect(adapter.headers()['HTTP-Referer']).toBe('https://app.example')
+    expect(adapter.headers()['X-OpenRouter-Title']).toBe('Gavio')
+    const gw = new Gateway({ provider: 'openrouter' })
+    expect(gw.providerName).toBe('openrouter')
+    expect(gw.model).toBe('openai/gpt-4o')
+  })
+
+  it('openrouter posts chat completions and preserves response metadata', async () => {
+    const originalFetch = globalThis.fetch
+    let capturedUrl = ''
+    let capturedInit: RequestInit | undefined
+    globalThis.fetch = (async (url, init) => {
+      capturedUrl = String(url)
+      capturedInit = init
+      return new Response(
+        JSON.stringify({
+          choices: [{ message: { content: 'ok' } }],
+          usage: { prompt_tokens: 1000, completion_tokens: 500 },
+          model: 'openai/gpt-4o',
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      )
+    }) as typeof fetch
+
+    try {
+      const adapter = openrouterAdapter({
+        apiKey: 'k',
+        httpReferer: 'https://app.example',
+        appTitle: 'Gavio',
+      })
+      const response = await adapter.complete(
+        new GavioRequest({
+          messages: [{ role: 'user', content: 'hi' }],
+          model: 'openai/gpt-4o',
+          provider: 'openrouter',
+        }),
+      )
+
+      const payload = JSON.parse(String(capturedInit!.body)) as Record<string, unknown>
+      const headers = capturedInit!.headers as Record<string, string>
+      expect(capturedUrl).toBe('https://openrouter.ai/api/v1/chat/completions')
+      expect(payload['model']).toBe('openai/gpt-4o')
+      expect(payload['messages']).toEqual([{ role: 'user', content: 'hi' }])
+      expect(payload['max_tokens']).toBe(1024)
+      expect(headers['Authorization']).toBe('Bearer k')
+      expect(headers['HTTP-Referer']).toBe('https://app.example')
+      expect(response.provider).toBe('openrouter')
+      expect(response.model).toBe('openai/gpt-4o')
+      expect(response.modelVersion).toBe('openai/gpt-4o')
+      expect(response.costUsd).toBeGreaterThan(0)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
   })
 })
 

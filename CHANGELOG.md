@@ -11,7 +11,26 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Summary
+**Adapter & positioning.** v0.13.0 adds an optional OpenRouter adapter, richer
+runtime context fields, and updates the public positioning around Gavio as an
+AI request runtime and inspector rather than only a gateway. Feature IDs
+`F-ADP-02`, `F-RT-01`, and `F-DOC-V4`. Feature issue #53.
+
+### Added
+- **OpenRouter adapter (all SDKs, `F-ADP-02`)** — Python, JavaScript, and Java
+  now expose an optional OpenRouter provider adapter using direct
+  OpenAI-compatible chat-completions HTTP calls, `OPENROUTER_API_KEY`, optional
+  base URL, timeout, and attribution headers.
+- **Runtime context fields (all SDKs, `F-RT-01`)** — interceptor context now
+  derives first-class `tenant`, `feature`, `cost`, `retry`, `tools`, and
+  `policy` fields from request metadata while preserving the original metadata
+  map for compatibility.
+
+### Changed
+- **Positioning docs (`F-DOC-V4`)** — README, docs homepage, and package guides
+  now lead with AI Request Runtime / Inspector positioning and call out Cost
+  Intelligence, Policy Packs, and OpenRouter in the provider surface.
 
 ---
 
