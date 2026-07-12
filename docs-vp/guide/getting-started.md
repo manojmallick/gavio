@@ -21,7 +21,7 @@ you use. Every example below runs **as-is** in dev mode (no API key, no network)
 |---|---|
 | Python 3.10+ | `pip install gavio` |
 | JavaScript (Node 18+) | `npm install gavio` |
-| Java 17+ | add `io.github.manojmallick:gavio-core:0.12.0` (Maven) |
+| Java 17+ | add `io.github.manojmallick:gavio-core:0.13.0` (Maven) |
 
 ---
 

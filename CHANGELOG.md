@@ -11,11 +11,19 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.13.0] — 2026-07-12
+
 ### Summary
 **Adapter & positioning.** v0.13.0 adds an optional OpenRouter adapter, richer
 runtime context fields, and updates the public positioning around Gavio as an
 AI request runtime and inspector rather than only a gateway. Feature IDs
-`F-ADP-02`, `F-RT-01`, and `F-DOC-V4`. Feature issue #53.
+`F-ADP-02`, `F-RT-01`, and `F-DOC-V4`. Feature PR #54 (#53).
+
+Tests: Python 239 · JavaScript 253 · Java modules green.
 
 ### Added
 - **OpenRouter adapter (all SDKs, `F-ADP-02`)** — Python, JavaScript, and Java
@@ -737,7 +745,8 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/manojmallick/gavio/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/manojmallick/gavio/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/manojmallick/gavio/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/manojmallick/gavio/compare/v0.9.0...v0.10.0
