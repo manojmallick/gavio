@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs'
 import { describe, it, expect, afterEach } from 'vitest'
 import { Gateway } from '../../src/gateway.js'
 import { buildCostReport, buildDag } from '../../src/inspector/analytics.js'
-import type { SummaryLike } from '../../src/inspector/analytics.js'
+import type { StatsAggregate, SummaryLike } from '../../src/inspector/analytics.js'
 import type { InspectorMode } from '../../src/inspector/index.js'
 import { mockProvider } from '../../src/providers/mock.js'
 
@@ -30,6 +30,38 @@ interface ReplayGatingCase {
   expectedStatus: number
 }
 
+type ExpectedTotal = Pick<
+  StatsAggregate,
+  | 'requests'
+  | 'errors'
+  | 'tokens'
+  | 'costUsd'
+  | 'averageCostUsd'
+  | 'cacheHits'
+  | 'retryCount'
+  | 'retryOverheadUsd'
+  | 'cacheSavingsUsd'
+>
+
+type ExpectedGroup = Pick<StatsAggregate, 'requests' | 'costUsd'> &
+  Partial<Pick<StatsAggregate, 'cacheHits' | 'errors'>>
+
+type ExpectedTopSpend = Array<{ key: string; requests: number; costUsd: number }>
+
+interface CostReportCase {
+  id: string
+  groupBy?: string
+  summaries: SummaryLike[]
+  expected: {
+    total: ExpectedTotal
+    groups: Record<string, ExpectedGroup>
+    topSpend: {
+      tenant: ExpectedTopSpend
+      feature: ExpectedTopSpend
+    }
+  }
+}
+
 const vectors = JSON.parse(
   readFileSync(
     new URL('../../../../test-vectors/inspector/api-cases.json', import.meta.url),
@@ -42,14 +74,7 @@ const costVectors = JSON.parse(
     new URL('../../../../test-vectors/inspector/cost-report.json', import.meta.url),
     'utf-8',
   ),
-) as {
-  cases: Array<{
-    id: string
-    groupBy?: string
-    summaries: SummaryLike[]
-    expected: Record<string, any>
-  }>
-}
+) as { cases: CostReportCase[] }
 
 describe('shared test-vectors — inspector/api-cases.json dagCases', () => {
   for (const dagCase of vectors.dagCases) {
@@ -127,8 +152,12 @@ describe('shared test-vectors — inspector/cost-report.json', () => {
           expect(report.groups![key]!.errors).toBe(aggregate.errors)
         }
       }
-      expect(report.topSpend.tenant.slice(0, 2)).toEqual(expected.topSpend.tenant)
-      expect(report.topSpend.feature.slice(0, 2)).toEqual(expected.topSpend.feature)
+      const tenantTopSpend = report.topSpend.tenant
+      const featureTopSpend = report.topSpend.feature
+      expect(tenantTopSpend).toBeDefined()
+      expect(featureTopSpend).toBeDefined()
+      expect(tenantTopSpend!.slice(0, 2)).toEqual(expected.topSpend.tenant)
+      expect(featureTopSpend!.slice(0, 2)).toEqual(expected.topSpend.feature)
     })
   }
 })
