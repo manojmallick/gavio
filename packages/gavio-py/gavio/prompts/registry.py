@@ -848,22 +848,21 @@ def build_prompt_release_bundle(
     target = registry.get(prompt_id, prompt_version)
     prompt_diff: PromptDiff | None = None
     if from_version is None:
-        previous = [version for version in registry.versions(prompt_id) if version != target.version]
+        previous = [
+            version
+            for version in registry.versions(prompt_id)
+            if version != target.version
+        ]
         if previous:
             from_version = previous[-1]
     if from_version is not None:
         prompt_diff = registry.diff(prompt_id, from_version, target.version)
     parsed_reports = tuple(reports)
+    source_links = links if links is not None else prompt_eval_links_from_manifest(manifest)
     parsed_links = tuple(
-        link if isinstance(link, PromptEvalLink) else PromptEvalLink.from_dict(link)
-        for link in (links if links is not None else prompt_eval_links_from_manifest(manifest))
-        if (link.prompt_id if isinstance(link, PromptEvalLink) else link.get("promptId", link.get("templateId"))) == prompt_id
-        and (
-            link.prompt_version
-            if isinstance(link, PromptEvalLink)
-            else link.get("promptVersion", link.get("templateVersion"))
-        )
-        == prompt_version
+        link
+        for link in _parse_prompt_eval_links(source_links)
+        if link.prompt_id == prompt_id and link.prompt_version == prompt_version
     )
     gates = tuple(
         evaluate_prompt_version_gate(report, link)
@@ -881,6 +880,15 @@ def build_prompt_release_bundle(
         reports=parsed_reports,
         prompt_diff=prompt_diff,
         metadata=_sanitize_workflow_metadata(dict(metadata or {})),
+    )
+
+
+def _parse_prompt_eval_links(
+    links: Iterable[PromptEvalLink | dict[str, Any]],
+) -> tuple[PromptEvalLink, ...]:
+    return tuple(
+        link if isinstance(link, PromptEvalLink) else PromptEvalLink.from_dict(link)
+        for link in links
     )
 
 
