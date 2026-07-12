@@ -10,13 +10,15 @@ from __future__ import annotations
 import json
 from collections import Counter, defaultdict
 from collections.abc import Iterable
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from ...context import InterceptorContext
 from ...exceptions import ToolRuntimeError
 from ...request import GavioRequest
 from ..base import Interceptor
+
+UTC = timezone.utc
 
 
 class ToolRuntimeInterceptor(Interceptor):
