@@ -64,7 +64,7 @@ def test_java_example_poms_use_current_gavio_version():
                 assert version == EXPECTED_VERSION, f"{pom}: {artifact_id}"
 
 
-def test_examples_readme_names_current_published_version():
+def test_examples_readme_names_current_package_line():
     readme = (REPO_ROOT / "examples/README.md").read_text(encoding="utf-8")
 
-    assert f"published `{EXPECTED_VERSION}` packages" in readme
+    assert f"target the `{EXPECTED_VERSION}` package line" in readme

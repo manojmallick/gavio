@@ -23,7 +23,8 @@ event/export contract that later integrations can build on. It reuses the
 Inspector event envelope as the public `GavioRuntimeEvent`, adds metadata-safe
 JSONL runtime exporters across Python, JavaScript, and Java, documents how
 Gavio fits beside gateway/observability/eval tools, and adds runnable runtime
-export examples. Feature ID `F-EXP-01`. Feature PR #63.
+export examples. Feature ID `F-EXP-01`. Feature PR #63; examples/docs PRs
+#60, #61, and #62.
 
 Tests: targeted runtime exporter tests across Python, JavaScript, and Java;
 stable release gate green.
@@ -42,6 +43,8 @@ stable release gate green.
   role focused on embedded runtime governance.
 - **Runtime export examples** — added `08-runtime-export` examples for Python,
   JavaScript, and Java.
+- **Expanded examples catalog** — refreshed the v1 examples and added runnable
+  Policy Pack and Tool Runtime examples across the supported SDKs.
 
 ### Changed
 - **Current-version docs** — refreshed install snippets, docs-site nav, package

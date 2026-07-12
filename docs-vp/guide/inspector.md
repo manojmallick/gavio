@@ -260,5 +260,6 @@ The performance budget (disabled ≈ 0, `metadata` < 1% p50, `full` < 5%) is
 enforced by the
 [`benchmarks/inspector/`](https://github.com/manojmallick/gavio/tree/main/benchmarks/inspector)
 harnesses, which run in CI for all three SDKs against a delay-padded mock
-provider. Measured p50 overhead per request: `metadata` 0.13–0.58%,
-`full` 0–2.7% — inside the budget in every SDK.
+provider. Latest local release-prep p50 overhead per request (2026-07-12):
+`metadata` 0.30-1.79%, `full` 1.01-9.68%; all are below the CI thresholds
+(`metadata` < 10%, `full` < 25%).
