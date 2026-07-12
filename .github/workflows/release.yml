@@ -28,9 +28,21 @@ permissions:
   id-token: write   # PyPI + npm provenance (OIDC)
 
 jobs:
+  stable-release-gate:
+    name: Stable release gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate release tag readiness
+        run: python3 scripts/stable_release_gate.py --tag "$GITHUB_REF_NAME"
+
   # ── Python → PyPI ─────────────────────────────────────────────────────────
   publish-python:
     name: Publish → PyPI
+    needs: [stable-release-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,6 +96,7 @@ jobs:
   # ── Java → Maven Central ──────────────────────────────────────────────────
   publish-java:
     name: Publish → Maven Central
+    needs: [stable-release-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -132,6 +145,7 @@ jobs:
   # ── JavaScript → npm ──────────────────────────────────────────────────────
   publish-npm:
     name: Publish → npmjs.com
+    needs: [stable-release-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

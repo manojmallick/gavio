@@ -10,9 +10,9 @@ export default defineConfig({
   base,
   lang: 'en-US',
   title: 'Gavio',
-  titleTemplate: ':title · Gavio — AI gateway',
+  titleTemplate: ':title · Gavio — AI request runtime',
   description:
-    'The open standard AI gateway for production systems. PII protection, audit trails, reliability, and cost control as composable interceptors — same API in Python, Java, and JavaScript.',
+    'AI request runtime and inspector for production systems. PII protection, audit trails, reliability, cost intelligence, policy packs, and tool runtime checks as composable interceptors.',
 
   appearance: 'dark',
   cleanUrls: true,
@@ -33,29 +33,29 @@ export default defineConfig({
       {
         name: 'keywords',
         content:
-          'ai gateway, llm gateway, pii redaction, pii guard, llm audit, ai observability, ai reliability, retry fallback, openai, anthropic, python ai gateway, java ai gateway, javascript ai gateway, gavio',
+          'ai request runtime, ai inspector, llm runtime, pii redaction, pii guard, llm audit, ai observability, ai reliability, retry fallback, cost intelligence, policy packs, tool runtime, openai, anthropic, gavio',
       },
     ],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: 'Gavio' }],
-    ['meta', { property: 'og:title', content: 'Gavio — the open standard AI gateway' }],
+    ['meta', { property: 'og:title', content: 'Gavio — AI request runtime and inspector' }],
     [
       'meta',
       {
         property: 'og:description',
         content:
-          'PII protection, audit trails, reliability, and cost control as composable interceptors. Same API in Python, Java, and JavaScript.',
+          'PII protection, audit trails, reliability, cost intelligence, policy packs, and tool runtime checks as composable interceptors.',
       },
     ],
     ['meta', { property: 'og:url', content: HOSTNAME + '/' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:title', content: 'Gavio — the open standard AI gateway' }],
+    ['meta', { name: 'twitter:title', content: 'Gavio — AI request runtime and inspector' }],
     [
       'meta',
       {
         name: 'twitter:description',
         content:
-          'PII protection, audit, reliability, cost control — one interceptor API in Python, Java, and JavaScript.',
+          'PII protection, audit, reliability, cost intelligence, policy packs, and tool runtime checks across Python, Java, and JavaScript.',
       },
     ],
     ['link', { rel: 'canonical', href: HOSTNAME + '/' }],
@@ -67,7 +67,7 @@ export default defineConfig({
     nav: [
       { text: 'Docs', link: '/guide/getting-started', activeMatch: '/guide/' },
       {
-        text: 'v0.9.0',
+        text: 'v1.0.0',
         items: [
           { text: 'Changelog', link: 'https://github.com/manojmallick/gavio/blob/main/CHANGELOG.md' },
           { text: 'Releasing', link: 'https://github.com/manojmallick/gavio/blob/main/RELEASING.md' },
@@ -84,6 +84,7 @@ export default defineConfig({
           { text: 'Architecture', link: '/guide/architecture' },
           { text: 'Interceptors', link: '/guide/interceptors' },
           { text: 'Inspector', link: '/guide/inspector' },
+          { text: 'Stability', link: '/guide/stability' },
         ],
       },
       {

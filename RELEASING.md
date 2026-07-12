@@ -98,14 +98,22 @@ gh secret list
    - `packages/gavio-java/pom.xml` (parent) → `<version>` (and it flows to modules)
    - `packages/gavio-py/gavio/__init__.py` → `__version__`
 2. Move `CHANGELOG.md` `[Unreleased]` → the new version with today's date.
-3. Commit, then tag and push:
+3. Run the stable release gate:
+   ```bash
+   python3 scripts/stable_release_gate.py --version X.Y.Z
+   ```
+   For the `1.0.0` gate, this must pass before tagging. It validates lockstep
+   SDK versions, changelog links, release/security/stability docs, benchmark
+   evidence, workflow wiring, package hygiene, and zero mandatory Python core
+   dependencies.
+4. Commit, then tag and push:
    ```bash
    git commit -am "chore: release v0.1.1"
    git tag -a v0.1.1 -m "Gavio v0.1.1"
    git push origin main --follow-tags
    ```
-4. Watch it: `gh run watch` (or the Actions tab). The workflow fails fast if any
-   manifest version ≠ the tag.
+5. Watch it: `gh run watch` (or the Actions tab). The workflow fails fast if the
+   stable release gate or any manifest/tag version check fails.
 
 > The version-match guard means a mismatched tag/manifest can't publish — so a
 > bad tag is safe to delete and re-push after fixing the manifest.

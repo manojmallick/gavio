@@ -8,10 +8,11 @@ seriously.
 
 | Version | Supported |
 |---|---|
-| 0.9.x | ✅ (current) |
-| < 0.5 | ❌ |
+| 1.x | Supported through 2028-07-12 |
+| pre-1.0 minors | Not supported after 1.0.0 |
 
-Pre-1.0, security fixes land on the latest minor only.
+The 1.x line receives the LTS coverage described in
+[STABILITY.md](./STABILITY.md).
 
 ## Reporting a vulnerability
 
