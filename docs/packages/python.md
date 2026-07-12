@@ -96,12 +96,14 @@ gw = (Gateway.builder()
 
 See [interceptors.md](../interceptors.md) for options and custom scanners.
 
-### Tool Runtime (v0.14.0)
+### Tool Runtime
 
 `ToolRuntimeInterceptor` validates tool metadata from `metadata["tools"]` before
 tool outputs re-enter model context. It supports declared input/output schemas,
 freshness/TTL checks, conflict detection across configured result keys,
 confidence scoring, and provenance records under `ctx.tools["runtime"]`.
+Tool Runtime v2 adds registry-backed permissions, approval gates, replay
+records, and MCP metadata capture through the same `metadata["tools"]` object.
 
 ```python
 from gavio.interceptors.tool_runtime import ToolRuntimeInterceptor

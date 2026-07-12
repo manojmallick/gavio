@@ -13,6 +13,10 @@ serialise to shapes valid against these schemas.
 | [`GavioOtelSpan.schema.json`](./GavioOtelSpan.schema.json) | OpenTelemetry-style span JSON produced from runtime events |
 | [`PromptTemplate.schema.json`](./PromptTemplate.schema.json) | Versioned prompt template registered in the Prompt Registry |
 | [`EvalReport.schema.json`](./EvalReport.schema.json) | Metadata-safe Prompt Registry eval report |
+| [`ToolDefinition.schema.json`](./ToolDefinition.schema.json) | Tool Runtime v2 registry entry with schemas, permissions, risk, and MCP metadata |
+| [`ToolPermission.schema.json`](./ToolPermission.schema.json) | Tool Runtime v2 permission scope |
+| [`ToolCallRecord.schema.json`](./ToolCallRecord.schema.json) | Tool Runtime v2 observed tool-call input/output record |
+| [`ToolApproval.schema.json`](./ToolApproval.schema.json) | Tool Runtime v2 approval record |
 | [`BudgetPolicy.schema.json`](./BudgetPolicy.schema.json) | Cost Governance v2 scoped budget policy |
 | [`BudgetDecision.schema.json`](./BudgetDecision.schema.json) | Cost Governance v2 allow/warn/block/fallback decision |
 | [`CostReport.schema.json`](./CostReport.schema.json) | Cost Governance v2 spend, overhead, savings, and budget report |

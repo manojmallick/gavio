@@ -29,27 +29,95 @@ import org.junit.jupiter.api.TestFactory;
 
 class ToolRuntimeInterceptorTest {
 
-    private static Path vectorsFile() {
+    private static Path vectorsFile(String name) {
         Path dir = Path.of("").toAbsolutePath();
         while (dir != null) {
-            Path candidate = dir.resolve("test-vectors/tool-runtime/cases.json");
+            Path candidate = dir.resolve("test-vectors/tool-runtime").resolve(name);
             if (Files.isRegularFile(candidate)) {
                 return candidate;
             }
             dir = dir.getParent();
         }
-        throw new IllegalStateException("could not locate test-vectors/tool-runtime from working dir");
+        throw new IllegalStateException("could not locate test-vectors/tool-runtime/" + name + " from working dir");
     }
 
     @SuppressWarnings("unchecked")
-    private static List<Map<String, Object>> cases() throws IOException {
-        String text = Files.readString(vectorsFile());
+    private static List<Map<String, Object>> cases(String name) throws IOException {
+        String text = Files.readString(vectorsFile(name));
         List<Object> raw = (List<Object>) Json.parseObject(text).get("cases");
         List<Map<String, Object>> out = new ArrayList<>();
         for (Object c : raw) {
             out.add((Map<String, Object>) c);
         }
         return out;
+    }
+
+    private static List<Map<String, Object>> cases() throws IOException {
+        return cases("cases.json");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void assertDecision(Map<String, Object> decision, Map<String, Object> expected) {
+        assertEquals(
+                ((Number) expected.get("violation_count")).intValue(),
+                ((List<?>) decision.get("violations")).size());
+        assertEquals(
+                ((Number) expected.getOrDefault("conflict_count", 0)).intValue(),
+                ((List<?>) decision.get("conflicts")).size());
+        if (expected.containsKey("confidence")) {
+            assertEquals(
+                    ((Number) expected.get("confidence")).doubleValue(),
+                    ((Number) decision.get("confidence")).doubleValue(),
+                    0.0001);
+        }
+        if (expected.containsKey("provenance_count")) {
+            assertEquals(
+                    ((Number) expected.get("provenance_count")).intValue(),
+                    ((List<?>) decision.get("provenance")).size());
+        }
+        if (expected.containsKey("first_violation_kind")) {
+            Map<String, Object> first = (Map<String, Object>)
+                    ((List<?>) decision.get("violations")).get(0);
+            assertEquals(expected.get("first_violation_kind"), first.get("kind"));
+        }
+        if (expected.containsKey("first_conflict_key")) {
+            Map<String, Object> first = (Map<String, Object>)
+                    ((List<?>) decision.get("conflicts")).get(0);
+            assertEquals(expected.get("first_conflict_key"), first.get("key"));
+        }
+        if (expected.containsKey("decision_count")) {
+            assertEquals(
+                    ((Number) expected.get("decision_count")).intValue(),
+                    ((List<?>) decision.get("decisions")).size());
+        }
+        if (expected.containsKey("first_action")) {
+            Map<String, Object> first = (Map<String, Object>)
+                    ((List<?>) decision.get("decisions")).get(0);
+            assertEquals(expected.get("first_action"), first.get("action"));
+        }
+        if (expected.containsKey("first_approved")) {
+            Map<String, Object> first = (Map<String, Object>)
+                    ((List<?>) decision.get("decisions")).get(0);
+            assertEquals(expected.get("first_approved"), first.get("approved"));
+        }
+        if (expected.containsKey("approval_required_count")) {
+            assertEquals(
+                    ((Number) expected.get("approval_required_count")).intValue(),
+                    ((Number) decision.get("approvals_required")).intValue());
+        }
+        if (expected.containsKey("blocked_count")) {
+            assertEquals(
+                    ((Number) expected.get("blocked_count")).intValue(),
+                    ((Number) decision.get("blocked")).intValue());
+        }
+        if (expected.containsKey("first_mcp_server")) {
+            Map<String, Object> first = (Map<String, Object>)
+                    ((List<?>) decision.get("provenance")).get(0);
+            assertEquals(expected.get("first_mcp_server"), first.get("mcp_server"));
+        }
+        if (expected.containsKey("replayable")) {
+            assertEquals(expected.get("replayable"), decision.get("replayable"));
+        }
     }
 
     @TestFactory
@@ -59,35 +127,32 @@ class ToolRuntimeInterceptorTest {
             Map<String, Object> decision =
                     ToolRuntimeInterceptor.analyze((Map<String, Object>) c.get("tools"));
             Map<String, Object> expected = (Map<String, Object>) c.get("expected");
-
-            assertEquals(
-                    ((Number) expected.get("violation_count")).intValue(),
-                    ((List<?>) decision.get("violations")).size());
-            assertEquals(
-                    ((Number) expected.getOrDefault("conflict_count", 0)).intValue(),
-                    ((List<?>) decision.get("conflicts")).size());
-            if (expected.containsKey("confidence")) {
-                assertEquals(
-                        ((Number) expected.get("confidence")).doubleValue(),
-                        ((Number) decision.get("confidence")).doubleValue(),
-                        0.0001);
-            }
-            if (expected.containsKey("provenance_count")) {
-                assertEquals(
-                        ((Number) expected.get("provenance_count")).intValue(),
-                        ((List<?>) decision.get("provenance")).size());
-            }
-            if (expected.containsKey("first_violation_kind")) {
-                Map<String, Object> first = (Map<String, Object>)
-                        ((List<?>) decision.get("violations")).get(0);
-                assertEquals(expected.get("first_violation_kind"), first.get("kind"));
-            }
-            if (expected.containsKey("first_conflict_key")) {
-                Map<String, Object> first = (Map<String, Object>)
-                        ((List<?>) decision.get("conflicts")).get(0);
-                assertEquals(expected.get("first_conflict_key"), first.get("key"));
-            }
+            assertDecision(decision, expected);
         }));
+    }
+
+    @TestFactory
+    @SuppressWarnings("unchecked")
+    Stream<DynamicTest> permissionVectors() throws IOException {
+        return cases("permissions.json").stream().map(c -> DynamicTest.dynamicTest(
+                "tool-runtime-permissions:" + c.get("id"),
+                () -> {
+                    Map<String, Object> decision =
+                            ToolRuntimeInterceptor.analyze((Map<String, Object>) c.get("tools"));
+                    assertDecision(decision, (Map<String, Object>) c.get("expected"));
+                }));
+    }
+
+    @TestFactory
+    @SuppressWarnings("unchecked")
+    Stream<DynamicTest> replayVectors() throws IOException {
+        return cases("replay.json").stream().map(c -> DynamicTest.dynamicTest(
+                "tool-runtime-replay:" + c.get("id"),
+                () -> {
+                    Map<String, Object> decision =
+                            ToolRuntimeInterceptor.replay((Map<String, Object>) c.get("record"));
+                    assertDecision(decision, (Map<String, Object>) c.get("expected"));
+                }));
     }
 
     @Test

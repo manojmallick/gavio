@@ -21,22 +21,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.4.0</version>
+  <version>1.5.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.4.0</version>
+  <version>1.5.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>1.4.0</version>
+  <version>1.5.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>1.4.0</version>
+  <version>1.5.0</version>
 </dependency>
 ```
 
@@ -85,9 +85,10 @@ Gateway gw = Gateway.builder()
     .build();
 ```
 
-Tool Runtime (v0.14.0) reads `metadata("tools", ...)`, validates declared
-input/output schemas, checks result freshness, detects configured conflicts,
-and records provenance in `ctx.tools().get("runtime")`.
+Tool Runtime reads `metadata("tools", ...)`, validates declared input/output
+schemas, checks result freshness, detects configured conflicts, and records
+provenance in `ctx.tools().get("runtime")`. Tool Runtime v2 also understands
+`definitions`, `permissions`, `approvals`, `records`, and MCP metadata.
 
 ## Real providers
 
@@ -247,7 +248,7 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `1.4.0`.
+All artifacts share the `io.github.manojmallick` group id and version `1.5.0`.
 
 | Artifact | Contains |
 |---|---|

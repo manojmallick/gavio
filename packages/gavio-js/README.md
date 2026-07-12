@@ -77,9 +77,10 @@ import { toolRuntime } from 'gavio/interceptors/tool-runtime'
 const gw = new Gateway({ devMode: true }).use(toolRuntime())
 ```
 
-Tool Runtime (v0.14.0) reads `metadata.tools.calls`, validates declared
-input/output schemas, checks result freshness, detects configured conflicts,
-and records provenance in `ctx.tools.runtime`.
+Tool Runtime reads `metadata.tools.calls`, validates declared input/output
+schemas, checks result freshness, detects configured conflicts, and records
+provenance in `ctx.tools.runtime`. Tool Runtime v2 also understands
+`definitions`, `permissions`, `approvals`, `records`, and MCP metadata.
 
 Embeddings run through the same pipeline — inputs are PII-scanned before the
 provider's embedding API is called:

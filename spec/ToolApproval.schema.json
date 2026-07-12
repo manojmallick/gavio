@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/ToolApproval.v1.json",
+  "title": "ToolApproval",
+  "description": "Approval record that can satisfy Tool Runtime v2 approval gates.",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string" },
+    "tool_call_id": { "type": "string" },
+    "toolCallId": { "type": "string" },
+    "tool_id": { "type": "string" },
+    "toolId": { "type": "string" },
+    "tool_name": { "type": "string" },
+    "toolName": { "type": "string" },
+    "status": { "type": "string", "enum": ["approved", "allowed", "denied", "revoked"] },
+    "decision": { "type": "string", "enum": ["allow", "approved", "deny", "denied", "revoked"] },
+    "approved": { "type": "boolean" },
+    "approved_by": { "type": "string" },
+    "approvedBy": { "type": "string" },
+    "reason": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "expires_at": { "type": "string", "format": "date-time" },
+    "expiresAt": { "type": "string", "format": "date-time" },
+    "metadata": { "type": "object", "additionalProperties": true }
+  },
+  "additionalProperties": true
+}

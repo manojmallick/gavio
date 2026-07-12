@@ -28,19 +28,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.4.0</version>
+  <version>1.5.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.4.0</version>
+  <version>1.5.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:1.4.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:1.4.0")
+implementation("io.github.manojmallick:gavio-core:1.5.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:1.5.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -135,13 +135,16 @@ Gateway gw = Gateway.builder()
 Retry / timeout / fallback implement `ExecutorPolicy` and wrap the provider call
 (first-registered = outermost). See [interceptors.md](./interceptors.md).
 
-### Tool Runtime (v0.14.0)
+### Tool Runtime
 
 `ToolRuntimeInterceptor` validates tool metadata from request `metadata("tools",
 ...)` before tool outputs re-enter model context. It supports declared
 input/output schemas, freshness/TTL checks, conflict detection across configured
 result keys, confidence scoring, and provenance records under
 `ctx.tools().get("runtime")`.
+Tool Runtime v2 adds registry-backed permissions, approval gates, replay
+records, and MCP metadata capture through the same `metadata("tools", ...)`
+object.
 
 ```java
 Gateway gw = Gateway.builder()
