@@ -20,8 +20,8 @@ documented configuration, and Inspector endpoints.
 
 ## LTS
 
-The `1.x` line receives LTS coverage for 24 months from the `1.0.0` release
-date. Critical security fixes target patch releases within 24 hours where
+The `1.x` line receives LTS coverage from 2026-07-12 through 2028-07-12.
+Critical security fixes target patch releases within 24 hours where
 feasible, and compatibility fixes prioritize the supported Python, Node.js, and
 Java versions exercised by CI.
 

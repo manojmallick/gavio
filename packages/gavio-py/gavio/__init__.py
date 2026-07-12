@@ -1,6 +1,6 @@
-"""Gavio — the open standard AI gateway for production systems.
+"""Gavio — AI request runtime and inspector for production systems.
 
-Public API surface (v0.1.0):
+Stable public API surface (v1.0.0):
 
     from gavio import Gateway, GavioRequest, GavioResponse, Provider
 
@@ -37,7 +37,7 @@ from .types import (
     TokenUsage,
 )
 
-__version__ = "0.14.0"
+__version__ = "1.0.0"
 
 __all__ = [
     "__version__",

@@ -45,10 +45,10 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
 
-> **Status:** v0.14.0 ships Tool Runtime schema, freshness, conflict, and provenance checks (`F-TOOL-01/02/03/04`).
-> Semver stability holds since v0.2.0; pre-1.0, some APIs may still change.
-> The v1.0.0 Stable release gate formalizes the API stability guarantee and LTS
-> policy. See [STABILITY.md](./STABILITY.md) and the [CHANGELOG](./CHANGELOG.md).
+> **Status:** v1.0.0 is the stable release gate: Gavio now has an API stability
+> guarantee, a 24-month 1.x LTS policy, and release automation that checks
+> lockstep SDK versions before publishing. See [STABILITY.md](./STABILITY.md)
+> and the [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -179,7 +179,7 @@ showing `EMAIL` was detected and redacted before the (mock) provider ever saw it
 |---|---|---|
 | **Python** 3.10+ | `pip install gavio` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
 | **JavaScript** (Node 18+) | `npm install gavio` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:0.14.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:1.0.0` | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -226,7 +226,7 @@ family (`gavio-interceptor-pii`, `-audit`, `-reliability`, `-cache`,
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.14.0</version>
+  <version>1.0.0</version>
 </dependency>
 ```
 
@@ -306,7 +306,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Runtime context fields — `tenant`, `feature`, `cost`, `retry`, `tools`, `policy` | `F-RT-01` | 0.13.0 |
 | AI Request Runtime / Inspector positioning | `F-DOC-V4` | 0.13.0 |
 | Tool Runtime — schema validation, freshness, conflict detection, provenance | `F-TOOL-01/02/03/04` | 0.14.0 |
-| Stable release gate — lockstep version checks, release hygiene, API stability and LTS policy | — | 1.0.0 gate |
+| Stable release gate — lockstep version checks, release hygiene, API stability and LTS policy | — | 1.0.0 |
 | **Providers** — OpenAI · Anthropic · Gemini · Azure OpenAI · Ollama · Mock (all stdlib HTTP, no vendor SDKs) | — | 0.1–0.2 |
 | **OpenRouter provider adapter** — direct OpenAI-compatible integration with attribution headers | `F-ADP-02` | 0.13.0 |
 

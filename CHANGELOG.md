@@ -11,6 +11,23 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [1.0.0] — 2026-07-12
+
+### Summary
+**Stable release gate.** v1.0.0 establishes Gavio's first stable API and
+release-readiness gate across Python, JavaScript, and Java. It adds a
+dependency-free stable-release validation command, wires it into CI and
+publishing workflows, documents the API stability guarantee and 24-month 1.x
+LTS policy, and syncs package/runtime versions for the stable release. Feature
+PR #58 (#57).
+
+Tests: Python 248 · JavaScript 260 · Java modules green · docs build green ·
+stable release gate green · Inspector benchmarks green.
+
 ### Added
 - **Stable release gate (`v1.0.0`)** — added `scripts/stable_release_gate.py`
   to validate lockstep SDK/runtime versions, changelog links, release docs,
@@ -22,8 +39,16 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 ### Changed
 - **Stability/LTS docs** — added `STABILITY.md` and docs-site stability guidance
   for the v1.0.0 API stability guarantee and 24-month 1.x LTS policy.
-- **Release metadata** — synced Python `gavio.__version__` with the released
-  package version.
+- **Release metadata** — synced Python, JavaScript, and Java package/runtime
+  versions to the stable release.
+- **Current-version docs** — refreshed install snippets, docs-site nav, package
+  docs, and Java artifact examples to the stable `1.0.0` release while keeping
+  historical feature "since" labels intact.
+
+### Security
+- **Supported versions policy** — `SECURITY.md` now names the stable `1.x`
+  support line, vulnerability reporting path, and 24-month LTS window. No
+  external security audit result is claimed in this release.
 
 ---
 
@@ -761,25 +786,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-## [1.0.0] — TBD _(planned)_
-
-### Summary
-Stable release. API stability guarantee. Full documentation. LTS designation.
-
-### Additions
-- API stability guarantee: no breaking changes without a major version bump
-- Full documentation at gavio.io (all guides, all API references)
-- Performance benchmarks published (latency overhead per interceptor)
-- Security audit completed and published
-- Long-term support (LTS) designation — security patches for 24 months
-
-### ⚠️ Breaking changes in v1.0.0
-- Any remaining deprecated APIs removed
-- Full list to be determined during v0.5.0 development
-
----
-
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.14.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/manojmallick/gavio/compare/v0.14.0...v1.0.0
 [0.14.0]: https://github.com/manojmallick/gavio/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/manojmallick/gavio/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/manojmallick/gavio/compare/v0.11.0...v0.12.0

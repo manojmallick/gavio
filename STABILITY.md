@@ -38,7 +38,7 @@ Breaking changes after `1.0.0` require a deprecation window before removal:
 ## Long-term support
 
 The `1.x` line receives Long-term support for 24 months from the `1.0.0`
-release date:
+release date: 2026-07-12 through 2028-07-12.
 
 - critical security fixes target a patch release within 24 hours where feasible;
 - high-severity security fixes target the next patch release;

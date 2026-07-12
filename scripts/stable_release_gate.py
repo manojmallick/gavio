@@ -244,7 +244,7 @@ def _check_docs(root: Path, version: str, failures: list[str]) -> None:
     _require_contains(
         root,
         "SECURITY.md",
-        ("1.x", "24 months", "latest minor"),
+        ("1.x", "2028-07-12", "pre-1.0"),
         failures,
     )
     _require_contains(
