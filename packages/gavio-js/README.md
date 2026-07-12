@@ -203,8 +203,9 @@ const gw = await Gateway.fromConfig({
 
 Control Plane support (v1.7.0) loads runtime config from an optional
 self-hosted server, caches the last successful config, and can fail open or
-closed during outages. The same surface is available as `ControlPlaneClient`
-and `loadControlPlaneConfig`.
+closed during outages. v2.3.0 adds durable JSON file, SQLite, and Postgres
+storage modes to the control-plane app. The same surface is available as
+`ControlPlaneClient` and `loadControlPlaneConfig`.
 
 ## Production Trust Package
 
@@ -214,7 +215,7 @@ import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
 const bundle = buildProductionTrustBundle({
   bundleId: 'trust-prod-support-2026-07-12',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '2.2.0', tag: 'v2.2.0' },
+  release: { version: '2.3.0', tag: 'v2.3.0' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',
@@ -297,8 +298,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
   eval integrations.
 - **Control Plane** — optional self-hosted runtime config with policy rollout,
-  budget config, audit search, config snapshots, SDK cache fallback, and
-  `ControlPlaneClient` (v1.7.0).
+  budget config, audit search, config snapshots, SDK cache fallback, durable
+  SQLite/Postgres app storage, and `ControlPlaneClient` (v1.7.0).
 - **Production Trust Package** — metadata-only release evidence bundles with
   deterministic hashes, privacy checks, audit-chain evidence, runtime-event
   evidence, and document/control pointers (`F-TRUST-01`).

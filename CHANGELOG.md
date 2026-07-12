@@ -15,6 +15,37 @@ Nothing yet.
 
 ---
 
+## [2.3.0] — 2026-07-12
+
+### Summary
+**Control Plane Persistence.** v2.3.0 adds durable storage options for the
+self-hosted control-plane app. The default JSON file store remains available,
+while SQLite adds migration-backed local/private durability and Postgres adds
+the managed database adapter path. Projects, environments, runtime keys, teams,
+policies, policy rollouts, budgets, runtime events, audit records, and config
+snapshots now survive process restarts when SQL storage is enabled. Feature ID
+`F-CP-01`. Feature PR #89 (#88).
+
+Tests: control-plane app 6 · Python 307 · JavaScript typecheck/build/306 tests
+green · Java modules green · docs build green · stable release gate green.
+Inspector benchmarks were not rerun because this release changes
+control-plane app persistence/docs, not Inspector runtime overhead.
+
+### Added
+- **Control Plane Persistence (app, `F-CP-01`)** — added storage mode selection
+  for JSON file, SQLite, and Postgres; idempotent SQL migrations tracked in
+  `gavio_control_plane_migrations`; durable runtime/admin records; storage
+  visibility in `/health`; CLI environment wiring; and CI coverage for the
+  control-plane app on Node 22.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, package/runtime versions, and
+  control-plane docs to the `2.3.0` release line while keeping historical
+  feature "since" labels intact.
+
+---
+
 ## [2.2.0] — 2026-07-12
 
 ### Summary
@@ -1255,7 +1286,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/manojmallick/gavio/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/manojmallick/gavio/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/manojmallick/gavio/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/manojmallick/gavio/compare/v1.9.0...v2.0.0

@@ -10,13 +10,38 @@ npm start
 Defaults:
 
 - URL: `http://127.0.0.1:8787`
-- State file: `.gavio-control-plane/state.json`
+- Storage: JSON file at `.gavio-control-plane/state.json`
 - Local admin role header: `x-gavio-role: owner`
 
-The app uses Node built-ins only. Runtime keys are returned once at creation
+The default file store and SQLite mode use Node built-ins only; Postgres mode
+requires the optional `pg` driver. Runtime keys are returned once at creation
 time and stored as SHA-256 hashes. Events and audit records are metadata-first:
 content-bearing fields such as `messages`, `content`, and `diff` are stripped
 before persistence.
+
+## Storage modes
+
+```bash
+# Backwards-compatible JSON file store
+GAVIO_CONTROL_PLANE_STORAGE=file \
+GAVIO_CONTROL_PLANE_STATE=.gavio-control-plane/state.json \
+npm start
+
+# Durable SQLite store with startup migrations
+GAVIO_CONTROL_PLANE_STORAGE=sqlite \
+GAVIO_CONTROL_PLANE_SQLITE_PATH=.gavio-control-plane/control-plane.sqlite \
+npm start
+
+# Postgres store; install the optional driver first
+npm install pg
+GAVIO_CONTROL_PLANE_STORAGE=postgres \
+GAVIO_CONTROL_PLANE_DATABASE_URL=postgres://gavio:gavio@localhost:5432/gavio \
+npm start
+```
+
+SQLite and Postgres use the same migration-backed record schema for projects,
+environments, runtime keys, policies, rollouts, budgets, runtime events, audit
+records, and config snapshots. `/health` reports the active storage mode.
 
 ## Runtime Config
 

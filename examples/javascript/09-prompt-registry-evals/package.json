@@ -3,5 +3,5 @@
   "private": true,
   "type": "module",
   "scripts": { "start": "node prompt-registry-evals.mjs" },
-  "dependencies": { "gavio": "^2.2.0" }
+  "dependencies": { "gavio": "^2.3.0" }
 }

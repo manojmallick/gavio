@@ -22,22 +22,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>2.2.0</version>
+  <version>2.3.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>2.2.0</version>
+  <version>2.3.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>2.2.0</version>
+  <version>2.3.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>2.2.0</version>
+  <version>2.3.0</version>
 </dependency>
 ```
 
@@ -181,7 +181,8 @@ Gateway gw = Gateway.builder()
 
 Control Plane support (v1.7.0) loads runtime config from an optional
 self-hosted server, caches the last successful config, and can fail open or
-closed during outages. The same surface is available through
+closed during outages. v2.3.0 adds durable JSON file, SQLite, and Postgres
+storage modes to the control-plane app. The same surface is available through
 `io.gavio.controlplane.ControlPlaneClient`.
 
 ## Ecosystem integrations
@@ -228,7 +229,7 @@ import io.gavio.trust.ProductionTrustVerification;
 
 Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
     .generatedAt("2026-07-12T12:00:00Z")
-    .release("2.2.0", "v2.2.0", commit)
+    .release("2.3.0", "v2.3.0", commit)
     .runtime("production", "project:prod-support", true, "metadata_only")
     .auditChain(recordCount, chainOk, headHash, tailHash)
     .build();
@@ -302,8 +303,9 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
   eval integrations.
 - **Control Plane** — optional self-hosted runtime config with policy rollout,
-  budget config, audit search, config snapshots, SDK cache fallback, and
-  `io.gavio.controlplane.ControlPlaneClient` (v1.7.0).
+  budget config, audit search, config snapshots, SDK cache fallback, durable
+  SQLite/Postgres app storage, and `io.gavio.controlplane.ControlPlaneClient`
+  (v1.7.0).
 - **Production Trust Package** — metadata-only release evidence bundles with
   deterministic hashes, privacy checks, audit-chain evidence, runtime-event
   evidence, and document/control pointers (`F-TRUST-01`).
@@ -331,7 +333,7 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `2.2.0`.
+All artifacts share the `io.github.manojmallick` group id and version `2.3.0`.
 
 | Artifact | Contains |
 |---|---|

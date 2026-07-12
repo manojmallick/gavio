@@ -82,6 +82,20 @@ jobs:
       - name: Test (vitest, incl. shared vectors + Redis backend, F-CACHE-04)
         run: npm test
 
+  control-plane:
+    name: Control Plane app
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/control-plane
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Test (file + SQLite persistence)
+        run: npm test
+
   java:
     name: Java SDK
     runs-on: ubuntu-latest

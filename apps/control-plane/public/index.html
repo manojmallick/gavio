@@ -143,7 +143,7 @@
 
       async function refresh() {
         const health = await get("/health");
-        document.getElementById("status").textContent = health.ok ? "online" : "offline";
+        document.getElementById("status").textContent = health.ok ? `online · ${health.storage}` : "offline";
         const data = Object.fromEntries(
           await Promise.all(resources.map(async ([name, path]) => [name, (await get(path)).items])),
         );
