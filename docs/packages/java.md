@@ -47,7 +47,7 @@ implementation("io.github.manojmallick:gavio-interceptor-pii:0.13.0")
 
 | Artifact | Contains |
 |---|---|
-| `gavio-core` | Gateway, request/response records, interceptor chain, providers base, Mock |
+| `gavio-core` | Gateway, request/response records, interceptor chain, Tool Runtime, providers base, Mock |
 | `gavio-interceptor-pii` | `PiiGuard`, scanners (Email/Iban/Bsn/CreditCard/Phone/IpAddress/Ssn/Secret) |
 | `gavio-interceptor-audit` | `AuditInterceptor`, `AuditRecord`, `StdoutSink`, hash-chain + call-graph |
 | `gavio-interceptor-cache` | `SemanticCache`, `MemoryCacheBackend`, `RedisCacheBackend`/`RedisVectorBackend` (F-CACHE-04) |
@@ -116,6 +116,7 @@ import io.gavio.interceptors.audit.AuditInterceptor;
 import io.gavio.interceptors.audit.sinks.StdoutSink;
 import io.gavio.interceptors.reliability.RetryInterceptor;
 import io.gavio.interceptors.reliability.TimeoutPolicy;
+import io.gavio.interceptors.toolruntime.ToolRuntimeInterceptor;
 
 Gateway gw = Gateway.builder()
     .provider(Provider.ANTHROPIC).model("claude-sonnet-4-6")
@@ -143,6 +144,35 @@ GavioRequest request = GavioRequest.builder()
 
 Those labels can be used with `/api/stats?group_by=tenant` and
 `/api/cost-report?group_by=feature`.
+
+### Tool Runtime (v0.14.0)
+
+`ToolRuntimeInterceptor` validates tool metadata from request `metadata("tools",
+...)` before tool outputs re-enter model context. It supports declared
+input/output schemas, freshness/TTL checks, conflict detection across configured
+result keys, confidence scoring, and provenance records under
+`ctx.tools().get("runtime")`.
+
+```java
+Gateway gw = Gateway.builder()
+    .devMode(true)
+    .use(ToolRuntimeInterceptor.builder()
+        .onFailure(ToolRuntimeInterceptor.OnFailure.ERROR)
+        .build())
+    .build();
+
+gw.complete(GavioRequest.builder()
+    .message("user", "summarize inventory")
+    .metadata("tools", Map.of("calls", List.of(Map.of(
+        "id", "inventory-1",
+        "name", "inventory",
+        "source", "warehouse",
+        "created_at", "2026-07-12T12:00:00Z",
+        "ttl_seconds", 60,
+        "result", Map.of("sku", "SKU-1", "quantity", 4),
+        "output_schema", Map.of("required", List.of("sku", "quantity"))))))
+    .build()).join();
+```
 
 ### Policy packs (v0.12.0)
 

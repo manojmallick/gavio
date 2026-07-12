@@ -6,7 +6,7 @@
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
-budgets, audit logging, runtime context — before and after the provider call. Same API in
+budgets, audit logging, tool runtime, runtime context — before and after the provider call. Same API in
 [Python, Java, and JavaScript](https://github.com/manojmallick/gavio), enforced
 by shared cross-SDK test vectors.
 
@@ -73,6 +73,21 @@ System.out.println("pii types: " + ((AuditRecord) resp.audit()).piiEntityTypes()
 
 All gateway calls return `CompletableFuture<GavioResponse>`; use `.join()`,
 `.get()`, or compose with `thenApply(...)`.
+
+## Tool Runtime
+
+```java
+import io.gavio.interceptors.toolruntime.ToolRuntimeInterceptor;
+
+Gateway gw = Gateway.builder()
+    .devMode(true)
+    .use(ToolRuntimeInterceptor.builder().build())
+    .build();
+```
+
+Tool Runtime (v0.14.0) reads `metadata("tools", ...)`, validates declared
+input/output schemas, checks result freshness, detects configured conflicts,
+and records provenance in `ctx.tools().get("runtime")`.
 
 ## Real providers
 
