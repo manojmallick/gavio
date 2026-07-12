@@ -117,7 +117,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   (11-proef), CreditCard (Luhn), Phone, IP, SSN scanners and
   redact/mask/tag/block + restore (`F-SEC-01`); secret/credential scanner
   (`F-SEC-04`); `promptInjectionGuard()` (`F-SEC-05`); embedding call guard
-  (`F-SEC-10`).
+  (`F-SEC-10`); Policy Pack manifests for core, FinTech, and custom regex-rule
+  packs (`F-PACK-01/02/05`).
 - **Reliability** — `retryInterceptor()` (`F-REL-01`), `fallbackChain()`
   (`F-REL-02`), `circuitBreaker()` (`F-REL-03`), `loadBalancer()` (`F-REL-04`),
   buffered streaming (`F-REL-06`), `timeoutPolicy()` (`F-REL-07`).

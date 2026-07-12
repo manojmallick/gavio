@@ -15,6 +15,7 @@ offending SDK's test-vector run goes red.
 | [`pii/detection.json`](./pii/detection.json) | Full-pipeline cases — run the default `PiiGuard` over `text`, collect unique entity types, sort, compare to `expectedTypes`. Exercises the whole scanner set plus overlap resolution. |
 | [`pii/image-detection.json`](./pii/image-detection.json) | Image PII cases (F-SEC-09) — a stubbed `ModalityScanner` yields `ocrText` + `entityTypes`; the modality guard runs the text scanners over the OCR text, unions the direct detections, and compares the sorted entity types to `expectedTypes`. Image bytes are stubbed so the contract is deterministic across SDKs. |
 | [`pii/fintech-detection.json`](./pii/fintech-detection.json) | FinTech policy pack cases — run a `PiiGuard` configured with only `fintechScanners()` over `text`, collect the sorted entity types, compare to `expectedTypes`. Exercises context-gated SWIFT/BIC and ABA routing-number checksum. |
+| [`policy-packs/manifest.json`](./policy-packs/manifest.json) | Policy Pack architecture cases (F-PACK-01/02/05) — verify core and FinTech pack manifests, scanner lists, and custom regex-rule pack detection across SDKs. |
 | [`license/detection.json`](./license/detection.json) | License detection cases (F-QUA-10) — run the default license detector over `text`, collect the sorted SPDX ids, compare to `expectedLicenses`. Snippets are synthetic license text; the shipped corpus contains only shingle hashes. |
 | [`inspector/cost-report.json`](./inspector/cost-report.json) | Cost Intelligence cases (F-COST-02) — run the Inspector cost-report builder over trace summaries with attribution dimensions, compare total spend, grouped spend, retry overhead, cache savings, and top-spend dimensions. |
 
@@ -41,6 +42,17 @@ offending SDK's test-vector run goes red.
 `expectedLicenses` are SPDX ids sorted ascending:
 `Apache-2.0, BSD-3-Clause, GPL-2.0, GPL-3.0, MIT, MPL-2.0`.
 
+`policy-packs/manifest.json`:
+```json
+{
+  "builtinPacks": [{ "id": "gavio.fintech", "detectorEntityTypes": ["SWIFT_BIC"] }],
+  "customRulePack": {
+    "rules": [{ "entityType": "EMPLOYEE_ID", "pattern": "\\bEMP-[0-9]{6}\\b" }],
+    "cases": [{ "text": "EMP-123456", "expectedTypes": ["EMPLOYEE_ID"] }]
+  }
+}
+```
+
 `inspector/cost-report.json`:
 ```json
 {
@@ -55,9 +67,9 @@ offending SDK's test-vector run goes red.
 
 | SDK | Test that consumes these vectors |
 |---|---|
-| Python | `packages/gavio-py/tests/unit/test_vectors.py` · `packages/gavio-py/tests/unit/test_inspector_agentic.py` |
-| JavaScript | `packages/gavio-js/tests/unit/test-vectors.test.ts` · `packages/gavio-js/tests/unit/inspector-api-vectors.test.ts` |
-| Java | `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/TestVectorsTest.java` (PII) · `packages/gavio-java/gavio-interceptor-guardrails/src/test/java/io/gavio/vectors/LicenseVectorsTest.java` (license) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/inspector/InspectorApiVectorsTest.java` (Inspector) |
+| Python | `packages/gavio-py/tests/unit/test_vectors.py` · `packages/gavio-py/tests/unit/test_policy_packs.py` · `packages/gavio-py/tests/unit/test_inspector_agentic.py` |
+| JavaScript | `packages/gavio-js/tests/unit/test-vectors.test.ts` · `packages/gavio-js/tests/unit/policy-packs.test.ts` · `packages/gavio-js/tests/unit/inspector-api-vectors.test.ts` |
+| Java | `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/TestVectorsTest.java` (PII) · `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/interceptors/pii/policy/PolicyPackTest.java` (policy packs) · `packages/gavio-java/gavio-interceptor-guardrails/src/test/java/io/gavio/vectors/LicenseVectorsTest.java` (license) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/inspector/InspectorApiVectorsTest.java` (Inspector) |
 
 ## Ground truth
 

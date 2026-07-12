@@ -21,22 +21,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.11.0</version>
+  <version>0.12.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>0.11.0</version>
+  <version>0.12.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>0.11.0</version>
+  <version>0.12.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>0.11.0</version>
+  <version>0.12.0</version>
 </dependency>
 ```
 
@@ -143,7 +143,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   CreditCard (Luhn), Phone, IP, SSN scanners, redact/mask/tag/block + restore,
   and custom scanners via the `PiiScanner` SPI (`F-SEC-01`); `SecretScanner`
   (`F-SEC-04`); `PromptInjectionGuard` (`F-SEC-05`); embedding call guard
-  (`F-SEC-10`).
+  (`F-SEC-10`); Policy Pack manifests for core, FinTech, and custom regex-rule
+  packs (`F-PACK-01/02/05`).
 - **Reliability** — `RetryInterceptor` (`F-REL-01`), `FallbackChain`
   (`F-REL-02`), `CircuitBreaker` (`F-REL-03`), `LoadBalancer` (`F-REL-04`),
   buffered streaming (`F-REL-06`), `TimeoutPolicy` (`F-REL-07`).
@@ -181,7 +182,7 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `0.11.0`.
+All artifacts share the `io.github.manojmallick` group id and version `0.12.0`.
 
 | Artifact | Contains |
 |---|---|

@@ -36,6 +36,10 @@ test-case export, and the `gavio inspect --store` read-only dashboard.
 embedding inputs through the same pre-interceptor chain (PII guard included)
 before the provider's embedding API.
 
+**v0.12.0** — [Policy Pack architecture](#domain-policy-packs-f-pack-010205):
+core/FinTech manifests, detector action metadata, redaction strategies, and
+custom regex-rule packs.
+
 ---
 
 ## PII Guard (`F-SEC-01`)
@@ -99,11 +103,20 @@ await gateway.complete(messages=[...], images=[png_bytes])
 face-detection backend. `on_detect="block"` raises `PiiBlockedError` on any
 detection; the default `"tag"` records detections without blocking.
 
-### Domain policy packs — FinTech
+### Domain policy packs (`F-PACK-01/02/05`)
 
-Generic PII detection misses domain-specific identifiers. **Policy packs** are
-scanner sets for an industry; compose them with the default set. The **FinTech**
-pack adds financial identifiers beyond the core `IBAN` scanner:
+Generic PII detection misses domain-specific identifiers. **Policy packs** now
+wrap scanner sets in a manifest: pack id/name/version/domain, detectors,
+default action (`allow`/`flag`/`redact`/`mask`/`hash`/`block`/`route`/
+`require-approval`), redaction strategy (`tokenize`/`mask`/`hash`/`redact`),
+audit labels, and scanner composition. The scanners still plug into `PiiGuard`
+unchanged.
+
+Built-ins:
+
+- **Core PII** (`gavio.core-pii`) backs the default scanner set.
+- **FinTech** (`gavio.fintech`) promotes the v0.10.0 scanner prototype into a
+  first-class pack beyond the core `IBAN` scanner:
 
 | Scanner | Entity | Validation |
 |---|---|---|
@@ -111,14 +124,52 @@ pack adds financial identifiers beyond the core `IBAN` scanner:
 | Routing number | `ROUTING_NUMBER` | US ABA mod-10 checksum |
 
 ```python
-from gavio.interceptors.pii import PiiGuard, default_scanners, fintech_scanners
+from gavio.interceptors.pii import (
+    PiiGuard,
+    RegexPolicyRule,
+    core_policy_pack,
+    custom_policy_pack,
+    fintech_policy_pack,
+    policy_pack_scanners,
+)
 
-PiiGuard(scanners=[*default_scanners(), *fintech_scanners()])
+pack = fintech_policy_pack()
+print(pack.manifest()["id"])  # gavio.fintech
+
+PiiGuard(scanners=policy_pack_scanners(core_policy_pack(), pack))
+
+custom = custom_policy_pack(
+    id="acme.internal",
+    name="Acme Internal IDs",
+    rules=[
+        RegexPolicyRule(
+            name="employee_id",
+            entity_type="EMPLOYEE_ID",
+            pattern=r"\bEMP-[0-9]{6}\b",
+            confidence=0.88,
+            replacement_prefix="EMPLOYEE_ID",
+            action="flag",
+            redaction_strategy="hash",
+            label="INTERNAL_IDENTIFIER",
+        )
+    ],
+    default_action="flag",
+    redaction_strategy="hash",
+    audit_labels=["INTERNAL_IDENTIFIER"],
+)
 ```
 
-Per-scanner `confidence` combined with `PiiGuard` sensitivity thresholds gives
-the flag-vs-redact behaviour policy packs need. (JS: `fintechScanners()`; Java:
-`DefaultScanners.fintech()`.)
+Existing factory APIs remain compatible: `default_scanners()` and
+`fintech_scanners()` in Python, `defaultScanners()` and `fintechScanners()` in
+JavaScript, and `DefaultScanners.defaults()` / `DefaultScanners.fintech()` in
+Java are now backed by the pack objects. JavaScript uses `corePolicyPack()`,
+`fintechPolicyPack()`, `customPolicyPack()` and `policyPackScanners()`; Java
+uses `PolicyPacks.core()`, `PolicyPacks.fintech()`, `PolicyPacks.custom()` and
+`PolicyPacks.scanners(...)`.
+
+Per-rule `confidence` still combines with `PiiGuard` sensitivity thresholds.
+The action and redaction strategy are manifest metadata in this slice; runtime
+blocking/redaction behavior is still controlled by `PiiGuard` mode.
 
 ---
 

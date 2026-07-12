@@ -1,16 +1,7 @@
 /** Built-in tier-1 (regex) PII scanners. */
 
 import type { PiiScanner } from '../scanner.js'
-import { bsnScanner } from './bsn.js'
-import { creditCardScanner } from './credit-card.js'
-import { emailScanner } from './email.js'
-import { ibanScanner } from './iban.js'
-import { ipAddressScanner } from './ip-address.js'
-import { phoneScanner } from './phone.js'
-import { routingNumberScanner } from './routing-number.js'
-import { secretScanner } from './secret.js'
-import { ssnScanner } from './ssn.js'
-import { swiftBicScanner } from './swift-bic.js'
+import { corePolicyPack, fintechPolicyPack } from '../policy-pack.js'
 
 export { bsnScanner, validBsn } from './bsn.js'
 export { creditCardScanner, luhnValid } from './credit-card.js'
@@ -26,16 +17,7 @@ export { swiftBicScanner } from './swift-bic.js'
 
 /** The default scanner set wired into PiiGuard when none is supplied. */
 export function defaultScanners(): PiiScanner[] {
-  return [
-    secretScanner(),
-    emailScanner(),
-    ibanScanner(),
-    bsnScanner(),
-    creditCardScanner(),
-    ssnScanner(),
-    phoneScanner(),
-    ipAddressScanner(),
-  ]
+  return corePolicyPack().scanners
 }
 
 /**
@@ -45,5 +27,5 @@ export function defaultScanners(): PiiScanner[] {
  * (IBAN is already in the default set.)
  */
 export function fintechScanners(): PiiScanner[] {
-  return [swiftBicScanner(), routingNumberScanner()]
+  return fintechPolicyPack().scanners
 }

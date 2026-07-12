@@ -92,6 +92,34 @@ gw = (Gateway.builder()
 
 See [interceptors.md](../interceptors.md) for options and custom scanners.
 
+### Policy packs (v0.12.0)
+
+Policy packs expose scanner composition plus manifest metadata. Existing
+scanner factories still work, but the built-in core and FinTech packs are now
+first-class:
+
+```python
+from gavio.interceptors.pii import (
+    PiiGuard,
+    RegexPolicyRule,
+    core_policy_pack,
+    custom_policy_pack,
+    fintech_policy_pack,
+    policy_pack_scanners,
+)
+
+fintech = fintech_policy_pack()
+print(fintech.manifest()["detectors"])
+
+custom = custom_policy_pack(
+    id="acme.internal",
+    name="Acme Internal IDs",
+    rules=[RegexPolicyRule("employee_id", "EMPLOYEE_ID", r"\bEMP-[0-9]{6}\b")],
+)
+
+PiiGuard(scanners=policy_pack_scanners(core_policy_pack(), fintech, custom))
+```
+
 ---
 
 ## Providers
