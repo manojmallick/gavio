@@ -15,6 +15,51 @@ Nothing yet.
 
 ---
 
+## [1.5.0] — 2026-07-12
+
+### Summary
+**Tool Runtime v2.** v1.5.0 turns Tool Runtime into a cross-SDK governance
+layer for tool-call records. Python, JavaScript, and Java now understand
+registry-backed tool definitions, required/granted permissions, risk metadata,
+approval gates, deterministic replay records, provenance requirements, and
+MCP-aware metadata without coupling Gavio to a specific MCP implementation.
+Feature IDs `F-TOOL-05`, `F-TOOL-06`, `F-TOOL-07`, and `F-TOOL-08`. Feature
+PR #73 (#72).
+
+Tests: Python 278 · JavaScript 284 · Java modules green · docs build green ·
+stable release gate green · Inspector benchmarks green (Python 0.58%/0.94%,
+JavaScript -0.01%/-0.54%, Java 0.46%/1.10% metadata/full p50 overhead).
+
+### Added
+- **Tool Runtime v2 governance (all SDKs, `F-TOOL-05/06`)** — Python,
+  JavaScript, and Java runtime decisions now include per-call action, risk,
+  required/granted/missing permissions, approval-required status, approved
+  status, block counts, and approval counts.
+- **Approval and replay APIs (all SDKs, `F-TOOL-07`)** — added Python
+  `replay_tool_runtime`, JavaScript `replayToolRuntime`, and Java
+  `ToolRuntimeInterceptor.replay(...)` to reconstruct deterministic decisions
+  from stored tool-call records.
+- **Tool governance contracts and vectors** — added
+  `spec/ToolDefinition.schema.json`, `spec/ToolPermission.schema.json`,
+  `spec/ToolCallRecord.schema.json`, `spec/ToolApproval.schema.json`,
+  `test-vectors/tool-runtime/permissions.json`, and
+  `test-vectors/tool-runtime/replay.json`.
+- **MCP-aware metadata capture (`F-TOOL-08`)** — Tool Runtime provenance now
+  records MCP server/tool/session metadata when present while remaining a
+  metadata-only validator around application-owned tool execution.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, and package/runtime versions to
+  the `1.5.0` release line while keeping historical feature "since" labels
+  intact.
+- **Backward-compatible Tool Runtime metadata** — existing v0.14.0
+  `metadata.tools.calls[]` schema, freshness, conflict, confidence, and
+  provenance behavior remains supported alongside v2 `definitions`,
+  `permissions`, `approvals`, and `records`.
+
+---
+
 ## [1.4.0] — 2026-07-12
 
 ### Summary
@@ -942,7 +987,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/manojmallick/gavio/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/manojmallick/gavio/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/manojmallick/gavio/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/manojmallick/gavio/compare/v1.1.0...v1.2.0
