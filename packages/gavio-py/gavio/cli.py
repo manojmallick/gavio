@@ -110,6 +110,21 @@ def main(argv: list[str] | None = None) -> int:
         help="Print a compact summary instead of the full JSON report.",
     )
 
+    workflow = subcommands.add_parser("workflow", help="Platform workflow release tools.")
+    workflow_subcommands = workflow.add_subparsers(dest="workflow_command", required=True)
+    release = workflow_subcommands.add_parser(
+        "release",
+        help="Build a metadata-only platform workflow release artifact.",
+    )
+    release.add_argument("manifest", metavar="MANIFEST")
+    release.add_argument("--output", default=None, metavar="PATH", help="Write JSON artifact.")
+    release.add_argument("--pretty", action="store_true")
+    release.add_argument(
+        "--allow-failures",
+        action="store_true",
+        help="Return success even when workflow gates fail.",
+    )
+
     args = parser.parse_args(argv)
     if args.command == "inspect":
         return _inspect(args)
@@ -121,6 +136,8 @@ def main(argv: list[str] | None = None) -> int:
         return _policy(args)
     if args.command == "eval" and args.eval_command == "run":
         return _eval_run(args)
+    if args.command == "workflow" and args.workflow_command == "release":
+        return _workflow_release(args)
     return 2
 
 
@@ -230,6 +247,24 @@ def _eval_run(args: argparse.Namespace) -> int:
         return error_exit("gavio eval run", error)
     print_json(cli_summary(result) if args.summary else result.to_dict(), pretty=args.pretty)
     return exit_code(result)
+
+
+def _workflow_release(args: argparse.Namespace) -> int:
+    from .prompts.runner import error_exit, print_json
+    from .workflow import run_platform_workflow_release_file
+
+    try:
+        result = run_platform_workflow_release_file(args.manifest)
+        if args.output:
+            indent = 2 if args.pretty else None
+            Path(args.output).expanduser().write_text(
+                json.dumps(result.artifact, indent=indent, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+        return error_exit("gavio workflow release", error)
+    print_json(result.artifact, pretty=args.pretty)
+    return 0 if result.passed or args.allow_failures else 1
 
 
 def _load_policy_pack_arg(path_or_name: str, policy_pack_cls: Any, load_by_name: Any) -> Any:

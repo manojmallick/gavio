@@ -1,6 +1,6 @@
 """Gavio — AI request runtime and inspector for production systems.
 
-Stable public API surface (v2.7.0):
+Stable public API surface (v3.0.0):
 
     from gavio import Gateway, GavioRequest, GavioResponse, Provider
 
@@ -81,8 +81,14 @@ from .types import (
     Sensitivity,
     TokenUsage,
 )
+from .workflow import (
+    PlatformWorkflowReleaseResult,
+    build_platform_workflow_release,
+    platform_workflow_release_hash,
+    run_platform_workflow_release_file,
+)
 
-__version__ = "2.7.0"
+__version__ = "3.0.0"
 
 __all__ = [
     "__version__",
@@ -141,6 +147,10 @@ __all__ = [
     "build_production_trust_bundle",
     "trust_bundle_hash",
     "verify_production_trust_bundle",
+    "PlatformWorkflowReleaseResult",
+    "build_platform_workflow_release",
+    "platform_workflow_release_hash",
+    "run_platform_workflow_release_file",
     # exceptions
     "GavioError",
     "ConfigurationError",

@@ -17,6 +17,7 @@ const API_RESOURCES = new Map([
   ['/api/audit-records', 'auditRecords'],
   ['/api/config-snapshots', 'configSnapshots'],
   ['/api/retention-policies', 'retentionPolicies'],
+  ['/api/workflow-releases', 'workflowReleases'],
 ])
 
 export async function startControlPlane(options = {}) {

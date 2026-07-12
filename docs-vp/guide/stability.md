@@ -34,7 +34,7 @@ Java versions exercised by CI.
 Maintainers run the stable release gate before publishing:
 
 ```bash
-python3 scripts/stable_release_gate.py --version 2.7.0
+python3 scripts/stable_release_gate.py --version 3.0.0
 ```
 
 The tag workflow runs the same check with the pushed tag:

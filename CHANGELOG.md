@@ -15,6 +15,43 @@ Nothing yet.
 
 ---
 
+## [3.0.0] — 2026-07-12
+
+### Summary
+**Platform Workflow Release.** v3.0.0 adds a unified release workflow for
+platform teams that need one metadata-only artifact across prompts, evals,
+policy packs, production trust bundles, and platform runtime profiles. The new
+Python CLI builds deterministic workflow release artifacts with stable hashes,
+fails closed on eval/profile/trust/policy gates, and the self-hosted control
+plane can persist and search those release records without storing raw prompt
+or output content. Feature ID `F-PLAT-02`. Feature PR #100 (#99).
+
+Tests: GitHub Actions matrix green · stable release gate green · Python 3.10,
+3.11, and 3.12 suites green · JavaScript 18/20/22 suites green · Java 17/21
+suites green · control-plane app green · Inspector overhead benchmark check
+green · docs build green · Platform Workflow Release example green.
+
+### Added
+- **Platform Workflow Release (`F-PLAT-02`)** — added
+  `gavio workflow release <manifest>` for metadata-only release artifacts that
+  combine prompt release bundles, eval gate reports, policy-pack signature
+  evidence, production trust verification, and platform-runtime readiness.
+- **Workflow release control-plane records** — added
+  `/api/workflow-releases` storage/listing with metadata sanitization and
+  `policySource` filtering across the JSON file, SQLite, and Postgres store
+  path.
+- **Workflow release docs and example** — added the platform workflow release
+  guide plus an offline Python example project that builds trust/profile
+  inputs and writes a reviewable workflow release artifact.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, package/runtime versions, and
+  release docs to the `3.0.0` release line while keeping historical feature
+  "since" labels intact.
+
+---
+
 ## [2.7.0] — 2026-07-12
 
 ### Summary
@@ -1419,7 +1456,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.7.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/manojmallick/gavio/compare/v2.7.0...v3.0.0
 [2.7.0]: https://github.com/manojmallick/gavio/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/manojmallick/gavio/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/manojmallick/gavio/compare/v2.4.0...v2.5.0

@@ -14,6 +14,7 @@ The Python SDK is the **reference implementation**. Source:
 - [Platform Runtime Profile](#platform-runtime-profile)
 - [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
+- [Platform Workflow Release](#platform-workflow-release)
 - [Testing](#testing)
 - [Version support](#version-support)
 
@@ -400,7 +401,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "2.7.0", "tag": "v2.7.0"},
+    release={"version": "3.0.0", "tag": "v3.0.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",
@@ -472,6 +473,30 @@ triage metadata, and prompt release bundles for release evidence.
 
 See [Prompt Registry + Evals](../prompt-registry-evals.md) for all SDKs and the
 shared schemas.
+
+## Platform Workflow Release
+
+Python v3.0.0 adds a release workflow that joins prompt release bundles, eval
+reports, policy-pack signature evidence, production trust verification, and
+platform-runtime readiness into one metadata-only artifact.
+
+```bash
+gavio workflow release workflow.json --output workflow-release.json --pretty
+```
+
+The CLI returns exit code `1` when eval, prompt, policy, trust, or runtime
+profile gates fail. Use `--allow-failures` to write a blocked review artifact
+without failing CI.
+
+```python
+from gavio import run_platform_workflow_release_file
+
+result = run_platform_workflow_release_file("workflow.json")
+print(result.artifact["workflowHash"])
+```
+
+See [Platform Workflow Release](../platform-workflow-release.md) for the
+manifest format and control-plane storage endpoint.
 
 ## Embeddings
 

@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "gavio.prompt-registry.v2",
+  "registryId": "support-prompts",
+  "templates": [
+    {
+      "id": "support.reply",
+      "version": "1.0.0",
+      "messages": [
+        { "role": "system", "content": "You are concise." },
+        { "role": "user", "content": "Write a reply about {{ topic }}." }
+      ],
+      "requiredVariables": ["topic"]
+    },
+    {
+      "id": "support.reply",
+      "version": "1.1.0",
+      "messages": [
+        { "role": "system", "content": "You are concise and policy aware." },
+        { "role": "user", "content": "Write a reply to {{ customer }} about {{ topic }}." }
+      ],
+      "requiredVariables": ["customer", "topic"],
+      "metadata": {
+        "promptEvalLinks": [
+          {
+            "suiteId": "support-release",
+            "baselineScore": 1.0,
+            "failUnder": 1.0,
+            "maxRegression": 0.0
+          }
+        ]
+      }
+    }
+  ]
+}
+

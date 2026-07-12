@@ -37,9 +37,9 @@ structural regressed, not a noisy run:
 | `metadata` | < 1% p50 | **< 10%** of the simulated call (500 µs) |
 | `full` | < 5% p50 | **< 25%** of the simulated call (1250 µs) |
 
-Latest local release-prep check (2026-07-12): Python metadata 2.54% / full
-5.05%, JavaScript metadata 0.51% / full 0.64%, Java metadata 1.27% / full
-0.07%. All are below the CI thresholds above.
+Latest local release-prep check (2026-07-12): Python metadata 2.45% / full
+6.32%, JavaScript metadata 1.49% / full 1.58%, Java metadata 2.18% / full
+1.58%. All are below the CI thresholds above.
 
 ## Running
 

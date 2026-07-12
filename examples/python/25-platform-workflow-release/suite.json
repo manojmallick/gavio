@@ -1,0 +1,20 @@
+{
+  "id": "support-release",
+  "cases": [
+    {
+      "id": "refund-safe",
+      "templateId": "support.reply",
+      "templateVersion": "1.1.0",
+      "variables": {
+        "customer": "Avery",
+        "topic": "refund status"
+      },
+      "mockOutput": "Avery refund status approved",
+      "assertions": [
+        { "type": "contains", "value": "refund status" },
+        { "type": "not_contains", "value": "card number" }
+      ]
+    }
+  ]
+}
+

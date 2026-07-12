@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "gavio.platform-workflow.v1",
+  "workflowId": "support-platform-release",
+  "generatedAt": "2026-07-12T12:00:00Z",
+  "release": {
+    "version": "3.0.0",
+    "tag": "v3.0.0",
+    "commit": "local-example"
+  },
+  "prompts": {
+    "manifest": "prompts.json",
+    "promptId": "support.reply",
+    "promptVersion": "1.1.0",
+    "fromVersion": "1.0.0"
+  },
+  "evals": [
+    {
+      "suite": "suite.json",
+      "failUnder": 1.0
+    }
+  ],
+  "policies": [
+    {
+      "id": "core-policy",
+      "pathOrName": "core"
+    }
+  ],
+  "trustBundle": {
+    "path": "trust.json"
+  },
+  "runtimeProfile": {
+    "path": "profile.json"
+  },
+  "metadata": {
+    "owner": "platform"
+  }
+}
+

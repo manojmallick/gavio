@@ -23,6 +23,7 @@ implemented per SDK, so you can compare the APIs side by side.
 | 22 | **Platform Feature Tour** — all major v2.x surfaces in one offline project | [py](./python/22-platform-feature-tour/) | — | — | no |
 | 23 | **Prompt Registry v2** — signed manifests, semver selectors, approvals, metadata-safe diffs | [py](./python/23-prompt-registry-v2/) | — | — | no |
 | 24 | **Enterprise Admin v2** — scoped admin keys, rollout approvals, audit export, retention controls | — | [js](./javascript/24-enterprise-admin-v2/) | — | no |
+| 25 | **Platform Workflow Release** — unified prompt/eval/policy/trust/runtime-profile release artifact | [py](./python/25-platform-workflow-release/) | — | — | no |
 
 Only example 02 needs a key — it uses a real provider if `ANTHROPIC_API_KEY` or
 `OPENAI_API_KEY` is set, and otherwise falls back to the mock provider so it
@@ -41,6 +42,7 @@ smallest runnable project for one feature family.
 | Cost governance, runtime labels, budget reporting | `04`, `08`, `13` | `22` |
 | Runtime events, JSONL export, OTel spans, metrics | `05`, `08`, `15` | `22` |
 | Prompt registry, eval reports, CI-style gates, release bundles | `09`, `21`, `23` | `22` |
+| Platform workflow releases across prompts, evals, policies, trust, and runtime profiles | `25` | — |
 | Tool runtime, permissions, approvals, MCP metadata | `07` | `22` |
 | Control plane, enterprise admin, trust bundle, platform profile | `13`, `14`, `20`, `24` | `22` |
 | Ecosystem integration metadata, adapter payloads, generated trust evidence, and sample production apps | `15` | `22` |
@@ -69,6 +71,6 @@ cd examples/java/01-quickstart
 mvn -q compile exec:java
 ```
 
-Most language-specific package examples target the `2.7.0` package line. The
+Most language-specific package examples target the `3.0.0` package line. The
 integration trust examples run from this repository branch and the current
 package line once released.
