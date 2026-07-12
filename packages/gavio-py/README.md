@@ -267,6 +267,18 @@ Prompt Registry + Evals (v1.4.0) adds versioned prompt templates,
 metadata-only lineage, deterministic pass/fail reports, and SHA-256 output
 hashes instead of raw model output (`F-EVAL-01/02`).
 
+Python v2.1.0 also adds `gavio eval run` for CI gates over JSON/YAML suites:
+
+```bash
+gavio eval run examples/python/21-eval-ci-gate/suite.yaml \
+  --baseline examples/python/21-eval-ci-gate/baseline-report.json \
+  --fail-under 0.95 \
+  --max-regression 0.02 \
+  --report reports/gavio-eval-report.json \
+  --junit reports/gavio-eval-junit.xml \
+  --summary
+```
+
 ## What's inside
 
 Every feature is an interceptor you compose explicitly — no hidden magic.
@@ -291,7 +303,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   tracing via `agent_id`/`parent_trace_id` (`F-OBS-03`), prompt lineage
   (`F-OBS-04`), Prometheus metrics (`F-OBS-08`), stdout + JSONL sinks.
 - **Prompt Registry + Evals** — versioned templates, lineage-preserving render,
-  deterministic eval cases, privacy-safe output hashes (`F-EVAL-01/02`).
+  deterministic eval cases, privacy-safe output hashes, and `gavio eval run`
+  CI gates (`F-EVAL-01/02/03`).
 - **Runtime export** — metadata-safe JSONL runtime events (`F-EXP-01`) and
   OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
   eval integrations.

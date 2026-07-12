@@ -11,6 +11,17 @@ from .registry import (
     PromptTemplate,
     RenderedPrompt,
 )
+from .runner import (
+    EvalGate,
+    EvalRunResult,
+    cli_summary,
+    evaluate_gate,
+    junit_xml,
+    load_eval_document,
+    run_eval_file,
+    write_json_report,
+    write_junit_report,
+)
 
 __all__ = [
     "PromptTemplate",
@@ -22,4 +33,13 @@ __all__ = [
     "EvalCaseResult",
     "EvalReport",
     "EvalSuite",
+    "EvalGate",
+    "EvalRunResult",
+    "load_eval_document",
+    "run_eval_file",
+    "evaluate_gate",
+    "write_json_report",
+    "write_junit_report",
+    "junit_xml",
+    "cli_summary",
 ]

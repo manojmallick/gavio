@@ -380,6 +380,23 @@ report = await EvalSuite.from_dict({
 }).run(registry, lambda _prompt, _case: "Avery refund approved")
 ```
 
+Python v2.1.0 adds a file-backed CI runner for the same deterministic eval
+contract:
+
+```bash
+gavio eval run examples/python/21-eval-ci-gate/suite.yaml \
+  --baseline examples/python/21-eval-ci-gate/baseline-report.json \
+  --fail-under 0.95 \
+  --max-regression 0.02 \
+  --report reports/gavio-eval-report.json \
+  --junit reports/gavio-eval-junit.xml \
+  --summary
+```
+
+Use JSON suites by default, or install `gavio[yaml]` for full YAML support. The
+runner exits `1` when cases fail, the score falls below `--fail-under`, or the
+baseline regression exceeds `--max-regression`.
+
 ## Embeddings
 
 `gw.embed(texts)` (`F-SEC-10`, since v0.9.0) runs embedding inputs through the

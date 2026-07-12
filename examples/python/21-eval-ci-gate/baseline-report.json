@@ -1,0 +1,11 @@
+{
+  "suiteId": "support-release-gate",
+  "score": 0.66666667,
+  "passedCases": 0,
+  "failedCases": 2,
+  "metadata": {
+    "templateId": "support.reply",
+    "templateVersion": "2026-07-01",
+    "source": "last-approved-prompt-run"
+  }
+}

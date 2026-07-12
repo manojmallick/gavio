@@ -441,6 +441,23 @@ report = await suite.run(registry, lambda _prompt, _case: "Avery refund approved
 assert report.score == 1.0
 ```
 
+Python v2.1.0 adds a file-backed CI runner for the same deterministic eval
+contract:
+
+```bash
+gavio eval run examples/python/21-eval-ci-gate/suite.yaml \
+  --baseline examples/python/21-eval-ci-gate/baseline-report.json \
+  --fail-under 0.95 \
+  --max-regression 0.02 \
+  --report reports/gavio-eval-report.json \
+  --junit reports/gavio-eval-junit.xml \
+  --summary
+```
+
+Use JSON suites by default, or install `gavio[yaml]` for full YAML support. The
+runner exits `1` when cases fail, the score falls below `--fail-under`, or the
+baseline regression exceeds `--max-regression`.
+
 See [Prompt Registry + Evals](../prompt-registry-evals.md) for all SDKs and the
 shared schemas.
 
