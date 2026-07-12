@@ -42,6 +42,14 @@ export { uuid7, newTraceId } from './ids.js'
 export { PricingProvider, estimateTokens } from './pricing.js'
 
 export {
+  compatibilityMatrix,
+  getIntegration,
+  integrationMetadata,
+  listIntegrations,
+} from './integrations.js'
+export type { IntegrationRecipe } from './integrations.js'
+
+export {
   PromptTemplate,
   PromptRegistry,
   EvalAssertion,

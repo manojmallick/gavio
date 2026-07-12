@@ -25,6 +25,13 @@ from .exceptions import (
 )
 from .exporters import GavioRuntimeExporter, JsonlRuntimeExporter, OtelSpanExporter
 from .gateway import Gateway, GatewayBuilder
+from .integrations import (
+    IntegrationRecipe,
+    compatibility_matrix,
+    get_integration,
+    integration_metadata,
+    list_integrations,
+)
 from .prompts import EvalSuite, PromptRegistry, PromptTemplate, RenderedPrompt
 from .request import GavioRequest
 from .response import GavioResponse
@@ -52,6 +59,11 @@ __all__ = [
     "__version__",
     "Gateway",
     "GatewayBuilder",
+    "IntegrationRecipe",
+    "list_integrations",
+    "get_integration",
+    "integration_metadata",
+    "compatibility_matrix",
     "GavioRequest",
     "GavioResponse",
     "InterceptorContext",

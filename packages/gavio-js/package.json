@@ -105,6 +105,11 @@
       "import": "./dist/esm/exporters/index.js",
       "require": "./dist/cjs/exporters/index.js"
     },
+    "./integrations": {
+      "types": "./dist/esm/integrations.d.ts",
+      "import": "./dist/esm/integrations.js",
+      "require": "./dist/cjs/integrations.js"
+    },
     "./trust": {
       "types": "./dist/esm/trust.d.ts",
       "import": "./dist/esm/trust.js",

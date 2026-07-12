@@ -1,6 +1,6 @@
 # Integrations
 
-Since: `1.1.0`
+Since: `1.9.0`
 
 Use Gavio as the embedded runtime governance layer beside the tools teams
 already use.
@@ -12,25 +12,49 @@ Application
   -> observability, eval, and security tools through runtime events
 ```
 
-| Tool | Let that tool own | Let Gavio own |
-|---|---|---|
-| LiteLLM | Multi-provider proxy, virtual keys, routing, rate/budget tiers | App-level PII, audit hashes, policy packs, tool checks, feature labels |
-| Portkey | AI gateway, org governance, provider routing, gateway logs | Embedded policy decisions, metadata-only audit, interceptor facts |
-| Helicone | Gateway observability, request analytics, prompt workflows | Local runtime controls before and after calls |
-| Langfuse | Traces, prompts, eval datasets, review loops | Metadata-safe runtime event source and policy/audit context |
-| OpenLIT | OpenTelemetry-native observability | Runtime event source and privacy-preserving labels |
-| promptfoo | Evals, red-team tests, CI checks | Runtime assertions, policy outcomes, cost/PII regression signals |
+| Tool | Category | Let that tool own | Let Gavio own | Export |
+|---|---|---|---|---|
+| LiteLLM | gateway | Proxy, virtual keys, provider routing | App PII/policy, audit hashes, cost labels | JSONL, OTel |
+| Portkey | gateway | Gateway config, org controls, routing | Embedded policy, interceptor facts, audit | JSONL, OTel |
+| Helicone | gateway observability | Gateway analytics and prompt workflows | Local runtime controls and privacy-safe labels | JSONL |
+| Langfuse | observability | Traces, prompts, eval datasets, review loops | Runtime facts and policy/audit context | JSONL |
+| OpenLIT | observability | OTel-native dashboards and APM correlation | Runtime event source and span attributes | OTel |
+| promptfoo | eval | Eval suites, red-team tests, CI gates | Runtime assertions and safe eval reports | JSONL |
+| LangChain | framework | Chains, agents, tools, memory | Governed model calls and tool validation | JSONL, OTel |
+| LangGraph | framework | Graph state, nodes, checkpoints | Per-node labels and replay evidence | JSONL, OTel |
+| Vercel AI SDK | framework | Streaming UX, server actions, provider APIs | Server-side governance and route labels | JSONL, OTel |
+| OpenAI SDK | provider SDK | Provider-specific APIs, files, assistants | Governed chat shim, policy, audit/export | JSONL, OTel |
 
-Recommended metadata:
+Use the SDK catalog helpers to keep labels consistent:
 
-```json
-{
-  "tenant": "acme",
-  "feature": "support-chat",
-  "environment": "prod",
-  "workflow": "ticket-triage"
-}
+```python
+from gavio import integration_metadata
+
+metadata = integration_metadata(
+    "litellm",
+    tenant="acme",
+    feature="support-chat",
+    environment="prod",
+)
 ```
 
-These scalar labels are copied into runtime events and cost dimensions without
+```ts
+import { integrationMetadata } from "gavio/integrations"
+
+const metadata = integrationMetadata("openlit", {
+  tenant: "acme",
+  feature: "support-chat",
+  environment: "prod",
+})
+```
+
+```java
+import io.gavio.integrations.IntegrationCatalog;
+
+var metadata = IntegrationCatalog.metadata(
+    "langchain",
+    Map.of("tenant", "acme", "feature", "support-chat", "environment", "prod"));
+```
+
+These scalar labels flow into runtime events and cost dimensions without
 exporting raw prompt or response text.
