@@ -11,6 +11,7 @@
  *   /api/dag               → agent call graph (?root= | ?session_id=, F-OBS-10)
  *   /api/sessions          → per-session rollups (F-OBS-10)
  *   /api/stats             → RED aggregates (?group_by=&since=, F-DX-08)
+ *   /api/cost-report       → cost intelligence rollups (?group_by=&since=)
  *   /api/simulate-cost     → re-cost one trace under another model
  *   /api/chain/verify      → 400 on the live server (store mode is Python-only)
  *   /api/replay (POST)     → re-fire a trace through the live gateway (F-DX-11)
@@ -26,7 +27,7 @@ import type { PricingProvider } from '../pricing.js'
 import { TokenUsage } from '../types.js'
 import type { Message } from '../types.js'
 import { VERSION } from '../version.js'
-import { buildDag, buildSessions, buildStats } from './analytics.js'
+import { buildCostReport, buildDag, buildSessions, buildStats } from './analytics.js'
 import type { TraceBuffer, TraceRecord } from './buffer.js'
 import type { InspectorBus } from './bus.js'
 import type { InspectorMode } from './config.js'
@@ -203,6 +204,10 @@ export class InspectorServer {
       this.stats(res, url.searchParams)
       return
     }
+    if (path === '/api/cost-report') {
+      this.costReport(res, url.searchParams)
+      return
+    }
     if (path === '/api/simulate-cost') {
       this.simulateCost(res, url.searchParams)
       return
@@ -280,6 +285,21 @@ export class InspectorServer {
       return
     }
     this.json(res, 200, stats)
+  }
+
+  private costReport(res: ServerResponse, params: URLSearchParams): void {
+    let report
+    try {
+      report = buildCostReport(
+        this.buffer.list(),
+        params.get('group_by') ?? undefined,
+        params.get('since') ?? undefined,
+      )
+    } catch (error) {
+      this.json(res, 400, { error: error instanceof Error ? error.message : String(error) })
+      return
+    }
+    this.json(res, 200, report)
   }
 
   private simulateCost(res: ServerResponse, params: URLSearchParams): void {

@@ -320,6 +320,25 @@ Budget blocks with `BudgetExceededError`, rate limiting with
 `RateLimitExceededError`, and RBAC with `ModelNotAllowedError` (role read from
 `request.metadata["role"]`).
 
+In v0.11.0, `CostControl` can scope spend by `global`, `agent`, `session`,
+`model`, `tenant`, `feature`, or `user`. Tenant/feature/user scopes are read
+from `request.metadata.costDimensions` (or flat aliases like `tenant_id` and
+`featureId`). A hard cap still blocks by default, or can fall back to a cheaper
+model:
+
+```python
+CostControl(
+    hard_cap_usd=50,
+    soft_cap_usd=40,
+    scope="tenant",
+    window="month",
+    fallback_model="gpt-4o-mini",
+)
+```
+
+Soft warnings and hard-cap fallback/block decisions surface as Inspector
+`governance.event` records with `kind="budget"`.
+
 #### Cost-optimiser routing (`F-GOV-06`)
 
 `CostRouter` reroutes a request to a cheaper `simple_model` when a pluggable

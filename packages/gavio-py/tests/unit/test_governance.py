@@ -43,6 +43,27 @@ async def test_budget_blocks_after_hard_cap():
         await gw.complete(messages=[{"role": "user", "content": "two"}])
 
 
+async def test_budget_falls_back_for_scoped_budget():
+    pricing = PricingProvider({"mock": (1000.0, 1000.0)})
+    cost = CostControl(
+        hard_cap_usd=0.01,
+        scope="tenant",
+        window="total",
+        fallback_model="mock-mini",
+    )
+    gw = _gw(cost, pricing=pricing)
+
+    await gw.complete(
+        messages=[{"role": "user", "content": "one"}],
+        metadata={"costDimensions": {"tenant": "acme"}},
+    )
+    response = await gw.complete(
+        messages=[{"role": "user", "content": "two"}],
+        metadata={"costDimensions": {"tenant": "acme"}},
+    )
+    assert response.model == "mock-mini"
+
+
 async def test_budget_allows_under_cap():
     gw = _gw(CostControl(hard_cap_usd=100.0))  # mock cost is 0
     for _ in range(3):

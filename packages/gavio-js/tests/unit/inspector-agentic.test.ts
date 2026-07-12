@@ -150,6 +150,31 @@ describe('GET /api/stats', () => {
     expect((await fetch(`${base}/api/stats?group_by=nope`)).status).toBe(400)
   })
 
+  it('groups cost dimensions and serves cost reports', async () => {
+    const { gw, base } = await serve()
+    await gw.complete({
+      messages: [{ role: 'user', content: 'claims' }],
+      metadata: {
+        costDimensions: {
+          tenant: 'acme',
+          feature: 'claims',
+          endpoint: '/chat',
+          environment: 'prod',
+          workflow: 'triage',
+          tool: 'search',
+        },
+      },
+    })
+
+    const grouped = await getJson(base, '/api/stats?group_by=tenant')
+    expect(Object.keys(grouped['groups'] as Record<string, unknown>)).toContain('acme')
+
+    const report = await getJson(base, '/api/cost-report?group_by=feature')
+    expect(Object.keys(report['groups'] as Record<string, unknown>)).toContain('claims')
+    const topSpend = report['topSpend'] as Record<string, Array<Record<string, unknown>>>
+    expect(topSpend['tenant']![0]!['key']).toBe('acme')
+  })
+
   it('counts PII and errors from summaries (unit)', () => {
     const summaries = [
       { traceId: 'a', status: 'ok', latencyMs: 10, piiEntityTypes: ['EMAIL'] },

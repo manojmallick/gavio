@@ -52,6 +52,7 @@ class TraceEmitter:
             "parent_trace_id": request.parent_trace_id,
             "agent_id": request.agent_id,
             "session_id": request.session_id,
+            "cost_dimensions": events.cost_dimensions_from_metadata(request.metadata),
         }
         if self.mode == "metadata":
             data = events.trace_start_data(**common)
@@ -65,6 +66,9 @@ class TraceEmitter:
             "latency_ms": self._elapsed_ms(),
             "interceptors_fired": list(ctx.interceptors_fired),
             "cost_usd": response.cost_usd,
+            "cache_savings_usd": _metadata_number(
+                response.metadata, "cacheSavingsUsd", "cache_savings_usd"
+            ),
             "cache_hit": response.cache_hit,
             "cache_type": response.cache_type.value if response.cache_type else None,
             "pii_entity_types": list(ctx.pii_entity_types),
@@ -163,6 +167,10 @@ class TraceEmitter:
         for data in ctx.drain_governance():
             self._emit("governance.event", data)
 
+    def emit_pending_governance(self, ctx: InterceptorContext) -> None:
+        """Drain governance events when a hook raises before its normal end event."""
+        self._emit_governance(ctx)
+
     @staticmethod
     def _drain_decision(name: str, ctx: InterceptorContext) -> dict[str, Any] | None:
         pending = ctx.drain_inspect()
@@ -192,7 +200,10 @@ class TraceEmitter:
                 self._emit(
                     "provider.call.end",
                     events.provider_call_end_data(
-                        duration_us, "error", error_type=type(error).__name__
+                        duration_us,
+                        "error",
+                        attempt=self._attempt,
+                        error_type=type(error).__name__,
                     ),
                 )
                 self.note_error("provider", None)
@@ -203,8 +214,10 @@ class TraceEmitter:
                 events.provider_call_end_data(
                     duration_us,
                     "ok",
+                    attempt=self._attempt,
                     model_version=response.model_version or None,
                     usage=response.usage,
+                    cost_usd=response.cost_usd,
                 ),
             )
             return response
@@ -213,3 +226,11 @@ class TraceEmitter:
 
     def _elapsed_ms(self) -> int:
         return (time.perf_counter_ns() - self._t0) // 1_000_000
+
+
+def _metadata_number(metadata: dict[str, Any], *keys: str) -> float | None:
+    for key in keys:
+        value = metadata.get(key)
+        if isinstance(value, (int, float)) and value >= 0:
+            return float(value)
+    return None

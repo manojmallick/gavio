@@ -74,23 +74,13 @@ public final class InterceptorChain {
                     ctx.markFired(interceptor.name());
                 }
 
-                if (emitter != null) {
-                    emitter.providerCallStart(req, 1);
-                }
-                long callStart = System.nanoTime();
                 GavioResponse response;
                 try {
                     origin = "provider";
                     response = executor.execute(req).join();
                     origin = "chain";
                 } catch (Throwable providerError) {
-                    if (emitter != null) {
-                        emitter.providerCallError(System.nanoTime() - callStart, unwrap(providerError));
-                    }
                     throw providerError;
-                }
-                if (emitter != null) {
-                    emitter.providerCallEnd(System.nanoTime() - callStart, response);
                 }
 
                 for (int i = interceptors.size() - 1; i >= 0; i--) {
@@ -123,6 +113,7 @@ public final class InterceptorChain {
             } catch (Throwable error) {
                 Throwable cause = unwrap(error);
                 if (emitter != null) {
+                    emitter.emitGovernance(ctx);
                     emitter.traceError(origin, failedInterceptor, cause);
                     emitter.traceEndError(ctx);
                 }

@@ -23,19 +23,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.9.0</version>
+  <version>0.11.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>0.9.0</version>
+  <version>0.11.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:0.9.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:0.9.0")
+implementation("io.github.manojmallick:gavio-core:0.11.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:0.11.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -127,6 +127,21 @@ Gateway gw = Gateway.builder()
 
 Retry / timeout / fallback implement `ExecutorPolicy` and wrap the provider call
 (first-registered = outermost). See [interceptors.md](../interceptors.md).
+
+Cost Intelligence (v0.11.0) reads scalar labels from request metadata:
+
+```java
+GavioRequest request = GavioRequest.builder()
+    .message("user", "price this")
+    .metadata("costDimensions", Map.of(
+        "tenant", "acme",
+        "feature", "claims",
+        "endpoint", "/chat"))
+    .build();
+```
+
+Those labels can be used with `/api/stats?group_by=tenant` and
+`/api/cost-report?group_by=feature`.
 
 ---
 

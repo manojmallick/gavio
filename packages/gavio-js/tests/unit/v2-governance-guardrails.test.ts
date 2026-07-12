@@ -41,6 +41,24 @@ describe('costControl (F-GOV-02)', () => {
       BudgetExceededError,
     )
   })
+
+  it('falls back to a cheaper model for a scoped budget', async () => {
+    const pricing = new PricingProvider({ mock: [1000, 1000] })
+    const g = gw(
+      'x',
+      pricing,
+      costControl({ hardCapUsd: 0.01, scope: 'tenant', window: 'total', fallbackModel: 'mock-mini' }),
+    )
+    await g.complete({
+      messages: [{ role: 'user', content: 'one' }],
+      metadata: { costDimensions: { tenant: 'acme' } },
+    })
+    const response = await g.complete({
+      messages: [{ role: 'user', content: 'two' }],
+      metadata: { costDimensions: { tenant: 'acme' } },
+    })
+    expect(response.model).toBe('mock-mini')
+  })
 })
 
 describe('rateLimiter (F-GOV-03)', () => {

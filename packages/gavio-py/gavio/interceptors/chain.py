@@ -67,6 +67,8 @@ class InterceptorChain:
             response.interceptors_fired = list(ctx.interceptors_fired)
             return response
         except Exception as error:  # noqa: BLE001 - re-raised after notifying
+            if emitter is not None:
+                emitter.emit_pending_governance(ctx)
             for interceptor in self._interceptors:
                 try:
                     await interceptor.on_error(error, ctx)

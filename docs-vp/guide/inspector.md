@@ -2,6 +2,7 @@
 
 **Added in v0.6.0** · Feature IDs: `F-DX-09` (core) · `F-DX-10` (UI)
 **Extended in v0.7.0** · `F-OBS-10` (agent DAG) · `F-DX-11` (replay) · `F-DX-08` (production dashboard) · `F-DX-12` (test-case export)
+**Extended in v0.11.0** · `F-COST-01/02/04` (cost attribution, reports, scoped budgets)
 
 The Gavio Inspector is an embedded, zero-dependency dev-time visualizer. While
 a request moves through the interceptor chain, the gateway emits span events —
@@ -13,6 +14,9 @@ Since v0.7.0 it also renders **multi-agent call graphs and sessions**, can
 **replay** any captured request, aggregates **RED stats**, **exports traces as
 test cases**, and doubles as a **read-only production dashboard** over a
 persisted audit store.
+
+Since v0.11.0 it also adds **Cost Intelligence**: attribution dimensions,
+spend grouping, retry overhead, cache savings, and scoped budget events.
 
 It is **off by default** — dev mode does *not* enable it implicitly.
 
@@ -92,7 +96,8 @@ is set, all requests require `Authorization: Bearer <token>`.
 | `GET /api/traces/{id}` | one assembled trace: summary + ordered events |
 | `GET /api/dag?root=<id>` or `?session_id=<id>` | agent call graph with subtree cost/latency/status rollups <Badge type="tip" text="v0.7.0" /> |
 | `GET /api/sessions` | sessions with trace counts, errors, agents, cost, duration <Badge type="tip" text="v0.7.0" /> |
-| `GET /api/stats?group_by=&since=` | RED aggregates: rate, error %, latency p50/p95/p99, tokens, cost, cache hit-rate, PII counts <Badge type="tip" text="v0.7.0" /> |
+| `GET /api/stats?group_by=&since=` | RED aggregates: rate, error %, latency p50/p95/p99, tokens, cost, average cost/request, retry count, retry overhead, cache savings, cache hit-rate, PII counts <Badge type="tip" text="v0.11.0" /> |
+| `GET /api/cost-report?group_by=&since=` | Cost Intelligence report with totals, grouped spend, and top spend dimensions <Badge type="tip" text="v0.11.0" /> |
 | `POST /api/replay` | re-fires a captured trace through the live gateway (`full` mode only) <Badge type="tip" text="v0.7.0" /> |
 | `GET /api/simulate-cost?trace_id=&model=` | recosts a trace under a different model <Badge type="tip" text="v0.7.0" /> |
 | `GET /api/traces/{id}/export?format=` | trace as a test case (see below) <Badge type="tip" text="v0.7.0" /> |
@@ -137,6 +142,34 @@ Debug → regression test in one click. Requires `full` or `redacted` mode.
 `GET /api/simulate-cost?trace_id=<id>&model=<model>` recomputes a trace's cost
 from its captured token usage under a different model's pricing — e.g. "this
 call cost $0.0042 on sonnet; haiku would have been $0.0004".
+
+## Cost Attribution <Badge type="tip" text="v0.11.0" />
+
+Requests can carry attribution metadata without adding new constructor fields:
+
+```json
+{
+  "metadata": {
+    "costDimensions": {
+      "tenant": "acme",
+      "feature": "claims",
+      "endpoint": "/chat",
+      "environment": "prod",
+      "workflow": "triage",
+      "tool": "search"
+    }
+  }
+}
+```
+
+Flat aliases are accepted too (`tenant`, `tenantId`, `feature_id`, `user_id`,
+`env`, `route`, etc.). The Inspector copies only scalar labels into
+`trace.start.data.costDimensions`; prompt and response content never enter
+metadata mode.
+
+`/api/stats?group_by=tenant` and `/api/cost-report?group_by=feature` can group
+by `provider`, `model`, `agent_id`, `session_id`, `feature`, `tenant`, `user`,
+`endpoint`, `environment`, `workflow`, `tool`, or `middleware_chain`.
 
 ## Production mode: the read-only dashboard <Badge type="tip" text="v0.7.0" />
 

@@ -7,6 +7,7 @@
  */
 
 import type { InspectorEvent } from './events.js'
+import { COST_DIMENSION_KEYS, type CostDimensions } from './events.js'
 
 /** Roll-up of one trace, fed by trace.start and trace.end events. */
 export interface TraceSummary {
@@ -24,6 +25,19 @@ export interface TraceSummary {
   piiEntityTypes: string[]
   wallTimeUtc: string | null
   interceptorsFired: string[]
+  costDimensions: CostDimensions
+  feature: string | null
+  tenant: string | null
+  user: string | null
+  endpoint: string | null
+  environment: string | null
+  workflow: string | null
+  tool: string | null
+  middlewareChain: string | null
+  providerCallCount: number
+  retryCount: number
+  retryOverheadUsd: number
+  cacheSavingsUsd: number
   /** Token usage from provider.call.end — feeds /api/stats and /api/simulate-cost. */
   usage?: { promptTokens: number; completionTokens: number; totalTokens: number }
   /** Content hashes (audit-store summaries) — searchable via /api/traces?q=. */
@@ -64,8 +78,12 @@ export class TraceBuffer {
     }
     if (event.type === 'trace.start') this.applyStart(record.summary, event.data)
     if (event.type === 'trace.end') this.applyEnd(record.summary, event.data)
+    if (event.type === 'provider.call.start') this.applyProviderCallStart(record.summary, event.data)
     if (event.type === 'provider.call.end' && event.data['usage'] !== undefined) {
       record.summary.usage = event.data['usage'] as TraceSummary['usage']
+    }
+    if (event.type === 'provider.call.end') {
+      this.applyProviderCallEnd(record.summary, event.data)
     }
     if (event.type === 'governance.event' && event.data['kind'] === 'drift') {
       const metric = event.data['metric']
@@ -111,6 +129,11 @@ export class TraceBuffer {
     summary.provider = (data['provider'] as string | undefined) ?? null
     summary.model = (data['model'] as string | undefined) ?? null
     summary.wallTimeUtc = (data['wallTimeUtc'] as string | undefined) ?? null
+    summary.costDimensions = normalizeCostDimensions(data['costDimensions'])
+    for (const key of COST_DIMENSION_KEYS) {
+      ;(summary as unknown as Record<typeof key, string | null>)[key] =
+        summary.costDimensions[key] ?? null
+    }
   }
 
   private applyEnd(summary: TraceSummary, data: Record<string, unknown>): void {
@@ -121,6 +144,23 @@ export class TraceBuffer {
     summary.cacheType = (data['cacheType'] as string | null | undefined) ?? null
     summary.piiEntityTypes = (data['piiEntityTypes'] as string[] | undefined) ?? []
     summary.interceptorsFired = (data['interceptorsFired'] as string[] | undefined) ?? []
+    summary.middlewareChain =
+      summary.interceptorsFired.length > 0 ? summary.interceptorsFired.join('>') : null
+    summary.cacheSavingsUsd = numberValue(data['cacheSavingsUsd']) ?? summary.cacheSavingsUsd
+  }
+
+  private applyProviderCallStart(summary: TraceSummary, data: Record<string, unknown>): void {
+    const attempt = numberValue(data['attempt']) ?? summary.providerCallCount + 1
+    summary.providerCallCount = Math.max(summary.providerCallCount, attempt)
+    summary.retryCount = Math.max(0, summary.providerCallCount - 1)
+  }
+
+  private applyProviderCallEnd(summary: TraceSummary, data: Record<string, unknown>): void {
+    const attempt = numberValue(data['attempt'])
+    const costUsd = numberValue(data['costUsd']) ?? 0
+    if (attempt !== undefined && attempt > 1 && costUsd > 0) {
+      summary.retryOverheadUsd = round8(summary.retryOverheadUsd + costUsd)
+    }
   }
 }
 
@@ -140,5 +180,37 @@ function emptySummary(traceId: string): TraceSummary {
     piiEntityTypes: [],
     wallTimeUtc: null,
     interceptorsFired: [],
+    costDimensions: {},
+    feature: null,
+    tenant: null,
+    user: null,
+    endpoint: null,
+    environment: null,
+    workflow: null,
+    tool: null,
+    middlewareChain: null,
+    providerCallCount: 0,
+    retryCount: 0,
+    retryOverheadUsd: 0,
+    cacheSavingsUsd: 0,
   }
+}
+
+function normalizeCostDimensions(value: unknown): CostDimensions {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return {}
+  const source = value as Record<string, unknown>
+  const out: CostDimensions = {}
+  for (const key of COST_DIMENSION_KEYS) {
+    const v = source[key]
+    if (typeof v === 'string' && v !== '') out[key] = v
+  }
+  return out
+}
+
+function numberValue(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+}
+
+function round8(value: number): number {
+  return Math.round(value * 1e8) / 1e8
 }

@@ -135,6 +135,18 @@ graphs, replay, stats. Full guide: [Inspector](./inspector.md).
 const gw = new Gateway({ devMode: true, inspect: true })
 ```
 
+Cost Intelligence (v0.11.0) reads scalar labels from request metadata:
+
+```typescript
+await gw.complete({
+  messages: [{ role: 'user', content: 'price this' }],
+  metadata: { costDimensions: { tenant: 'acme', feature: 'claims', endpoint: '/chat' } },
+})
+```
+
+Those labels can be used with `/api/stats?group_by=tenant` and
+`/api/cost-report?group_by=feature`.
+
 ## Embeddings
 
 `gw.embed({ texts })` (`F-SEC-10`, since v0.9.0) runs embedding inputs through

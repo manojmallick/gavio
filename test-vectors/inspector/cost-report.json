@@ -1,0 +1,139 @@
+{
+  "cases": [
+    {
+      "id": "cost-report-groups-by-tenant",
+      "groupBy": "tenant",
+      "summaries": [
+        {
+          "traceId": "t-claims-1",
+          "provider": "openai",
+          "model": "gpt-4o",
+          "agentId": "claims-agent",
+          "sessionId": "s-acme",
+          "status": "ok",
+          "latencyMs": 120,
+          "costUsd": 0.012,
+          "cacheHit": false,
+          "wallTimeUtc": "2026-07-12T10:00:00Z",
+          "usage": { "promptTokens": 100, "completionTokens": 50, "totalTokens": 150 },
+          "costDimensions": {
+            "feature": "claims",
+            "tenant": "acme",
+            "user": "u-1",
+            "endpoint": "/chat",
+            "environment": "prod",
+            "workflow": "triage",
+            "tool": "search"
+          },
+          "feature": "claims",
+          "tenant": "acme",
+          "user": "u-1",
+          "endpoint": "/chat",
+          "environment": "prod",
+          "workflow": "triage",
+          "tool": "search",
+          "middlewareChain": "cost_control>retry",
+          "providerCallCount": 2,
+          "retryCount": 1,
+          "retryOverheadUsd": 0.004,
+          "cacheSavingsUsd": 0
+        },
+        {
+          "traceId": "t-claims-2",
+          "provider": "openai",
+          "model": "gpt-4o-mini",
+          "agentId": "claims-agent",
+          "sessionId": "s-acme",
+          "status": "ok",
+          "latencyMs": 30,
+          "costUsd": 0,
+          "cacheHit": true,
+          "wallTimeUtc": "2026-07-12T10:02:00Z",
+          "usage": { "promptTokens": 50, "completionTokens": 20, "totalTokens": 70 },
+          "costDimensions": {
+            "feature": "claims",
+            "tenant": "acme",
+            "user": "u-2",
+            "endpoint": "/chat",
+            "environment": "prod",
+            "workflow": "triage",
+            "tool": "cache"
+          },
+          "feature": "claims",
+          "tenant": "acme",
+          "user": "u-2",
+          "endpoint": "/chat",
+          "environment": "prod",
+          "workflow": "triage",
+          "tool": "cache",
+          "middlewareChain": "semantic_cache",
+          "providerCallCount": 0,
+          "retryCount": 0,
+          "retryOverheadUsd": 0,
+          "cacheSavingsUsd": 0.003
+        },
+        {
+          "traceId": "t-support-1",
+          "provider": "anthropic",
+          "model": "claude-sonnet",
+          "agentId": "support-agent",
+          "sessionId": "s-beta",
+          "status": "error",
+          "latencyMs": 220,
+          "costUsd": 0.006,
+          "cacheHit": false,
+          "wallTimeUtc": "2026-07-12T11:00:00Z",
+          "usage": { "promptTokens": 30, "completionTokens": 20, "totalTokens": 50 },
+          "costDimensions": {
+            "feature": "support",
+            "tenant": "beta",
+            "user": "u-3",
+            "endpoint": "/assist",
+            "environment": "prod",
+            "workflow": "answer",
+            "tool": "kb"
+          },
+          "feature": "support",
+          "tenant": "beta",
+          "user": "u-3",
+          "endpoint": "/assist",
+          "environment": "prod",
+          "workflow": "answer",
+          "tool": "kb",
+          "middlewareChain": "cost_control",
+          "providerCallCount": 1,
+          "retryCount": 0,
+          "retryOverheadUsd": 0,
+          "cacheSavingsUsd": 0
+        }
+      ],
+      "expected": {
+        "total": {
+          "requests": 3,
+          "errors": 1,
+          "tokens": { "prompt": 180, "completion": 90, "total": 270 },
+          "costUsd": 0.018,
+          "averageCostUsd": 0.006,
+          "cacheHits": 1,
+          "retryCount": 1,
+          "retryOverheadUsd": 0.004,
+          "cacheSavingsUsd": 0.003
+        },
+        "groups": {
+          "acme": { "requests": 2, "costUsd": 0.012, "cacheHits": 1 },
+          "beta": { "requests": 1, "costUsd": 0.006, "errors": 1 }
+        },
+        "topSpend": {
+          "tenant": [
+            { "key": "acme", "requests": 2, "costUsd": 0.012 },
+            { "key": "beta", "requests": 1, "costUsd": 0.006 }
+          ],
+          "feature": [
+            { "key": "claims", "requests": 2, "costUsd": 0.012 },
+            { "key": "support", "requests": 1, "costUsd": 0.006 }
+          ]
+        }
+      }
+    }
+  ]
+}

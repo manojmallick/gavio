@@ -33,6 +33,15 @@ public final class InspectorAnalytics {
         GROUP_BY_FIELDS.put("provider", "provider");
         GROUP_BY_FIELDS.put("model", "model");
         GROUP_BY_FIELDS.put("agent_id", "agentId");
+        GROUP_BY_FIELDS.put("session_id", "sessionId");
+        GROUP_BY_FIELDS.put("feature", "feature");
+        GROUP_BY_FIELDS.put("tenant", "tenant");
+        GROUP_BY_FIELDS.put("user", "user");
+        GROUP_BY_FIELDS.put("endpoint", "endpoint");
+        GROUP_BY_FIELDS.put("environment", "environment");
+        GROUP_BY_FIELDS.put("workflow", "workflow");
+        GROUP_BY_FIELDS.put("tool", "tool");
+        GROUP_BY_FIELDS.put("middleware_chain", "middlewareChain");
     }
 
     private InspectorAnalytics() {
@@ -200,7 +209,7 @@ public final class InspectorAnalytics {
             List<Map<String, Object>> summaries, String groupBy, String since) {
         if (groupBy != null && !GROUP_BY_FIELDS.containsKey(groupBy)) {
             throw new IllegalArgumentException(
-                    "group_by must be one of ['agent_id', 'model', 'provider']");
+                    "group_by must be one of " + GROUP_BY_FIELDS.keySet());
         }
         List<Map<String, Object>> filtered = summaries;
         if (since != null) {
@@ -220,7 +229,43 @@ public final class InspectorAnalytics {
             String field = GROUP_BY_FIELDS.get(groupBy);
             Map<String, List<Map<String, Object>>> groups = new LinkedHashMap<>();
             for (Map<String, Object> s : filtered) {
-                groups.computeIfAbsent(String.valueOf(s.get(field)), k -> new ArrayList<>()).add(s);
+                groups.computeIfAbsent(groupKey(s, groupBy), k -> new ArrayList<>()).add(s);
+            }
+            Map<String, Object> aggregated = new LinkedHashMap<>();
+            for (Map.Entry<String, List<Map<String, Object>>> e : groups.entrySet()) {
+                aggregated.put(e.getKey(), aggregate(e.getValue()));
+            }
+            out.put("groups", aggregated);
+        }
+        return out;
+    }
+
+    /** Cost intelligence rollup: spend, retries, cache savings and top dimensions. */
+    public static Map<String, Object> buildCostReport(
+            List<Map<String, Object>> summaries, String groupBy, String since) {
+        if (groupBy != null && !GROUP_BY_FIELDS.containsKey(groupBy)) {
+            throw new IllegalArgumentException(
+                    "group_by must be one of " + GROUP_BY_FIELDS.keySet());
+        }
+        List<Map<String, Object>> filtered = summaries;
+        if (since != null) {
+            OffsetDateTime sinceAt = parseIso(since);
+            filtered = new ArrayList<>();
+            for (Map<String, Object> s : summaries) {
+                if (s.get("wallTimeUtc") instanceof String wall
+                        && !parseIso(wall).isBefore(sinceAt)) {
+                    filtered.add(s);
+                }
+            }
+        }
+
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("total", aggregate(filtered));
+        out.put("topSpend", topSpend(filtered));
+        if (groupBy != null) {
+            Map<String, List<Map<String, Object>>> groups = new LinkedHashMap<>();
+            for (Map<String, Object> s : filtered) {
+                groups.computeIfAbsent(groupKey(s, groupBy), k -> new ArrayList<>()).add(s);
             }
             Map<String, Object> aggregated = new LinkedHashMap<>();
             for (Map.Entry<String, List<Map<String, Object>>> e : groups.entrySet()) {
@@ -238,6 +283,9 @@ public final class InspectorAnalytics {
         long prompt = 0;
         long completion = 0;
         double costUsd = 0.0;
+        long retryCount = 0;
+        double retryOverheadUsd = 0.0;
+        double cacheSavingsUsd = 0.0;
         Map<String, Long> pii = new LinkedHashMap<>();
         Map<String, Long> drift = new LinkedHashMap<>();
         for (Map<String, Object> s : summaries) {
@@ -265,6 +313,9 @@ public final class InspectorAnalytics {
                 }
             }
             costUsd += asDouble(s.get("costUsd"));
+            retryCount += asLong(s.get("retryCount"));
+            retryOverheadUsd += asDouble(s.get("retryOverheadUsd"));
+            cacheSavingsUsd += asDouble(s.get("cacheSavingsUsd"));
         }
         latencies.sort(Comparator.naturalOrder());
         int n = summaries.size();
@@ -286,11 +337,56 @@ public final class InspectorAnalytics {
         out.put("latencyMs", latencyMs);
         out.put("tokens", tokens);
         out.put("costUsd", round8(costUsd));
+        out.put("averageCostUsd", n == 0 ? 0.0 : round8(costUsd / n));
         out.put("cacheHits", cacheHits);
         out.put("cacheHitRate", n == 0 ? 0.0 : round4(cacheHits / (double) n));
+        out.put("retryCount", retryCount);
+        out.put("retryOverheadUsd", round8(retryOverheadUsd));
+        out.put("cacheSavingsUsd", round8(cacheSavingsUsd));
         out.put("piiDetections", pii);
         out.put("driftAlerts", drift);
         return out;
+    }
+
+    private static Map<String, Object> topSpend(List<Map<String, Object>> summaries) {
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (String dimension : GROUP_BY_FIELDS.keySet()) {
+            Map<String, Map<String, Object>> groups = new LinkedHashMap<>();
+            for (Map<String, Object> s : summaries) {
+                String key = groupKey(s, dimension);
+                Map<String, Object> entry = groups.computeIfAbsent(key, k -> {
+                    Map<String, Object> e = new LinkedHashMap<>();
+                    e.put("key", k);
+                    e.put("requests", 0L);
+                    e.put("costUsd", 0.0);
+                    return e;
+                });
+                entry.put("requests", asLong(entry.get("requests")) + 1L);
+                entry.put("costUsd", round8(asDouble(entry.get("costUsd")) + asDouble(s.get("costUsd"))));
+            }
+            List<Map<String, Object>> ranked = new ArrayList<>(groups.values());
+            ranked.sort((a, b) -> {
+                int byCost = Double.compare(asDouble(b.get("costUsd")), asDouble(a.get("costUsd")));
+                if (byCost != 0) {
+                    return byCost;
+                }
+                int byRequests = Long.compare(asLong(b.get("requests")), asLong(a.get("requests")));
+                if (byRequests != 0) {
+                    return byRequests;
+                }
+                return String.valueOf(a.get("key")).compareTo(String.valueOf(b.get("key")));
+            });
+            out.put(dimension, ranked.subList(0, Math.min(5, ranked.size())));
+        }
+        return out;
+    }
+
+    private static String groupKey(Map<String, Object> summary, String groupBy) {
+        Object value = summary.get(GROUP_BY_FIELDS.get(groupBy));
+        if (value == null || "".equals(value)) {
+            return "unknown";
+        }
+        return String.valueOf(value);
     }
 
     /** Nearest-rank percentile over an ascending list; null when empty. */

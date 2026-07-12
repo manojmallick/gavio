@@ -13,6 +13,7 @@ import type { InterceptorContext } from '../context.js'
 import type { InspectorBus } from './bus.js'
 import type { InspectorMode } from './config.js'
 import {
+  costDimensionsFromMetadata,
   interceptorEndData,
   interceptorEndDataWithDiff,
   interceptorStartData,
@@ -36,6 +37,7 @@ export class TraceEmitter {
   readonly traceId: string
   private readonly t0 = process.hrtime.bigint()
   private seq = 0
+  private providerAttempt = 0
 
   constructor(bus: InspectorBus, mode: InspectorMode, traceId: string) {
     this.bus = bus
@@ -57,6 +59,7 @@ export class TraceEmitter {
       model: request.model,
       wallTimeUtc: new Date().toISOString(),
       mode: this.mode,
+      costDimensions: costDimensionsFromMetadata(request.metadata),
     }
     if (this.mode === 'metadata') {
       this.emit('trace.start', traceStartData(meta))
@@ -106,17 +109,20 @@ export class TraceEmitter {
   }
 
   providerCallStart(provider: string, model: string): void {
-    this.emit('provider.call.start', providerCallStartData(provider, model, 1))
+    this.providerAttempt += 1
+    this.emit('provider.call.start', providerCallStartData(provider, model, this.providerAttempt))
   }
 
   providerCallEndOk(startedAt: bigint, response: GavioResponse): void {
     this.emit(
       'provider.call.end',
       providerCallEndData({
+        attempt: this.providerAttempt,
         durationUs: this.usSince(startedAt),
         status: 'ok',
         modelVersion: response.modelVersion,
         usage: response.usage.toJSON(),
+        costUsd: response.costUsd,
       }),
     )
   }
@@ -125,6 +131,7 @@ export class TraceEmitter {
     this.emit(
       'provider.call.end',
       providerCallEndData({
+        attempt: this.providerAttempt,
         durationUs: this.usSince(startedAt),
         status: 'error',
         errorType: errorTypeName(error),
@@ -153,6 +160,7 @@ export class TraceEmitter {
       status: 'ok',
       latencyMs,
       costUsd: response.costUsd,
+      cacheSavingsUsd: numberFromMetadata(response.metadata, 'cacheSavingsUsd', 'cache_savings_usd'),
       cacheHit: response.cacheHit || ctx.cacheHit,
       cacheType: response.cacheType ?? ctx.cacheType,
       interceptorsFired: ctx.interceptorsFired,
@@ -186,6 +194,17 @@ export class TraceEmitter {
   private usSince(startedAt: bigint): number {
     return Math.max(0, Number((process.hrtime.bigint() - startedAt) / 1000n))
   }
+}
+
+export function numberFromMetadata(
+  metadata: Record<string, unknown>,
+  ...keys: string[]
+): number | undefined {
+  for (const key of keys) {
+    const value = metadata[key]
+    if (typeof value === 'number' && Number.isFinite(value) && value >= 0) return value
+  }
+  return undefined
 }
 
 function errorTypeName(error: unknown): string {

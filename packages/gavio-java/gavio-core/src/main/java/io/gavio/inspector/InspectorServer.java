@@ -31,7 +31,8 @@ import java.util.logging.Logger;
  * <p>Endpoints: {@code /} (vendored UI), {@code /api/health},
  * {@code /api/pipeline}, {@code /api/traces}, {@code /api/traces/{id}},
  * {@code /api/traces/{id}/export}, {@code /api/dag}, {@code /api/sessions},
- * {@code /api/stats}, {@code /api/simulate-cost}, {@code /api/chain/verify},
+ * {@code /api/stats}, {@code /api/cost-report}, {@code /api/simulate-cost},
+ * {@code /api/chain/verify},
  * {@code POST /api/replay} and {@code /api/stream} (SSE). Every response
  * carries the {@code X-Gavio-Inspector-Mode} header; with an auth token
  * configured, all requests must send {@code Authorization: Bearer <token>}.
@@ -108,6 +109,7 @@ public final class InspectorServer {
                 case "/api/sessions" -> sendJson(exchange, 200,
                         Map.of("sessions", InspectorAnalytics.buildSessions(buffer.summaries(0))));
                 case "/api/stats" -> handleStats(exchange);
+                case "/api/cost-report" -> handleCostReport(exchange);
                 case "/api/simulate-cost" -> handleSimulateCost(exchange);
                 case "/api/chain/verify" -> handleChainVerify(exchange);
                 case "/api/replay" -> handleReplay(exchange);
@@ -252,6 +254,19 @@ public final class InspectorServer {
             return;
         }
         sendJson(exchange, 200, stats);
+    }
+
+    private void handleCostReport(HttpExchange exchange) throws IOException {
+        String query = exchange.getRequestURI().getQuery();
+        Map<String, Object> report;
+        try {
+            report = InspectorAnalytics.buildCostReport(
+                    buffer.summaries(0), queryParam(query, "group_by"), queryParam(query, "since"));
+        } catch (IllegalArgumentException error) {
+            sendJson(exchange, 400, Map.of("error", String.valueOf(error.getMessage())));
+            return;
+        }
+        sendJson(exchange, 200, report);
     }
 
     private void handleSimulateCost(HttpExchange exchange) throws IOException {

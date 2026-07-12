@@ -10,6 +10,15 @@ const GROUP_BY_FIELDS = {
   provider: 'provider',
   model: 'model',
   agent_id: 'agentId',
+  session_id: 'sessionId',
+  feature: 'feature',
+  tenant: 'tenant',
+  user: 'user',
+  endpoint: 'endpoint',
+  environment: 'environment',
+  workflow: 'workflow',
+  tool: 'tool',
+  middleware_chain: 'middlewareChain',
 } as const
 
 type GroupBy = keyof typeof GROUP_BY_FIELDS
@@ -40,6 +49,19 @@ export interface SummaryLike {
   wallTimeUtc?: string | null
   piiEntityTypes?: string[] | null
   interceptorsFired?: string[] | null
+  costDimensions?: Record<string, string> | null
+  feature?: string | null
+  tenant?: string | null
+  user?: string | null
+  endpoint?: string | null
+  environment?: string | null
+  workflow?: string | null
+  tool?: string | null
+  middlewareChain?: string | null
+  providerCallCount?: number | null
+  retryCount?: number | null
+  retryOverheadUsd?: number | null
+  cacheSavingsUsd?: number | null
   usage?: UsageJson | null
   promptHash?: string | null
   responseHash?: string | null
@@ -91,8 +113,12 @@ export interface StatsAggregate {
   latencyMs: { p50: number | null; p95: number | null; p99: number | null }
   tokens: { prompt: number; completion: number; total: number }
   costUsd: number
+  averageCostUsd: number
   cacheHits: number
   cacheHitRate: number
+  retryCount: number
+  retryOverheadUsd: number
+  cacheSavingsUsd: number
   piiDetections: Record<string, number>
   driftAlerts: Record<string, number>
 }
@@ -101,6 +127,14 @@ export interface Stats {
   total: StatsAggregate
   groups?: Record<string, StatsAggregate>
 }
+
+export interface CostReport {
+  total: StatsAggregate
+  groups?: Record<string, StatsAggregate>
+  topSpend: Record<string, Array<{ key: string; requests: number; costUsd: number }>>
+}
+
+const GROUP_BY_MESSAGE = `group_by must be one of ${JSON.stringify(Object.keys(GROUP_BY_FIELDS).sort())}`
 
 function round(value: number, decimals: number): number {
   const factor = 10 ** decimals
@@ -243,25 +277,13 @@ export function buildStats(
   groupBy?: string,
   since?: string,
 ): Stats {
-  if (groupBy !== undefined && !(groupBy in GROUP_BY_FIELDS)) {
-    throw new Error("group_by must be one of ['agent_id', 'model', 'provider']")
-  }
-  if (since !== undefined) {
-    const sinceMs = Date.parse(since)
-    if (Number.isNaN(sinceMs)) {
-      throw new Error(`invalid since timestamp: ${JSON.stringify(since)}`)
-    }
-    summaries = summaries.filter(
-      (s) => s.wallTimeUtc != null && Date.parse(s.wallTimeUtc) >= sinceMs,
-    )
-  }
+  summaries = filterAndValidate(summaries, groupBy, since)
 
   const out: Stats = { total: aggregate(summaries) }
   if (groupBy !== undefined) {
-    const field = GROUP_BY_FIELDS[groupBy as GroupBy]
     const groups = new Map<string, SummaryLike[]>()
     for (const s of summaries) {
-      const key = String(s[field])
+      const key = groupKey(s, groupBy as GroupBy)
       const members = groups.get(key)
       if (members === undefined) groups.set(key, [s])
       else members.push(s)
@@ -270,6 +292,53 @@ export function buildStats(
     for (const [key, members] of groups) out.groups[key] = aggregate(members)
   }
   return out
+}
+
+export function buildCostReport(
+  summaries: SummaryLike[],
+  groupBy?: string,
+  since?: string,
+): CostReport {
+  summaries = filterAndValidate(summaries, groupBy, since)
+
+  const out: CostReport = { total: aggregate(summaries), topSpend: topSpend(summaries) }
+  if (groupBy !== undefined) {
+    const groups = new Map<string, SummaryLike[]>()
+    for (const s of summaries) {
+      const key = groupKey(s, groupBy as GroupBy)
+      const members = groups.get(key)
+      if (members === undefined) groups.set(key, [s])
+      else members.push(s)
+    }
+    out.groups = {}
+    for (const [key, members] of groups) out.groups[key] = aggregate(members)
+  }
+  return out
+}
+
+function filterAndValidate(
+  summaries: SummaryLike[],
+  groupBy?: string,
+  since?: string,
+): SummaryLike[] {
+  if (groupBy !== undefined && !(groupBy in GROUP_BY_FIELDS)) {
+    throw new Error(GROUP_BY_MESSAGE)
+  }
+  if (since === undefined) return summaries
+  const sinceMs = Date.parse(since)
+  if (Number.isNaN(sinceMs)) {
+    throw new Error(`invalid since timestamp: ${JSON.stringify(since)}`)
+  }
+  return summaries.filter(
+    (s) => s.wallTimeUtc != null && Date.parse(s.wallTimeUtc) >= sinceMs,
+  )
+}
+
+function groupKey(s: SummaryLike, groupBy: GroupBy): string {
+  const field = GROUP_BY_FIELDS[groupBy]
+  const value = s[field]
+  if (value === undefined || value === null || value === '') return 'unknown'
+  return String(value)
 }
 
 function aggregate(summaries: SummaryLike[]): StatsAggregate {
@@ -298,6 +367,10 @@ function aggregate(summaries: SummaryLike[]): StatsAggregate {
     }
   }
   const n = summaries.length
+  const costUsd = round(
+    summaries.reduce((sum, s) => sum + (s.costUsd ?? 0), 0),
+    8,
+  )
   return {
     requests: n,
     errors,
@@ -308,15 +381,56 @@ function aggregate(summaries: SummaryLike[]): StatsAggregate {
       p99: percentile(latencies, 99),
     },
     tokens: { prompt, completion, total: prompt + completion },
-    costUsd: round(
-      summaries.reduce((sum, s) => sum + (s.costUsd ?? 0), 0),
-      8,
-    ),
+    costUsd,
+    averageCostUsd: n > 0 ? round(costUsd / n, 8) : 0,
     cacheHits,
     cacheHitRate: n > 0 ? round(cacheHits / n, 4) : 0,
+    retryCount: summaries.reduce((sum, s) => sum + (s.retryCount ?? 0), 0),
+    retryOverheadUsd: round(
+      summaries.reduce((sum, s) => sum + (s.retryOverheadUsd ?? 0), 0),
+      8,
+    ),
+    cacheSavingsUsd: round(
+      summaries.reduce((sum, s) => sum + (s.cacheSavingsUsd ?? 0), 0),
+      8,
+    ),
     piiDetections: pii,
     driftAlerts: drift,
   }
+}
+
+function topSpend(
+  summaries: SummaryLike[],
+): Record<string, Array<{ key: string; requests: number; costUsd: number }>> {
+  const dimensions: GroupBy[] = [
+    'provider',
+    'model',
+    'agent_id',
+    'session_id',
+    'feature',
+    'tenant',
+    'user',
+    'endpoint',
+    'environment',
+    'workflow',
+    'tool',
+    'middleware_chain',
+  ]
+  const out: Record<string, Array<{ key: string; requests: number; costUsd: number }>> = {}
+  for (const dimension of dimensions) {
+    const groups = new Map<string, { key: string; requests: number; costUsd: number }>()
+    for (const s of summaries) {
+      const key = groupKey(s, dimension)
+      const entry = groups.get(key) ?? { key, requests: 0, costUsd: 0 }
+      entry.requests += 1
+      entry.costUsd = round(entry.costUsd + (s.costUsd ?? 0), 8)
+      groups.set(key, entry)
+    }
+    out[dimension] = [...groups.values()]
+      .sort((a, b) => b.costUsd - a.costUsd || b.requests - a.requests || a.key.localeCompare(b.key))
+      .slice(0, 5)
+  }
+  return out
 }
 
 /** Nearest-rank percentile over an ascending list; null when empty. */
