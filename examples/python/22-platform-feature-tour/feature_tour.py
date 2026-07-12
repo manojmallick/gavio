@@ -1,6 +1,6 @@
 """Gavio platform feature tour.
 
-This is a compact, offline project that wires the major v2.0.0 surfaces into a
+This is a compact, offline project that wires the major v2.x surfaces into a
 single workflow. It is intentionally metadata-first: outputs include hashes,
 scores, labels, event counts, and readiness facts rather than raw prompts or
 responses.
@@ -280,7 +280,7 @@ def build_trust_and_platform(
     trust = build_production_trust_bundle(
         bundle_id="trust-platform-tour-2026-07-12",
         generated_at="2026-07-12T12:00:00Z",
-        release={"version": "2.0.0", "tag": "v2.0.0", "commit": "3c9685a"},
+        release={"version": "2.1.0", "tag": "v2.1.0", "commit": "084d2fb"},
         runtime={
             "environment": "dev",
             "policySource": "project:prod-support",
@@ -320,7 +320,7 @@ def build_trust_and_platform(
     profile = build_platform_runtime_profile(
         profile_id="platform-feature-tour",
         generated_at="2026-07-12T12:00:00Z",
-        sdk={"name": "gavio", "version": "2.0.0"},
+        sdk={"name": "gavio", "version": "2.1.0"},
         runtime={
             "environment": "dev",
             "provider": "mock",

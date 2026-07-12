@@ -20,7 +20,7 @@ implemented per SDK, so you can compare the APIs side by side.
 | 15 | **Ecosystem integrations** — compatibility matrix, metadata labels, full-stack runtime/export/eval/audit smoke | [py](./integrations/) | — | — | no |
 | 20 | **Platform Runtime Profile** — metadata-only production readiness profile and deterministic gaps | [py](./python/20-platform-runtime/) | — | — | no |
 | 21 | **Eval CI Gate** — `gavio eval run`, YAML/JSON suites, baseline comparison, JSON/JUnit reports | [py](./python/21-eval-ci-gate/) | — | — | no |
-| 22 | **Platform Feature Tour** — all major v2.0.0 surfaces in one offline project | [py](./python/22-platform-feature-tour/) | — | — | no |
+| 22 | **Platform Feature Tour** — all major v2.x surfaces in one offline project | [py](./python/22-platform-feature-tour/) | — | — | no |
 
 Only example 02 needs a key — it uses a real provider if `ANTHROPIC_API_KEY` or
 `OPENAI_API_KEY` is set, and otherwise falls back to the mock provider so it
@@ -29,7 +29,7 @@ always runs. Everything else runs in dev mode with **no API key**.
 ## Feature coverage
 
 Use `22-platform-feature-tour` when you want one offline project that touches
-the major v2.0.0 runtime surfaces. Use the focused examples when you want the
+the major v2.x runtime surfaces. Use the focused examples when you want the
 smallest runnable project for one feature family.
 
 | Feature group | Focused example | Umbrella example |
@@ -67,7 +67,6 @@ cd examples/java/01-quickstart
 mvn -q compile exec:java
 ```
 
-Most language-specific package examples target the `2.0.0` package line. The
-`21-eval-ci-gate` example targets the `2.1.0` Python eval runner. The
-integration catalog examples run from this repository branch and from the 2.0
+Most language-specific package examples target the `2.1.0` package line. The
+integration catalog examples run from this repository branch and from the 2.1
 package line once released.

@@ -36,6 +36,6 @@ Start here, then dive into the language you use.
 - [Platform runtime profile schema](../spec/PlatformRuntimeProfile.schema.json) — metadata-only readiness profile contract
 - [OTel mapping](./otel-mapping.md) — InspectorEvent → OpenTelemetry spans · [Grafana dashboard](./grafana/gavio-dashboard.json)
 - [CHANGELOG](../CHANGELOG.md) — release history + feature IDs
-- [Examples](../examples/) — runnable focused projects, eval CI gates, and the v2.0.0 platform feature tour
+- [Examples](../examples/) — runnable focused projects, eval CI gates, and the v2.x platform feature tour
 - [RELEASING](../RELEASING.md) — how releases are cut
 - [CONTRIBUTING](../CONTRIBUTING.md) — contribution guide

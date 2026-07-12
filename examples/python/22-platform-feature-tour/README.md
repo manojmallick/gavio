@@ -1,6 +1,6 @@
 # 22 - Platform Feature Tour
 
-An offline, end-to-end project that exercises the current v2.0.0 platform
+An offline, end-to-end project that exercises the current v2.x platform
 surface in one place. It is meant as the "show me how the pieces fit together"
 example for teams evaluating Gavio beyond a quickstart.
 
