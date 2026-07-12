@@ -21,6 +21,23 @@ def _template() -> dict:
     }
 
 
+def _workflow_template() -> dict:
+    template = _template()
+    template["version"] = "1.1.0"
+    template["metadata"] = {
+        "promptEvalLinks": [
+            {
+                "suiteId": "support-ci",
+                "baselineScore": 1.0,
+                "failUnder": 0.95,
+                "maxRegression": 0.05,
+                "metadata": {"output": "raw metadata output"},
+            }
+        ]
+    }
+    return template
+
+
 def _suite(output: str = "Avery refund approved") -> dict:
     return {
         "id": "support-ci",
@@ -35,6 +52,33 @@ def _suite(output: str = "Avery refund approved") -> dict:
                     {"type": "contains", "value": "refund"},
                     {"type": "not_contains", "value": "card number"},
                 ],
+            }
+        ],
+    }
+
+
+def _workflow_suite() -> dict:
+    return {
+        "id": "support-ci",
+        "templates": [_workflow_template()],
+        "cases": [
+            {
+                "id": "refund-leak",
+                "templateId": "support.reply",
+                "templateVersion": "1.1.0",
+                "variables": {"customer": "Avery", "topic": "refund"},
+                "mockOutput": "Avery, send your card number for refund.",
+                "assertions": [
+                    {"type": "contains", "value": "refund"},
+                    {"type": "not_contains", "value": "card number"},
+                ],
+                "triage": {
+                    "category": "safety",
+                    "severity": "high",
+                    "owner": "support-quality",
+                    "action": "revise_prompt",
+                    "metadata": {"output": "Avery, send your card number for refund."},
+                },
             }
         ],
     }
@@ -78,6 +122,44 @@ def test_eval_run_cli_writes_json_and_junit_reports(
     assert junit.tag == "testsuite"
     assert junit.attrib["tests"] == "1"
     assert junit.attrib["failures"] == "0"
+
+
+def test_eval_run_cli_reports_prompt_workflow_and_triage(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    suite = tmp_path / "suite.json"
+    suite.write_text(json.dumps(_workflow_suite()), encoding="utf-8")
+    report_path = tmp_path / "eval-report.json"
+    junit_path = tmp_path / "eval-junit.xml"
+
+    rc = cli_main([
+        "eval",
+        "run",
+        str(suite),
+        "--report",
+        str(report_path),
+        "--junit",
+        str(junit_path),
+        "--summary",
+    ])
+
+    summary = json.loads(capsys.readouterr().out)
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert rc == 1
+    assert summary["workflow"]["passed"] is False
+    assert summary["workflow"]["gates"][0]["failedCases"] == ["refund-leak"]
+    assert report["cases"][0]["triage"]["category"] == "safety"
+    assert "outputHash" in report["cases"][0]["triage"]["metadata"]
+    assert "output" not in report["cases"][0]["triage"]["metadata"]
+    serialized = json.dumps(report)
+    assert "Avery, send your card number for refund." not in serialized
+    assert "raw metadata output" not in serialized
+
+    junit_text = junit_path.read_text(encoding="utf-8")
+    assert "gavio.workflow.passed" in junit_text
+    assert "gavio.prompt.gate" in junit_text
+    assert "gavio.triage.category" in junit_text
+    assert "Avery, send your card number for refund." not in junit_text
 
 
 def test_eval_run_cli_returns_nonzero_for_threshold_failure(

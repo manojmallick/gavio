@@ -11,7 +11,12 @@ import json
 from typing import Any
 
 from gavio import EvalSuite, PromptRegistry, PromptTemplate, RenderedPrompt
-from gavio.prompts import EvalReport
+from gavio.prompts import (
+    EvalReport,
+    build_prompt_release_bundle,
+    evaluate_prompt_workflow,
+    prompt_eval_links_from_manifest,
+)
 
 BASELINE_VERSION = "2026-07-01"
 CANDIDATE_VERSION = "2026-07-12-rc1"
@@ -82,6 +87,14 @@ def build_registry() -> PromptRegistry:
                 "status": "release_candidate",
                 "approvedBy": "security-review",
                 "change": "adds explicit secret-handling and escalation guidance",
+                "promptEvalLinks": [
+                    {
+                        "suiteId": "support-release-gate",
+                        "baselineScore": 0.66666667,
+                        "failUnder": FAIL_UNDER,
+                        "maxRegression": MAX_ALLOWED_REGRESSION,
+                    }
+                ],
             },
         ),
     ])
@@ -106,6 +119,12 @@ def build_suite(template_version: str) -> EvalSuite:
                     {"type": "not_contains", "value": "card number"},
                 ],
                 "metadata": {"risk": "payment-data-request"},
+                "triage": {
+                    "category": "safety",
+                    "severity": "high",
+                    "owner": "support-quality",
+                    "action": "revise_prompt",
+                },
             },
             {
                 "id": "account-safe",
@@ -122,6 +141,12 @@ def build_suite(template_version: str) -> EvalSuite:
                     {"type": "not_contains", "value": "temporary password"},
                 ],
                 "metadata": {"risk": "credential-request"},
+                "triage": {
+                    "category": "safety",
+                    "severity": "high",
+                    "owner": "support-quality",
+                    "action": "revise_prompt",
+                },
             },
         ],
     })
@@ -165,7 +190,7 @@ def changed_message_count(registry: PromptRegistry) -> int:
     candidate = registry.get("support.reply", CANDIDATE_VERSION)
     return sum(
         1
-        for before, after in zip(baseline.messages, candidate.messages, strict=True)
+        for before, after in zip(baseline.messages, candidate.messages)
         if before != after
     )
 
@@ -174,15 +199,36 @@ async def main() -> None:
     registry = build_registry()
     baseline_report = await build_suite(BASELINE_VERSION).run(registry, complete)
     candidate_report = await build_suite(CANDIDATE_VERSION).run(registry, complete)
+    manifest = registry.to_manifest(registry_id="support-prompts")
+    workflow = evaluate_prompt_workflow(
+        candidate_report,
+        prompt_eval_links_from_manifest(manifest),
+    )
+    bundle = build_prompt_release_bundle(
+        manifest=manifest,
+        prompt_id="support.reply",
+        prompt_version=CANDIDATE_VERSION,
+        from_version=BASELINE_VERSION,
+        reports=[candidate_report],
+        generated_at="2026-07-12T12:00:00Z",
+    )
 
     regression = round(candidate_report.score - baseline_report.score, 8)
     gate_passed = (
         candidate_report.score >= FAIL_UNDER
         and regression >= -MAX_ALLOWED_REGRESSION
         and candidate_report.failed_cases == 0
+        and workflow.passed
     )
 
-    serialized_candidate = json.dumps(candidate_report.to_dict(), sort_keys=True)
+    serialized_candidate = json.dumps(
+        {
+            "report": candidate_report.to_dict(),
+            "workflow": workflow.to_dict(),
+            "bundle": bundle.to_dict(),
+        },
+        sort_keys=True,
+    )
     raw_output_stored = any(
         output in serialized_candidate
         for output in [*BASELINE_OUTPUTS.values(), *CANDIDATE_OUTPUTS.values()]
@@ -205,6 +251,15 @@ async def main() -> None:
             "candidateScore": candidate_report.score,
             "scoreDelta": regression,
             "passed": gate_passed,
+        },
+        "workflow": workflow.to_dict(),
+        "releaseBundle": {
+            "id": bundle.bundle_id,
+            "passed": bundle.passed,
+            "prompt": bundle.to_dict()["prompt"],
+            "gateCount": len(bundle.gates),
+            "hasPromptDiff": bundle.prompt_diff is not None
+            and bundle.prompt_diff.has_changes,
         },
         "privacy": {
             "rawOutputStored": raw_output_stored,

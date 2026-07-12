@@ -19,7 +19,7 @@ implemented per SDK, so you can compare the APIs side by side.
 | 14 | **Production Trust Package** — metadata-only release evidence bundle and verifier | [py](./python/14-production-trust/) | [js](./javascript/14-production-trust/) | [java](./java/14-production-trust/) | no |
 | 15 | **Ecosystem integrations** — compatibility matrix, metadata labels, full-stack runtime/export/eval/audit smoke | [py](./integrations/) | — | — | no |
 | 20 | **Platform Runtime Profile** — metadata-only production readiness profile and deterministic gaps | [py](./python/20-platform-runtime/) | — | — | no |
-| 21 | **Eval CI Gate** — `gavio eval run`, YAML/JSON suites, baseline comparison, JSON/JUnit reports | [py](./python/21-eval-ci-gate/) | — | — | no |
+| 21 | **Eval CI Gate** — `gavio eval run`, prompt/eval links, baseline comparison, JSON/JUnit reports | [py](./python/21-eval-ci-gate/) | — | — | no |
 | 22 | **Platform Feature Tour** — all major v2.x surfaces in one offline project | [py](./python/22-platform-feature-tour/) | — | — | no |
 | 23 | **Prompt Registry v2** — signed manifests, semver selectors, approvals, metadata-safe diffs | [py](./python/23-prompt-registry-v2/) | — | — | no |
 
@@ -39,7 +39,7 @@ smallest runnable project for one feature family.
 | Reliability, timeout, retry, guardrails, cache | `02`, `04` | `22` |
 | Cost governance, runtime labels, budget reporting | `04`, `08`, `13` | `22` |
 | Runtime events, JSONL export, OTel spans, metrics | `05`, `08`, `15` | `22` |
-| Prompt registry, eval reports, CI-style gates | `09`, `21`, `23` | `22` |
+| Prompt registry, eval reports, CI-style gates, release bundles | `09`, `21`, `23` | `22` |
 | Tool runtime, permissions, approvals, MCP metadata | `07` | `22` |
 | Control plane, trust bundle, platform profile | `13`, `14`, `20` | `22` |
 | Ecosystem integration metadata and recipes | `15` | `22` |

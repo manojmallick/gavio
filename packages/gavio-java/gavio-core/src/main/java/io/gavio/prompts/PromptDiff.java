@@ -22,6 +22,18 @@ public record PromptDiff(
         String toVersion,
         List<PromptDiffChange> changes) {
 
+    private static final Set<String> CONTENT_KEYS = Set.of(
+            "content",
+            "completion",
+            "messages",
+            "output",
+            "prompt",
+            "raw",
+            "rawOutput",
+            "renderedPrompt",
+            "response",
+            "text");
+
     public PromptDiff {
         changes = List.copyOf(changes);
     }
@@ -122,14 +134,26 @@ public record PromptDiff(
             if (java.util.Objects.equals(before.get(key), after.get(key))) {
                 continue;
             }
+            boolean contentKey = CONTENT_KEYS.contains(key);
             changes.add(new PromptDiffChange(
                     prefix + "." + key,
                     changeType(before.containsKey(key), after.containsKey(key)),
-                    null,
-                    null,
-                    before.get(key),
-                    after.get(key)));
+                    contentKey && before.containsKey(key) ? sha256Json(before.get(key)) : null,
+                    contentKey && after.containsKey(key) ? sha256Json(after.get(key)) : null,
+                    !contentKey && before.containsKey(key) ? safeDiffValue(before.get(key)) : null,
+                    !contentKey && after.containsKey(key) ? safeDiffValue(after.get(key)) : null));
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object safeDiffValue(Object value) {
+        if (value instanceof Map<?, ?> map) {
+            return EvalFailureTriage.sanitize((Map<String, Object>) map);
+        }
+        if (value instanceof List<?> list) {
+            return list.stream().map(PromptDiff::safeDiffValue).toList();
+        }
+        return value;
     }
 
     private static String changeType(boolean hasBefore, boolean hasAfter) {

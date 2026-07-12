@@ -54,7 +54,8 @@ public record EvalSuite(String id, List<EvalCase> cases) {
                     score,
                     sha256(output),
                     assertions,
-                    prompt.lineage()));
+                    prompt.lineage(),
+                    passed ? null : c.triage()));
         }
         return new EvalReport(id, results);
     }

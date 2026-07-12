@@ -15,10 +15,23 @@ public record EvalCaseResult(
         double score,
         String outputHash,
         List<EvalAssertionResult> assertions,
-        PromptLineage lineage) {
+        PromptLineage lineage,
+        EvalFailureTriage triage) {
 
     public EvalCaseResult {
         assertions = List.copyOf(assertions);
+    }
+
+    public EvalCaseResult(
+            String id,
+            String templateId,
+            String templateVersion,
+            boolean passed,
+            double score,
+            String outputHash,
+            List<EvalAssertionResult> assertions,
+            PromptLineage lineage) {
+        this(id, templateId, templateVersion, passed, score, outputHash, assertions, lineage, null);
     }
 
     public Map<String, Object> toMap() {
@@ -35,6 +48,9 @@ public record EvalCaseResult(
         }
         out.put("assertions", assertionMaps);
         out.put("lineage", lineageToCamel(lineage));
+        if (triage != null) {
+            out.put("triage", triage.toMap());
+        }
         return out;
     }
 

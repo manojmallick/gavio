@@ -1,11 +1,14 @@
 # 21 - Eval CI Gate + Prompt Release Candidate
 
-Shows a release-style prompt workflow using the v2.1.0 eval runner and the
-existing Prompt Registry + Evals APIs:
+Shows a release-style prompt workflow using the v2.1.0 eval runner plus the
+v2.4.0 prompt/eval workflow APIs:
 
 - run `gavio eval run` against a YAML/JSON suite;
 - compare candidate score against a stored baseline report;
 - enforce `--fail-under` and `--max-regression` gates;
+- link a prompt version to the eval suite that gates it;
+- attach triage routing metadata for failed cases;
+- build a metadata-safe prompt release bundle;
 - write metadata-safe JSON and JUnit reports for CI;
 - keep raw prompt outputs out of stored reports.
 

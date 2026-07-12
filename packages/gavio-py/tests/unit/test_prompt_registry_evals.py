@@ -9,7 +9,10 @@ from gavio.prompts import (
     EvalSuite,
     PromptRegistry,
     PromptTemplate,
+    build_prompt_release_bundle,
     diff_prompt_templates,
+    evaluate_prompt_workflow,
+    prompt_eval_links_from_manifest,
     sign_prompt_manifest,
     verify_prompt_manifest_signature,
 )
@@ -23,6 +26,18 @@ def _load() -> dict:
 
 def _load_v2() -> dict:
     return json.loads((_VECTORS / "registry-v2.json").read_text(encoding="utf-8"))
+
+
+def _load_workflow() -> dict:
+    return json.loads((_VECTORS / "workflow.json").read_text(encoding="utf-8"))
+
+
+def _assert_workflow_content_safe(serialized: str, vector: dict) -> None:
+    for content in vector["contentKeys"]:
+        if content in {"output", "renderedPrompt"}:
+            assert f'"{content}"' not in serialized
+        else:
+            assert content not in serialized
 
 
 def test_prompt_registry_renders_shared_vectors_without_raw_lineage_content() -> None:
@@ -163,3 +178,65 @@ def test_prompt_registry_v2_signs_manifest_deterministically() -> None:
     )
 
     assert signed["signature"] == manifest["signature"]
+
+
+@pytest.mark.asyncio
+async def test_prompt_eval_workflow_gates_and_triage_metadata_are_safe() -> None:
+    vector = _load_workflow()
+    registry = PromptRegistry.from_manifest(vector["manifest"])
+    suite = EvalSuite.from_dict(vector["suite"])
+    outputs = {case["id"]: case["mockOutput"] for case in vector["suite"]["cases"]}
+
+    report = await suite.run(registry, lambda _prompt, case: outputs[case.id])
+    links = prompt_eval_links_from_manifest(vector["manifest"])
+    workflow = evaluate_prompt_workflow(report, links)
+    data = report.to_dict()
+
+    assert workflow.passed is False
+    gate = workflow.gates[0]
+    assert gate.prompt_id == vector["expected"]["promptId"]
+    assert gate.prompt_version == vector["expected"]["promptVersion"]
+    assert gate.score == vector["expected"]["score"]
+    assert gate.baseline_score == vector["expected"]["baselineScore"]
+    assert gate.score_delta == vector["expected"]["scoreDelta"]
+    assert list(gate.failed_cases) == vector["expected"]["failedCases"]
+    failed = next(case for case in data["cases"] if case["id"] == "refund-leak")
+    assert failed["triage"]["category"] == vector["expected"]["triage"]["category"]
+    assert failed["triage"]["severity"] == vector["expected"]["triage"]["severity"]
+    assert "outputHash" in failed["triage"]["metadata"]
+    assert "output" not in failed["triage"]["metadata"]
+    assert "triage" not in next(case for case in data["cases"] if case["id"] == "refund-safe")
+
+    serialized = json.dumps({"report": data, "workflow": workflow.to_dict()})
+    _assert_workflow_content_safe(serialized, vector)
+
+
+@pytest.mark.asyncio
+async def test_prompt_release_bundle_contains_prompt_diff_and_eval_evidence() -> None:
+    vector = _load_workflow()
+    registry = PromptRegistry.from_manifest(vector["manifest"])
+    suite = EvalSuite.from_dict(vector["suite"])
+    outputs = {case["id"]: case["mockOutput"] for case in vector["suite"]["cases"]}
+    report = await suite.run(registry, lambda _prompt, case: outputs[case.id])
+
+    bundle = build_prompt_release_bundle(
+        manifest=vector["manifest"],
+        prompt_id=vector["expected"]["promptId"],
+        prompt_version=vector["expected"]["promptVersion"],
+        from_version=vector["expected"]["fromVersion"],
+        reports=[report],
+        generated_at="2026-07-12T12:00:00Z",
+    )
+    data = bundle.to_dict()
+
+    assert data["schemaVersion"] == "gavio.prompt-release-bundle.v1"
+    assert data["prompt"] == {
+        "id": vector["expected"]["promptId"],
+        "version": vector["expected"]["promptVersion"],
+    }
+    assert len(data["manifest"]["digest"]) == 64
+    assert data["passed"] is False
+    assert data["gates"][0]["failedCases"] == vector["expected"]["failedCases"]
+    assert data["promptDiff"]["hasChanges"] is True
+    serialized = json.dumps(data)
+    _assert_workflow_content_safe(serialized, vector)

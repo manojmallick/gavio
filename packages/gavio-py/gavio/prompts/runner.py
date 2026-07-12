@@ -11,7 +11,15 @@ from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree as ET
 
-from .registry import EvalReport, EvalSuite, PromptRegistry, PromptTemplate
+from .registry import (
+    EvalReport,
+    EvalSuite,
+    PromptEvalLink,
+    PromptRegistry,
+    PromptTemplate,
+    PromptWorkflowResult,
+    evaluate_prompt_workflow,
+)
 
 SCHEMA_VERSION = "1.0"
 _YAML_SUFFIXES = {".yaml", ".yml"}
@@ -43,10 +51,11 @@ class EvalRunResult:
     report: EvalReport
     gate: EvalGate
     source: str
+    workflow: PromptWorkflowResult | None = None
 
     @property
     def passed(self) -> bool:
-        return self.gate.passed
+        return self.gate.passed and (self.workflow.passed if self.workflow else True)
 
     def to_dict(self) -> dict[str, Any]:
         data = self.report.to_dict()
@@ -62,6 +71,8 @@ class EvalRunResult:
                 "gate": self.gate.to_dict(),
             }
         )
+        if self.workflow is not None:
+            data["workflow"] = self.workflow.to_dict()
         return data
 
 
@@ -83,7 +94,8 @@ def run_eval_file(
 
     suite_file = Path(suite_path).expanduser()
     payload = load_eval_document(suite_file)
-    registry = PromptRegistry(_load_templates(suite_file, payload, template_paths or []))
+    templates = _load_templates(suite_file, payload, template_paths or [])
+    registry = PromptRegistry(templates)
     suite = EvalSuite.from_dict(_suite_payload(payload))
     outputs = _output_map(payload, suite)
     report = suite.run_sync(registry, lambda _prompt, case: outputs[case.id])
@@ -94,7 +106,9 @@ def run_eval_file(
         baseline_score=baseline_score,
         max_regression=max_regression,
     )
-    return EvalRunResult(report=report, gate=gate, source=str(suite_file))
+    links = _workflow_links(payload, templates, suite.id)
+    workflow = evaluate_prompt_workflow(report, links) if links else None
+    return EvalRunResult(report=report, gate=gate, source=str(suite_file), workflow=workflow)
 
 
 def evaluate_gate(
@@ -173,6 +187,24 @@ def junit_xml(result: EvalRunResult) -> str:
     )
     for reason in result.gate.reasons:
         ET.SubElement(properties, "property", {"name": "gavio.gate.reason", "value": reason})
+    if result.workflow is not None:
+        ET.SubElement(
+            properties,
+            "property",
+            {"name": "gavio.workflow.passed", "value": str(result.workflow.passed).lower()},
+        )
+        for gate in result.workflow.gates:
+            ET.SubElement(
+                properties,
+                "property",
+                {
+                    "name": "gavio.prompt.gate",
+                    "value": (
+                        f"{gate.prompt_id}@{gate.prompt_version} "
+                        f"suite={gate.suite_id} passed={str(gate.passed).lower()}"
+                    ),
+                },
+            )
 
     for case in report.cases:
         testcase = ET.SubElement(
@@ -196,6 +228,16 @@ def junit_xml(result: EvalRunResult) -> str:
             "property",
             {"name": "gavio.output_hash", "value": case.output_hash},
         )
+        if case.triage is not None:
+            triage = case.triage.to_dict()
+            for key in ("category", "severity", "owner", "action"):
+                value = triage.get(key)
+                if value is not None:
+                    ET.SubElement(
+                        case_props,
+                        "property",
+                        {"name": f"gavio.triage.{key}", "value": str(value)},
+                    )
         if not case.passed:
             failed = [assertion for assertion in case.assertions if not assertion.passed]
             message = "; ".join(assertion.reason for assertion in failed) or "eval failed"
@@ -256,6 +298,58 @@ def _load_templates(
     if not templates:
         raise ValueError("eval document must provide templates or template files")
     return templates
+
+
+def _workflow_links(
+    payload: dict[str, Any],
+    templates: list[PromptTemplate | dict[str, Any]],
+    suite_id: str,
+) -> tuple[PromptEvalLink, ...]:
+    links: list[PromptEvalLink] = []
+    workflow = payload.get("promptWorkflow")
+    if isinstance(workflow, dict):
+        raw_links = workflow.get("links") or workflow.get("promptEvalLinks") or ()
+        if isinstance(raw_links, list):
+            for raw in raw_links:
+                if isinstance(raw, dict):
+                    links.append(PromptEvalLink.from_dict(raw, suite_id=suite_id))
+    for key in ("promptEvalLinks", "evalLinks"):
+        raw_links = payload.get(key)
+        if isinstance(raw_links, list):
+            for raw in raw_links:
+                if isinstance(raw, dict):
+                    links.append(PromptEvalLink.from_dict(raw, suite_id=suite_id))
+    for raw_template in templates:
+        template = (
+            raw_template.to_dict() if isinstance(raw_template, PromptTemplate) else raw_template
+        )
+        prompt_id = str(template.get("id"))
+        prompt_version = str(template.get("version"))
+        candidates: list[Any] = []
+        for key in ("promptEvalLinks", "evalLinks", "evals"):
+            value = template.get(key)
+            if isinstance(value, list):
+                candidates.extend(value)
+        metadata = template.get("metadata")
+        if isinstance(metadata, dict):
+            for key in ("promptEvalLinks", "evalLinks", "evals"):
+                value = metadata.get(key)
+                if isinstance(value, list):
+                    candidates.extend(value)
+        for raw in candidates:
+            if isinstance(raw, dict):
+                links.append(
+                    PromptEvalLink.from_dict(
+                        raw,
+                        prompt_id=prompt_id,
+                        prompt_version=prompt_version,
+                        suite_id=suite_id,
+                    )
+                )
+    deduped: dict[tuple[str, str, str], PromptEvalLink] = {}
+    for link in links:
+        deduped[(link.prompt_id, link.prompt_version, link.suite_id)] = link
+    return tuple(deduped.values())
 
 
 def _output_map(payload: dict[str, Any], suite: EvalSuite) -> dict[str, str]:
@@ -460,13 +554,16 @@ def _parse_yaml_scalar(value: str) -> Any:
 
 
 def cli_summary(result: EvalRunResult) -> dict[str, Any]:
-    return {
+    summary = {
         "suiteId": result.report.suite_id,
         "score": result.report.score,
         "passedCases": result.report.passed_cases,
         "failedCases": result.report.failed_cases,
         "gate": result.gate.to_dict(),
     }
+    if result.workflow is not None:
+        summary["workflow"] = result.workflow.to_dict()
+    return summary
 
 
 def print_json(data: dict[str, Any], *, pretty: bool = False) -> None:

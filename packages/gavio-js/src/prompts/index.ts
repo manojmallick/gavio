@@ -316,6 +316,25 @@ export interface EvalCaseInit {
   variables: Record<string, unknown>
   assertions: EvalAssertionInit[]
   metadata?: Record<string, unknown>
+  triage?: EvalFailureTriageInit | null
+}
+
+export interface EvalFailureTriageInit {
+  category?: string | null
+  severity?: string | null
+  owner?: string | null
+  action?: string | null
+  notes?: string | null
+  metadata?: Record<string, unknown>
+}
+
+export interface EvalFailureTriage {
+  category?: string
+  severity?: string
+  owner?: string
+  action?: string
+  notes?: string
+  metadata?: Record<string, unknown>
 }
 
 export class EvalCase {
@@ -325,6 +344,7 @@ export class EvalCase {
   readonly variables: Record<string, unknown>
   readonly assertions: EvalAssertion[]
   readonly metadata: Record<string, unknown>
+  readonly triage: EvalFailureTriage | null
 
   constructor(init: EvalCaseInit) {
     this.id = init.id
@@ -332,7 +352,9 @@ export class EvalCase {
     this.templateVersion = init.templateVersion ?? null
     this.variables = { ...init.variables }
     this.assertions = init.assertions.map((assertion) => new EvalAssertion(assertion))
-    this.metadata = { ...(init.metadata ?? {}) }
+    this.metadata = sanitizeWorkflowMetadata(init.metadata ?? {})
+    const triage = init.triage ?? (isRecord(init.metadata?.triage) ? init.metadata.triage : null)
+    this.triage = triage === null ? null : normalizeTriage(triage as EvalFailureTriageInit)
   }
 }
 
@@ -345,6 +367,7 @@ export interface EvalCaseResult {
   outputHash: string
   assertions: EvalAssertionResult[]
   lineage: PromptLineageInit
+  triage?: EvalFailureTriage
 }
 
 export interface EvalReport {
@@ -380,7 +403,7 @@ export class EvalSuite {
       const score = assertions.length === 0
         ? 0
         : round8(assertions.filter((assertion) => assertion.passed).length / assertions.length)
-      cases.push({
+      const result: EvalCaseResult = {
         id: testCase.id,
         templateId: testCase.templateId,
         templateVersion: prompt.lineage.templateVersion ?? '',
@@ -389,7 +412,9 @@ export class EvalSuite {
         outputHash: createHash('sha256').update(output, 'utf8').digest('hex'),
         assertions,
         lineage: prompt.lineage.toJSON(),
-      })
+      }
+      if (!passed && testCase.triage !== null) result.triage = testCase.triage
+      cases.push(result)
     }
     const passedCases = cases.filter((testCase) => testCase.passed).length
     return {
@@ -401,6 +426,201 @@ export class EvalSuite {
       cases,
     }
   }
+}
+
+export interface PromptEvalLinkInit {
+  promptId?: string
+  templateId?: string
+  promptVersion?: string
+  templateVersion?: string
+  suiteId?: string
+  evalSuiteId?: string
+  baselineScore?: number | null
+  failUnder?: number | null
+  maxRegression?: number
+  metadata?: Record<string, unknown>
+}
+
+export interface PromptEvalLink {
+  promptId: string
+  promptVersion: string
+  suiteId: string
+  baselineScore?: number | null
+  failUnder?: number | null
+  maxRegression: number
+  metadata?: Record<string, unknown>
+}
+
+export interface PromptVersionGate {
+  promptId: string
+  promptVersion: string
+  suiteId: string
+  passed: boolean
+  score: number
+  totalCases: number
+  passedCases: number
+  failedCases: string[]
+  reasons: string[]
+  baselineScore?: number | null
+  failUnder?: number | null
+  maxRegression: number
+  scoreDelta?: number | null
+}
+
+export interface PromptWorkflowResult {
+  passed: boolean
+  links: PromptEvalLink[]
+  gates: PromptVersionGate[]
+}
+
+export interface PromptReleaseBundle {
+  schemaVersion: 'gavio.prompt-release-bundle.v1'
+  bundleId: string
+  prompt: { id: string; version: string }
+  generatedAt: string
+  manifest: Record<string, unknown>
+  passed: boolean
+  gates: PromptVersionGate[]
+  evalReports: EvalReport[]
+  promptDiff?: PromptDiff
+  metadata?: Record<string, unknown>
+}
+
+export function promptEvalLink(init: PromptEvalLinkInit): PromptEvalLink {
+  const promptId = init.promptId ?? init.templateId
+  const promptVersion = init.promptVersion ?? init.templateVersion
+  const suiteId = init.suiteId ?? init.evalSuiteId
+  if (promptId === undefined || promptVersion === undefined || suiteId === undefined) {
+    throw new Error('prompt eval link requires promptId, promptVersion, and suiteId')
+  }
+  const link: PromptEvalLink = {
+    promptId,
+    promptVersion,
+    suiteId,
+    maxRegression: init.maxRegression ?? 0,
+  }
+  if (init.baselineScore !== undefined) link.baselineScore = init.baselineScore
+  if (init.failUnder !== undefined) link.failUnder = init.failUnder
+  if (init.metadata !== undefined && Object.keys(init.metadata).length > 0) {
+    link.metadata = sanitizeWorkflowMetadata(init.metadata)
+  }
+  return link
+}
+
+export function evaluatePromptVersionGate(report: EvalReport, link: PromptEvalLink | PromptEvalLinkInit): PromptVersionGate {
+  const parsed = 'promptId' in link && 'promptVersion' in link && 'suiteId' in link
+    ? link as PromptEvalLink
+    : promptEvalLink(link)
+  const cases = report.suiteId === parsed.suiteId
+    ? report.cases.filter((testCase) => testCase.templateId === parsed.promptId && testCase.templateVersion === parsed.promptVersion)
+    : []
+  const failedCases = cases.filter((testCase) => !testCase.passed).map((testCase) => testCase.id)
+  const score = cases.length === 0 ? 0 : round8(cases.reduce((sum, testCase) => sum + testCase.score, 0) / cases.length)
+  const reasons: string[] = []
+  if (cases.length === 0) reasons.push(`no eval cases found for ${parsed.promptId}@${parsed.promptVersion} in ${parsed.suiteId}`)
+  if (failedCases.length > 0) reasons.push(`${failedCases.length} linked eval case(s) failed`)
+  if (parsed.failUnder !== undefined && parsed.failUnder !== null && score < parsed.failUnder) {
+    reasons.push(`score ${score.toFixed(8)} is below fail-under ${parsed.failUnder.toFixed(8)}`)
+  }
+  let scoreDelta: number | null | undefined
+  if (parsed.baselineScore !== undefined && parsed.baselineScore !== null) {
+    scoreDelta = round8(score - parsed.baselineScore)
+    if (scoreDelta < -parsed.maxRegression) {
+      reasons.push(`score regression ${scoreDelta.toFixed(8)} exceeds allowed ${parsed.maxRegression.toFixed(8)}`)
+    }
+  }
+  return {
+    promptId: parsed.promptId,
+    promptVersion: parsed.promptVersion,
+    suiteId: parsed.suiteId,
+    passed: reasons.length === 0,
+    score,
+    totalCases: cases.length,
+    passedCases: cases.filter((testCase) => testCase.passed).length,
+    failedCases,
+    reasons,
+    baselineScore: parsed.baselineScore,
+    failUnder: parsed.failUnder,
+    maxRegression: parsed.maxRegression,
+    scoreDelta,
+  }
+}
+
+export function evaluatePromptWorkflow(report: EvalReport, links: Array<PromptEvalLink | PromptEvalLinkInit>): PromptWorkflowResult {
+  const parsedLinks = links.map((link) => 'promptId' in link && 'promptVersion' in link && 'suiteId' in link
+    ? link as PromptEvalLink
+    : promptEvalLink(link))
+  const gates = parsedLinks.map((link) => evaluatePromptVersionGate(report, link))
+  return { passed: gates.every((gate) => gate.passed), links: parsedLinks, gates }
+}
+
+export function promptEvalLinksFromManifest(manifest: PromptManifest): PromptEvalLink[] {
+  const links: PromptEvalLink[] = []
+  const manifestLinks = (manifest as PromptManifest & { promptEvalLinks?: unknown[]; evalLinks?: unknown[] }).promptEvalLinks
+    ?? (manifest as PromptManifest & { evalLinks?: unknown[] }).evalLinks
+    ?? []
+  for (const raw of manifestLinks) {
+    if (isRecord(raw)) links.push(promptEvalLink(raw as PromptEvalLinkInit))
+  }
+  for (const template of manifest.templates) {
+    const candidates: unknown[] = []
+    for (const keyName of ['promptEvalLinks', 'evalLinks', 'evals']) {
+      const value = (template as unknown as Record<string, unknown>)[keyName]
+      if (Array.isArray(value)) candidates.push(...value)
+    }
+    for (const keyName of ['promptEvalLinks', 'evalLinks', 'evals']) {
+      const value = template.metadata?.[keyName]
+      if (Array.isArray(value)) candidates.push(...value)
+    }
+    for (const raw of candidates) {
+      if (!isRecord(raw)) continue
+      links.push(promptEvalLink({
+        ...raw,
+        promptId: (raw.promptId as string | undefined) ?? (raw.templateId as string | undefined) ?? template.id,
+        promptVersion: (raw.promptVersion as string | undefined) ?? (raw.templateVersion as string | undefined) ?? template.version,
+      }))
+    }
+  }
+  return links
+}
+
+export function buildPromptReleaseBundle(options: {
+  manifest: PromptManifest
+  promptId: string
+  promptVersion: string
+  reports: EvalReport[]
+  links?: Array<PromptEvalLink | PromptEvalLinkInit>
+  fromVersion?: string | null
+  generatedAt?: string
+  bundleId?: string
+  metadata?: Record<string, unknown>
+}): PromptReleaseBundle {
+  const registry = PromptRegistry.fromManifest(options.manifest, { validateSemver: false })
+  const target = registry.get(options.promptId, options.promptVersion)
+  const versions = registry.versions(options.promptId).filter((version) => version !== target.version)
+  const fromVersion = options.fromVersion ?? versions.at(-1) ?? null
+  const diff = fromVersion === null ? undefined : registry.diff(options.promptId, fromVersion, target.version)
+  const links = (options.links ?? promptEvalLinksFromManifest(options.manifest))
+    .map((link) => 'promptId' in link && 'promptVersion' in link && 'suiteId' in link ? link as PromptEvalLink : promptEvalLink(link))
+    .filter((link) => link.promptId === options.promptId && link.promptVersion === options.promptVersion)
+  const gates = options.reports.flatMap((report) => links
+    .filter((link) => link.suiteId === report.suiteId)
+    .map((link) => evaluatePromptVersionGate(report, link)))
+  const bundle: PromptReleaseBundle = {
+    schemaVersion: 'gavio.prompt-release-bundle.v1',
+    bundleId: options.bundleId ?? `${options.promptId}@${options.promptVersion}`,
+    prompt: { id: options.promptId, version: options.promptVersion },
+    generatedAt: options.generatedAt ?? new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+    manifest: manifestIdentity(options.manifest),
+    passed: gates.every((gate) => gate.passed),
+    gates,
+    evalReports: options.reports,
+  }
+  if (diff !== undefined) bundle.promptDiff = diff
+  if (options.metadata !== undefined && Object.keys(options.metadata).length > 0) {
+    bundle.metadata = sanitizeWorkflowMetadata(options.metadata)
+  }
+  return bundle
 }
 
 function key(id: string, version: string): string {
@@ -532,6 +752,66 @@ function cloneApproval(approval: PromptApprovalInit): PromptApprovalInit {
   return cloned
 }
 
+const CONTENT_METADATA_KEYS = new Set([
+  'content',
+  'completion',
+  'messages',
+  'output',
+  'prompt',
+  'raw',
+  'rawOutput',
+  'renderedPrompt',
+  'response',
+  'text',
+])
+
+function normalizeTriage(init: EvalFailureTriageInit): EvalFailureTriage {
+  const triage: EvalFailureTriage = {}
+  if (init.category !== undefined && init.category !== null) triage.category = init.category
+  if (init.severity !== undefined && init.severity !== null) triage.severity = init.severity
+  if (init.owner !== undefined && init.owner !== null) triage.owner = init.owner
+  if (init.action !== undefined && init.action !== null) triage.action = init.action
+  if (init.notes !== undefined && init.notes !== null) triage.notes = init.notes
+  if (init.metadata !== undefined && Object.keys(init.metadata).length > 0) {
+    triage.metadata = sanitizeWorkflowMetadata(init.metadata)
+  }
+  return triage
+}
+
+function sanitizeWorkflowMetadata(data: Record<string, unknown>): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {}
+  for (const [recordKey, value] of Object.entries(data)) {
+    if (CONTENT_METADATA_KEYS.has(recordKey)) {
+      sanitized[`${recordKey}Hash`] = sha256Json(value)
+    } else {
+      sanitized[recordKey] = sanitizeWorkflowValue(value)
+    }
+  }
+  return sanitized
+}
+
+function sanitizeWorkflowValue(value: unknown): unknown {
+  if (isRecord(value)) return sanitizeWorkflowMetadata(value)
+  if (Array.isArray(value)) return value.map((item) => sanitizeWorkflowValue(item))
+  return value
+}
+
+function manifestIdentity(manifest: PromptManifest): Record<string, unknown> {
+  const identity: Record<string, unknown> = {
+    schemaVersion: manifest.schemaVersion,
+    registryId: manifest.registryId,
+    digest: promptManifestDigest(manifest),
+  }
+  if (manifest.signature !== undefined) {
+    identity.signature = {
+      algorithm: manifest.signature.algorithm,
+      keyId: manifest.signature.keyId,
+      value: manifest.signature.value,
+    }
+  }
+  return identity
+}
+
 function approvalRecord(approval: PromptApprovalInit | null): Record<string, unknown> {
   return approval === null ? {} : cloneApproval(approval) as unknown as Record<string, unknown>
 }
@@ -544,12 +824,19 @@ function diffRecord(
 ): void {
   for (const recordKey of [...new Set([...Object.keys(before), ...Object.keys(after)])].sort()) {
     if (JSON.stringify(before[recordKey]) === JSON.stringify(after[recordKey])) continue
-    changes.push({
+    const contentKey = CONTENT_METADATA_KEYS.has(recordKey)
+    const change: PromptDiffChange = {
       path: `${prefix}.${recordKey}`,
       type: changeType(recordKey in before, recordKey in after),
-      before: recordKey in before ? before[recordKey] : undefined,
-      after: recordKey in after ? after[recordKey] : undefined,
-    })
+    }
+    if (contentKey) {
+      if (recordKey in before) change.beforeHash = sha256Json(before[recordKey])
+      if (recordKey in after) change.afterHash = sha256Json(after[recordKey])
+    } else {
+      if (recordKey in before) change.before = sanitizeWorkflowValue(before[recordKey])
+      if (recordKey in after) change.after = sanitizeWorkflowValue(after[recordKey])
+    }
+    changes.push(change)
   }
 }
 

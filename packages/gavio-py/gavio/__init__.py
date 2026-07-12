@@ -39,7 +39,20 @@ from .platform_runtime import (
     platform_runtime_readiness,
     verify_platform_runtime_profile,
 )
-from .prompts import EvalSuite, PromptRegistry, PromptTemplate, RenderedPrompt
+from .prompts import (
+    EvalFailureTriage,
+    EvalSuite,
+    PromptEvalLink,
+    PromptRegistry,
+    PromptReleaseBundle,
+    PromptTemplate,
+    PromptVersionGate,
+    PromptWorkflowResult,
+    RenderedPrompt,
+    build_prompt_release_bundle,
+    evaluate_prompt_version_gate,
+    evaluate_prompt_workflow,
+)
 from .request import GavioRequest
 from .response import GavioResponse
 from .trust import (
@@ -93,6 +106,14 @@ __all__ = [
     "RenderedPrompt",
     "PromptRegistry",
     "EvalSuite",
+    "EvalFailureTriage",
+    "PromptEvalLink",
+    "PromptVersionGate",
+    "PromptWorkflowResult",
+    "PromptReleaseBundle",
+    "evaluate_prompt_version_gate",
+    "evaluate_prompt_workflow",
+    "build_prompt_release_bundle",
     "PlatformRuntimeVerification",
     "build_platform_runtime_profile",
     "platform_runtime_readiness",

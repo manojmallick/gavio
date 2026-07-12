@@ -15,6 +15,7 @@ import json
 import re
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -403,17 +404,62 @@ class EvalCase:
     assertions: tuple[EvalAssertion, ...]
     template_version: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    triage: EvalFailureTriage | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> EvalCase:
+        metadata = dict(data.get("metadata") or {})
+        triage = data.get("triage")
+        if triage is None and isinstance(metadata.get("triage"), dict):
+            triage = metadata["triage"]
         return cls(
             id=str(data["id"]),
             template_id=str(data["templateId"]),
             template_version=data.get("templateVersion"),
             variables=dict(data.get("variables") or {}),
             assertions=tuple(EvalAssertion.from_dict(item) for item in data.get("assertions", ())),
-            metadata=dict(data.get("metadata") or {}),
+            metadata=_sanitize_workflow_metadata(metadata),
+            triage=EvalFailureTriage.from_dict(triage) if isinstance(triage, dict) else None,
         )
+
+
+@dataclass(frozen=True)
+class EvalFailureTriage:
+    """Metadata for routing a failed eval case without storing model output."""
+
+    category: str | None = None
+    severity: str | None = None
+    owner: str | None = None
+    action: str | None = None
+    notes: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> EvalFailureTriage:
+        return cls(
+            category=_optional_str(data.get("category")),
+            severity=_optional_str(data.get("severity")),
+            owner=_optional_str(data.get("owner")),
+            action=_optional_str(data.get("action")),
+            notes=_optional_str(data.get("notes")),
+            metadata=_sanitize_workflow_metadata(dict(data.get("metadata") or {})),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {}
+        if self.category is not None:
+            data["category"] = self.category
+        if self.severity is not None:
+            data["severity"] = self.severity
+        if self.owner is not None:
+            data["owner"] = self.owner
+        if self.action is not None:
+            data["action"] = self.action
+        if self.notes is not None:
+            data["notes"] = self.notes
+        if self.metadata:
+            data["metadata"] = _sanitize_workflow_metadata(self.metadata)
+        return data
 
 
 @dataclass(frozen=True)
@@ -426,9 +472,10 @@ class EvalCaseResult:
     output_hash: str
     assertions: tuple[EvalAssertionResult, ...]
     lineage: PromptLineage
+    triage: EvalFailureTriage | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data = {
             "id": self.id,
             "templateId": self.template_id,
             "templateVersion": self.template_version,
@@ -438,6 +485,9 @@ class EvalCaseResult:
             "assertions": [result.to_dict() for result in self.assertions],
             "lineage": _lineage_to_camel(self.lineage),
         }
+        if self.triage is not None:
+            data["triage"] = self.triage.to_dict()
+        return data
 
 
 @dataclass(frozen=True)
@@ -526,12 +576,312 @@ class EvalSuite:
                     output_hash=hashlib.sha256(str(output).encode("utf-8")).hexdigest(),
                     assertions=assertion_results,
                     lineage=rendered.lineage,
+                    triage=case.triage if not passed else None,
                 )
             )
         return EvalReport(self.id, tuple(results))
 
     def run_sync(self, registry: PromptRegistry, complete: CompletionFn) -> EvalReport:
         return asyncio.run(self.run(registry, complete))
+
+
+@dataclass(frozen=True)
+class PromptEvalLink:
+    """Connect one prompt version to the eval suite that gates it."""
+
+    prompt_id: str
+    prompt_version: str
+    suite_id: str
+    baseline_score: float | None = None
+    fail_under: float | None = None
+    max_regression: float = 0.0
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(
+        cls,
+        data: dict[str, Any],
+        *,
+        prompt_id: str | None = None,
+        prompt_version: str | None = None,
+        suite_id: str | None = None,
+    ) -> PromptEvalLink:
+        raw_prompt_id = data.get("promptId", data.get("templateId", prompt_id))
+        raw_prompt_version = data.get(
+            "promptVersion",
+            data.get("templateVersion", prompt_version),
+        )
+        raw_suite_id = data.get("suiteId", data.get("evalSuiteId", data.get("id", suite_id)))
+        if raw_prompt_id is None or raw_prompt_version is None or raw_suite_id is None:
+            raise ValueError("prompt eval link requires promptId, promptVersion, and suiteId")
+        baseline = data.get("baselineScore", data.get("baseline_score"))
+        fail_under = data.get("failUnder", data.get("fail_under"))
+        max_regression = data.get("maxRegression", data.get("max_regression", 0.0))
+        return cls(
+            prompt_id=str(raw_prompt_id),
+            prompt_version=str(raw_prompt_version),
+            suite_id=str(raw_suite_id),
+            baseline_score=float(baseline) if baseline is not None else None,
+            fail_under=float(fail_under) if fail_under is not None else None,
+            max_regression=float(max_regression),
+            metadata=_sanitize_workflow_metadata(dict(data.get("metadata") or {})),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
+            "promptId": self.prompt_id,
+            "promptVersion": self.prompt_version,
+            "suiteId": self.suite_id,
+            "maxRegression": self.max_regression,
+        }
+        if self.baseline_score is not None:
+            data["baselineScore"] = self.baseline_score
+        if self.fail_under is not None:
+            data["failUnder"] = self.fail_under
+        if self.metadata:
+            data["metadata"] = _sanitize_workflow_metadata(self.metadata)
+        return data
+
+
+@dataclass(frozen=True)
+class PromptVersionGate:
+    """Per-prompt-version eval gate result."""
+
+    prompt_id: str
+    prompt_version: str
+    suite_id: str
+    passed: bool
+    score: float
+    total_cases: int
+    passed_cases: int
+    failed_cases: tuple[str, ...]
+    reasons: tuple[str, ...]
+    baseline_score: float | None = None
+    fail_under: float | None = None
+    max_regression: float = 0.0
+    score_delta: float | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "promptId": self.prompt_id,
+            "promptVersion": self.prompt_version,
+            "suiteId": self.suite_id,
+            "passed": self.passed,
+            "score": self.score,
+            "totalCases": self.total_cases,
+            "passedCases": self.passed_cases,
+            "failedCases": list(self.failed_cases),
+            "reasons": list(self.reasons),
+            "baselineScore": self.baseline_score,
+            "failUnder": self.fail_under,
+            "maxRegression": self.max_regression,
+            "scoreDelta": self.score_delta,
+        }
+
+
+@dataclass(frozen=True)
+class PromptWorkflowResult:
+    links: tuple[PromptEvalLink, ...]
+    gates: tuple[PromptVersionGate, ...]
+
+    @property
+    def passed(self) -> bool:
+        return all(gate.passed for gate in self.gates)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "passed": self.passed,
+            "links": [link.to_dict() for link in self.links],
+            "gates": [gate.to_dict() for gate in self.gates],
+        }
+
+
+@dataclass(frozen=True)
+class PromptReleaseBundle:
+    """Metadata-safe prompt release evidence bundle."""
+
+    bundle_id: str
+    prompt_id: str
+    prompt_version: str
+    generated_at: str
+    manifest_identity: dict[str, Any]
+    gates: tuple[PromptVersionGate, ...]
+    reports: tuple[EvalReport, ...]
+    prompt_diff: PromptDiff | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def passed(self) -> bool:
+        return all(gate.passed for gate in self.gates)
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
+            "schemaVersion": "gavio.prompt-release-bundle.v1",
+            "bundleId": self.bundle_id,
+            "prompt": {"id": self.prompt_id, "version": self.prompt_version},
+            "generatedAt": self.generated_at,
+            "manifest": dict(self.manifest_identity),
+            "passed": self.passed,
+            "gates": [gate.to_dict() for gate in self.gates],
+            "evalReports": [report.to_dict() for report in self.reports],
+        }
+        if self.prompt_diff is not None:
+            data["promptDiff"] = self.prompt_diff.to_dict()
+        if self.metadata:
+            data["metadata"] = _sanitize_workflow_metadata(self.metadata)
+        return data
+
+
+def evaluate_prompt_version_gate(report: EvalReport, link: PromptEvalLink) -> PromptVersionGate:
+    """Evaluate one linked prompt version against one eval report."""
+
+    if report.suite_id != link.suite_id:
+        matched_cases: tuple[EvalCaseResult, ...] = ()
+    else:
+        matched_cases = tuple(
+            case
+            for case in report.cases
+            if case.template_id == link.prompt_id and case.template_version == link.prompt_version
+        )
+    reasons: list[str] = []
+    failed = tuple(case.id for case in matched_cases if not case.passed)
+    if not matched_cases:
+        reasons.append(
+            f"no eval cases found for {link.prompt_id}@{link.prompt_version} in {link.suite_id}"
+        )
+        score = 0.0
+    else:
+        score = _round8(sum(case.score for case in matched_cases) / len(matched_cases))
+    if failed:
+        reasons.append(f"{len(failed)} linked eval case(s) failed")
+    if link.fail_under is not None and score < link.fail_under:
+        reasons.append(f"score {score:.8f} is below fail-under {link.fail_under:.8f}")
+    score_delta: float | None = None
+    if link.baseline_score is not None:
+        score_delta = _round8(score - link.baseline_score)
+        if score_delta < -link.max_regression:
+            reasons.append(
+                "score regression "
+                f"{score_delta:.8f} exceeds allowed {link.max_regression:.8f}"
+            )
+    return PromptVersionGate(
+        prompt_id=link.prompt_id,
+        prompt_version=link.prompt_version,
+        suite_id=link.suite_id,
+        passed=not reasons,
+        score=score,
+        total_cases=len(matched_cases),
+        passed_cases=sum(1 for case in matched_cases if case.passed),
+        failed_cases=failed,
+        reasons=tuple(reasons),
+        baseline_score=link.baseline_score,
+        fail_under=link.fail_under,
+        max_regression=link.max_regression,
+        score_delta=score_delta,
+    )
+
+
+def evaluate_prompt_workflow(
+    report: EvalReport,
+    links: Iterable[PromptEvalLink | dict[str, Any]],
+) -> PromptWorkflowResult:
+    parsed_links = tuple(
+        link if isinstance(link, PromptEvalLink) else PromptEvalLink.from_dict(link)
+        for link in links
+    )
+    return PromptWorkflowResult(
+        links=parsed_links,
+        gates=tuple(evaluate_prompt_version_gate(report, link) for link in parsed_links),
+    )
+
+
+def prompt_eval_links_from_manifest(manifest: dict[str, Any]) -> tuple[PromptEvalLink, ...]:
+    """Load prompt/eval links from a manifest-level or template-level field."""
+
+    links: list[PromptEvalLink] = []
+    for raw in manifest.get("promptEvalLinks", manifest.get("evalLinks", ())):
+        if isinstance(raw, dict):
+            links.append(PromptEvalLink.from_dict(raw))
+    for raw_template in manifest.get("templates", ()):
+        if not isinstance(raw_template, dict):
+            continue
+        prompt_id = str(raw_template.get("id"))
+        prompt_version = str(raw_template.get("version"))
+        candidates: list[Any] = []
+        for key in ("promptEvalLinks", "evalLinks", "evals"):
+            value = raw_template.get(key)
+            if isinstance(value, list):
+                candidates.extend(value)
+        metadata = raw_template.get("metadata")
+        if isinstance(metadata, dict):
+            for key in ("promptEvalLinks", "evalLinks", "evals"):
+                value = metadata.get(key)
+                if isinstance(value, list):
+                    candidates.extend(value)
+        for raw in candidates:
+            if isinstance(raw, dict):
+                links.append(
+                    PromptEvalLink.from_dict(
+                        raw,
+                        prompt_id=prompt_id,
+                        prompt_version=prompt_version,
+                    )
+                )
+    return tuple(links)
+
+
+def build_prompt_release_bundle(
+    *,
+    manifest: dict[str, Any],
+    prompt_id: str,
+    prompt_version: str,
+    reports: Iterable[EvalReport],
+    links: Iterable[PromptEvalLink | dict[str, Any]] | None = None,
+    from_version: str | None = None,
+    generated_at: str | None = None,
+    bundle_id: str | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> PromptReleaseBundle:
+    """Build metadata-safe evidence for releasing one prompt version."""
+
+    registry = PromptRegistry.from_manifest(manifest, validate_semver=False)
+    target = registry.get(prompt_id, prompt_version)
+    prompt_diff: PromptDiff | None = None
+    if from_version is None:
+        previous = [version for version in registry.versions(prompt_id) if version != target.version]
+        if previous:
+            from_version = previous[-1]
+    if from_version is not None:
+        prompt_diff = registry.diff(prompt_id, from_version, target.version)
+    parsed_reports = tuple(reports)
+    parsed_links = tuple(
+        link if isinstance(link, PromptEvalLink) else PromptEvalLink.from_dict(link)
+        for link in (links if links is not None else prompt_eval_links_from_manifest(manifest))
+        if (link.prompt_id if isinstance(link, PromptEvalLink) else link.get("promptId", link.get("templateId"))) == prompt_id
+        and (
+            link.prompt_version
+            if isinstance(link, PromptEvalLink)
+            else link.get("promptVersion", link.get("templateVersion"))
+        )
+        == prompt_version
+    )
+    gates = tuple(
+        evaluate_prompt_version_gate(report, link)
+        for report in parsed_reports
+        for link in parsed_links
+        if link.suite_id == report.suite_id
+    )
+    return PromptReleaseBundle(
+        bundle_id=bundle_id or f"{prompt_id}@{prompt_version}",
+        prompt_id=prompt_id,
+        prompt_version=prompt_version,
+        generated_at=generated_at or datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        manifest_identity=_manifest_identity(manifest),
+        gates=gates,
+        reports=parsed_reports,
+        prompt_diff=prompt_diff,
+        metadata=_sanitize_workflow_metadata(dict(metadata or {})),
+    )
 
 
 def _render_value(value: Any, variables: dict[str, Any]) -> Any:
@@ -565,6 +915,54 @@ def _lineage_to_camel(lineage: PromptLineage) -> dict[str, Any]:
         "variables": dict(lineage.variables),
         "ragChunks": [chunk.to_dict() for chunk in lineage.rag_chunks],
     }
+
+
+_CONTENT_METADATA_KEYS = {
+    "content",
+    "completion",
+    "messages",
+    "output",
+    "prompt",
+    "raw",
+    "rawOutput",
+    "renderedPrompt",
+    "response",
+    "text",
+}
+
+
+def _sanitize_workflow_metadata(data: dict[str, Any]) -> dict[str, Any]:
+    sanitized: dict[str, Any] = {}
+    for key, value in data.items():
+        if key in _CONTENT_METADATA_KEYS:
+            sanitized[f"{key}Hash"] = _sha256_json(value)
+            continue
+        sanitized[key] = _sanitize_workflow_value(value)
+    return sanitized
+
+
+def _sanitize_workflow_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return _sanitize_workflow_metadata(value)
+    if isinstance(value, list):
+        return [_sanitize_workflow_value(item) for item in value]
+    return value
+
+
+def _manifest_identity(manifest: dict[str, Any]) -> dict[str, Any]:
+    identity: dict[str, Any] = {
+        "schemaVersion": manifest.get("schemaVersion"),
+        "registryId": manifest.get("registryId"),
+        "digest": prompt_manifest_digest(manifest),
+    }
+    signature = manifest.get("signature")
+    if isinstance(signature, dict):
+        identity["signature"] = {
+            key: signature[key]
+            for key in ("algorithm", "keyId", "value")
+            if key in signature
+        }
+    return identity
 
 
 def diff_prompt_templates(before: PromptTemplate, after: PromptTemplate) -> PromptDiff:
@@ -705,12 +1103,23 @@ def _diff_mapping(
     for key in sorted(set(before) | set(after)):
         if before.get(key) == after.get(key):
             continue
+        content_key = key in _CONTENT_METADATA_KEYS
         changes.append(
             PromptDiffChange(
                 path=f"{prefix}.{key}",
                 type=_change_type(key in before, key in after),
-                before=before.get(key) if key in before else None,
-                after=after.get(key) if key in after else None,
+                before_hash=_sha256_json(before.get(key))
+                if content_key and key in before
+                else None,
+                after_hash=_sha256_json(after.get(key))
+                if content_key and key in after
+                else None,
+                before=_sanitize_workflow_value(before.get(key))
+                if not content_key and key in before
+                else None,
+                after=_sanitize_workflow_value(after.get(key))
+                if not content_key and key in after
+                else None,
             )
         )
 
