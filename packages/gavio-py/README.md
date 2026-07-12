@@ -1,12 +1,12 @@
 # Gavio — Python SDK
 
 > AI request runtime and inspector for production systems. PII protection,
-> audit trails, reliability, cost intelligence, policy packs, and provider
+> audit trails, runtime events, reliability, cost intelligence, policy packs, and provider
 > adapters as composable interceptors.
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
-budgets, audit logging, tool runtime, runtime context — before and after the provider call. Same API in
+budgets, audit logging, tool runtime, runtime events, runtime context — before and after the provider call. Same API in
 [Python, Java, and JavaScript](https://github.com/manojmallick/gavio), enforced
 by shared cross-SDK test vectors.
 
@@ -126,6 +126,23 @@ gw = Gateway.builder().provider(Provider.ANTHROPIC) \
 gavio inspect --store audit.jsonl   # metadata mode: no content, no replay
 ```
 
+## Runtime export
+
+```python
+from gavio import Gateway, JsonlRuntimeExporter
+
+gw = (
+    Gateway.builder()
+    .dev_mode(True)
+    .exporter(JsonlRuntimeExporter("runtime-events.jsonl"))
+    .build()
+)
+```
+
+Runtime export (v1.1.0) writes metadata-safe JSONL events for integrations. The
+exporter strips `messages`, `content`, and `diff` by default, even when the
+local Inspector is in full capture mode.
+
 ## What's inside
 
 Every feature is an interceptor you compose explicitly — no hidden magic.
@@ -147,6 +164,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   text (`F-OBS-01`), tamper-evident hash chain (`F-OBS-02`), multi-agent DAG
   tracing via `agent_id`/`parent_trace_id` (`F-OBS-03`), prompt lineage
   (`F-OBS-04`), Prometheus metrics (`F-OBS-08`), stdout + JSONL sinks.
+- **Runtime export** — metadata-safe JSONL runtime events for gateway,
+  observability, and eval integrations (`F-EXP-01`).
 - **Quality** — guardrails with JSON-schema and regex validators
   (`F-QUA-01/02`), composite risk scoring (`F-QUA-06`).
 - **Inspector** — dev-time visualizer (`F-DX-09/10`), agent call graphs and

@@ -5,6 +5,7 @@ import io.gavio.inspector.CaptureMode;
 import io.gavio.inspector.Inspector;
 import io.gavio.inspector.InspectorConfig;
 import io.gavio.inspector.PipelineInfo;
+import io.gavio.exporters.GavioRuntimeExporter;
 import io.gavio.interceptors.Interceptor;
 import io.gavio.providers.MockProvider;
 import io.gavio.providers.ProviderAdapter;
@@ -25,6 +26,7 @@ public final class GavioBuilder {
     private boolean dryRun;
     private PricingProvider pricing = new PricingProvider();
     private InspectorConfig inspectorConfig;
+    private final List<GavioRuntimeExporter> exporters = new ArrayList<>();
 
     public GavioBuilder provider(Provider provider) {
         this.provider = provider;
@@ -81,6 +83,16 @@ public final class GavioBuilder {
         return this;
     }
 
+    /**
+     * Subscribe a runtime event exporter. Adding an exporter enables
+     * METADATA-mode Inspector events with no HTTP server unless an explicit
+     * inspector configuration is also supplied.
+     */
+    public GavioBuilder exporter(GavioRuntimeExporter exporter) {
+        this.exporters.add(exporter);
+        return this;
+    }
+
     public Gateway build() {
         ProviderAdapter resolved = resolveAdapter();
         String resolvedModel = model != null ? model : defaultModel(resolved);
@@ -99,6 +111,11 @@ public final class GavioBuilder {
         }
 
         Inspector inspector = buildInspector(resolved, resolvedModel, chain);
+        if (inspector != null) {
+            for (GavioRuntimeExporter exporter : exporters) {
+                inspector.bus().subscribe(exporter::exportEvent);
+            }
+        }
         return new Gateway(resolved, resolvedModel, chain, dryRun, inspector);
     }
 
@@ -111,6 +128,13 @@ public final class GavioBuilder {
         InspectorConfig cfg = inspectorConfig;
         if (cfg == null) {
             cfg = configFromEnv();
+        }
+        if (cfg == null && !exporters.isEmpty()) {
+            cfg = InspectorConfig.builder()
+                    .enabled(true)
+                    .mode(CaptureMode.METADATA)
+                    .startServer(false)
+                    .build();
         }
         if (cfg == null || !cfg.enabled()) {
             return null;

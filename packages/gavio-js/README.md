@@ -1,12 +1,12 @@
 # Gavio — JavaScript / TypeScript SDK
 
 > AI request runtime and inspector for production systems. PII protection,
-> audit trails, reliability, cost intelligence, policy packs, and provider
+> audit trails, runtime events, reliability, cost intelligence, policy packs, and provider
 > adapters as composable interceptors.
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
-budgets, audit logging, tool runtime, runtime context — before and after the provider call. Same API in
+budgets, audit logging, tool runtime, runtime events, runtime context — before and after the provider call. Same API in
 [Python, Java, and JavaScript](https://github.com/manojmallick/gavio), enforced
 by shared cross-SDK test vectors.
 
@@ -99,6 +99,7 @@ import { retryInterceptor }  from 'gavio/interceptors/reliability'
 import { semanticCache }     from 'gavio/interceptors/cache'
 import { costControl }       from 'gavio/interceptors/governance'
 import { guardrails }        from 'gavio/interceptors/guardrails'
+import { jsonlRuntimeExporter } from 'gavio/exporters'
 import { anthropicAdapter }  from 'gavio/providers/anthropic'
 import { openrouterAdapter } from 'gavio/providers/openrouter'
 import { GavioOpenAI }       from 'gavio/shim/openai'
@@ -122,6 +123,21 @@ no content, no replay). The `gavio inspect --store` CLI for JSONL audit files
 is Python-only; the JS inspector serves the same dashboard endpoints from its
 embedded server.
 
+## Runtime export
+
+```typescript
+import { Gateway, jsonlRuntimeExporter } from 'gavio'
+
+const gw = new Gateway({
+  devMode: true,
+  exporters: [jsonlRuntimeExporter({ path: 'runtime-events.jsonl' })],
+})
+```
+
+Runtime export (v1.1.0) writes metadata-safe JSONL events for integrations. The
+exporter strips `messages`, `content`, and `diff` by default, even when the
+local Inspector is in full capture mode.
+
 ## What's inside
 
 Every feature is an interceptor you compose explicitly — no hidden magic.
@@ -144,6 +160,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   raw text (`F-OBS-01`), tamper-evident hash chain (`F-OBS-02`), multi-agent
   DAG tracing via `agentId`/`parentTraceId` (`F-OBS-03`), prompt lineage
   (`F-OBS-04`), Prometheus metrics (`F-OBS-08`), stdout sink.
+- **Runtime export** — metadata-safe JSONL runtime events for gateway,
+  observability, and eval integrations (`F-EXP-01`).
 - **Quality** — `guardrails()` with JSON-schema and regex validators
   (`F-QUA-01/02`), composite `riskScorer()` (`F-QUA-06`).
 - **Inspector** — dev-time visualizer (`F-DX-09/10`), agent call graphs and

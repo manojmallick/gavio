@@ -2,6 +2,7 @@
 
 import { InterceptorContext } from './context.js'
 import { ConfigurationError, ProviderError } from './errors.js'
+import type { GavioRuntimeExporter } from './exporters/index.js'
 import { auditInterceptor, isAuditInterceptor } from './interceptors/audit/index.js'
 import { isExecutorPolicy } from './interceptors/base.js'
 import type { Executor, ExecutorPolicy, Interceptor } from './interceptors/base.js'
@@ -36,6 +37,11 @@ export interface GatewayOptions {
    * `GAVIO_INSPECT_PORT` / `GAVIO_INSPECT_MODE` as defaults).
    */
   inspect?: boolean | InspectorConfig
+  /**
+   * Runtime event exporters. Adding one enables metadata-mode Inspector events
+   * with no HTTP server unless `inspect` is also configured.
+   */
+  exporters?: GavioRuntimeExporter[]
 }
 
 export interface CompleteOptions {
@@ -86,6 +92,7 @@ export class Gateway {
   private readonly devMode: boolean
   private readonly dryRunMode: boolean
   private readonly pricing: PricingProvider
+  private readonly exporters: GavioRuntimeExporter[]
   private readonly interceptors: Interceptor[] = []
   private readonly inspectorInstance: Inspector | null
 
@@ -96,10 +103,14 @@ export class Gateway {
     this.devMode = options.devMode ?? false
     this.dryRunMode = options.dryRun ?? false
     this.pricing = options.pricing ?? new PricingProvider()
+    this.exporters = options.exporters ?? []
     this.inspectorInstance = this.buildInspector(options.inspect)
     if (this.inspectorInstance !== null) {
       // /api/replay re-fires through this gateway's full pipeline (F-DX-11).
       this.inspectorInstance.replayHandler = (opts) => this.complete(opts)
+      for (const exporter of this.exporters) {
+        this.inspectorInstance.bus.subscribe((event) => exporter.exportEvent(event))
+      }
     }
   }
 
@@ -111,7 +122,14 @@ export class Gateway {
   private buildInspector(inspect: boolean | InspectorConfig | undefined): Inspector | null {
     const option: boolean | InspectorConfig | undefined =
       inspect ?? (envInspectEnabled() ? true : undefined)
-    if (option === undefined || option === false) return null
+    if ((option === undefined || option === false) && this.exporters.length === 0) return null
+    if (option === undefined || option === false) {
+      return new Inspector(
+        resolveInspectorConfig({ enabled: true, mode: 'metadata', startServer: false }, this.devMode),
+        () => this.pipelineInfo(),
+        { pricing: this.pricing },
+      )
+    }
     const overrides: InspectorConfig = typeof option === 'object' ? option : {}
     const resolved = resolveInspectorConfig(
       { ...overrides, enabled: overrides.enabled ?? true },

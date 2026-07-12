@@ -9,6 +9,7 @@ Source: [`packages/gavio-js`](../../packages/gavio-js/).
 - [Sub-path imports](#sub-path-imports)
 - [Interceptors](#interceptors)
 - [Providers](#providers)
+- [Runtime export](#runtime-export)
 - [Testing](#testing)
 - [Module format & runtimes](#module-format--runtimes)
 
@@ -52,7 +53,7 @@ r.interceptorsFired  // string[]
 r.audit              // AuditRecord
 ```
 
-**Constructor options:** `{ provider, model, devMode, dryRun }`.
+**Constructor options:** `{ provider, model, devMode, dryRun, exporters }`.
 **Chain methods:** `.use(interceptor)`, `.withAdapter(adapter)`.
 
 - **`devMode: true`** → mock provider + stdout audit auto-wired.
@@ -72,6 +73,7 @@ import { auditInterceptor } from 'gavio/interceptors/audit'
 import { stdoutSink }       from 'gavio/interceptors/audit/sinks'
 import { retryInterceptor, timeoutPolicy, fallbackChain } from 'gavio/interceptors/reliability'
 import { toolRuntime }      from 'gavio/interceptors/tool-runtime'
+import { jsonlRuntimeExporter } from 'gavio/exporters'
 import { anthropicAdapter, openaiAdapter, openrouterAdapter } from 'gavio/providers'
 import { GavioTestKit, mockProvider }      from 'gavio/testing'
 ```
@@ -216,6 +218,25 @@ await gw.complete({
 
 Those labels can be used with `/api/stats?group_by=tenant` and
 `/api/cost-report?group_by=feature`.
+
+## Runtime export
+
+Runtime export (v1.1.0, `F-EXP-01`) writes the Inspector event envelope as
+metadata-safe JSONL. Adding an exporter enables metadata-mode events without
+starting the Inspector HTTP server.
+
+```typescript
+import { Gateway, jsonlRuntimeExporter } from 'gavio'
+
+const gw = new Gateway({
+  devMode: true,
+  exporters: [jsonlRuntimeExporter({ path: 'runtime-events.jsonl' })],
+})
+```
+
+The JSONL exporter strips `messages`, `content`, and `diff` by default, even if
+the local Inspector runs in `full` mode. See [runtime events](../runtime-events.md)
+and [integrations](../integrations.md).
 
 ## Embeddings
 

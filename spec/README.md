@@ -9,6 +9,7 @@ serialise to shapes valid against these schemas.
 | [`GavioRequest.schema.json`](./GavioRequest.schema.json) | The provider-agnostic request |
 | [`GavioResponse.schema.json`](./GavioResponse.schema.json) | The enriched response |
 | [`AuditRecord.schema.json`](./AuditRecord.schema.json) | The per-request audit entry (hashes only) |
+| [`GavioRuntimeEvent.schema.json`](./GavioRuntimeEvent.schema.json) | The public runtime event/export envelope |
 | [`PiiMatch.schema.json`](./PiiMatch.schema.json) | A single detected PII entity |
 | [`InterceptorResult.schema.json`](./InterceptorResult.schema.json) | One interceptor's observable outcome |
 

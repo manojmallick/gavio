@@ -4,7 +4,7 @@
 
 **The AI request runtime and inspector for production systems.**
 
-PII protection · audit trails · reliability · cost control — as composable
+PII protection · audit trails · runtime events · reliability · cost control — as composable
 interceptors. **Same API in Python, Java, and JavaScript.**
 
 [![CI](https://github.com/manojmallick/gavio/actions/workflows/ci.yml/badge.svg)](https://github.com/manojmallick/gavio/actions/workflows/ci.yml)
@@ -42,6 +42,7 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Zero mandatory dependencies** in every core (stdlib HTTP everywhere — no vendor SDKs).
 - **Dev mode** — the whole stack runs in-process with a mock provider. No API key, no network.
 - **Audit by default** — every call logged as metadata + SHA-256 content hashes (never raw text).
+- **Runtime event export** — metadata-safe JSONL events for integrations with gateways, observability, and eval workflows.
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
 
@@ -64,6 +65,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `0.13.0` | Adapter & positioning | OpenRouter adapter, first-class runtime context, AI Request Runtime / Inspector positioning |
 | `0.14.0` | Tool Runtime | Tool schema validation, freshness checks, conflict detection, confidence, provenance |
 | `1.0.0` | Stable release gate | Lockstep SDK versions, API stability, 24-month 1.x LTS policy, release hygiene checks |
+| `1.1.0` | Positioning + Integration Foundation | Metadata-safe runtime event/export contract, JSONL exporters, integration docs, runtime export examples |
 
 ---
 
@@ -116,6 +118,7 @@ pipeline in reverse order:
 ## Runtime Intelligence
 
 - **AI Request Inspector** — opt-in live traces, per-interceptor waterfall, replay, agent DAGs, RED stats, and production audit-store views.
+- **Runtime Event Export** — metadata-safe JSONL event stream for gateways, observability systems, and eval workflows.
 - **Cost Intelligence** — tenant/feature/user attribution, `/api/cost-report`, retry overhead, cache savings, and scoped budget fallback.
 - **Domain-aware Policy Packs** — core and FinTech manifests plus custom regex-rule packs that keep detector metadata, actions, audit labels, and redaction strategy together.
 - **Tool Runtime** — validate tool inputs/outputs, freshness, conflicts, confidence, and provenance before tool results re-enter model context.
@@ -208,9 +211,9 @@ The Java snippet uses `gavio-core`, `gavio-interceptor-pii`, and
 
 | Language | Command | Docs |
 |---|---|---|
-| **Python** 3.10+ | `pip install gavio==1.0.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
-| **JavaScript** (Node 18+) | `npm install gavio@1.0.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:1.0.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Python** 3.10+ | `pip install gavio==1.1.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
+| **JavaScript** (Node 18+) | `npm install gavio@1.1.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:1.1.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -229,6 +232,7 @@ compared side by side.
 | 05 | Inspector & multi-agent tracing — waterfall, PII diff, agent DAG, sessions | [py](./examples/python/05-inspector/) | [js](./examples/javascript/05-inspector/) | — | no |
 | 06 | Policy Packs — core PII + FinTech + custom regex pack | [py](./examples/python/06-policy-packs/) | [js](./examples/javascript/06-policy-packs/) | [java](./examples/java/06-policy-packs/) | no |
 | 07 | Tool Runtime — schema, freshness, conflicts, confidence, provenance | [py](./examples/python/07-tool-runtime/) | [js](./examples/javascript/07-tool-runtime/) | [java](./examples/java/07-tool-runtime/) | no |
+| 08 | Runtime Export — metadata-safe runtime events and JSONL export | [py](./examples/python/08-runtime-export/) | [js](./examples/javascript/08-runtime-export/) | [java](./examples/java/08-runtime-export/) | no |
 
 Example 02 uses a real provider if `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is
 set; otherwise it falls back to the mock provider. All other examples run with
@@ -249,7 +253,7 @@ optional extras include `gavio[redis]`, `gavio[presidio]`, `gavio[otel]`,
 `gavio[elasticsearch]`, `gavio[pgvector]`, and `gavio[ocr]`.
 
 ```bash
-pip install gavio==1.0.0
+pip install gavio==1.1.0
 ```
 
 → **[Full Python guide](./docs/packages/python.md)** · [package README](./packages/gavio-py/README.md)
@@ -261,7 +265,7 @@ with per-subpath `exports` for tree-shaking. Native `fetch`, `node:crypto`.
 Node 18+, Deno, Bun.
 
 ```bash
-npm install gavio@1.0.0
+npm install gavio@1.1.0
 ```
 
 → **[Full JavaScript guide](./docs/packages/javascript.md)** · [package README](./packages/gavio-js/README.md)
@@ -281,17 +285,17 @@ Quickstart stack:
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
 </dependency>
 ```
 
@@ -372,6 +376,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | AI Request Runtime / Inspector positioning | `F-DOC-V4` | 0.13.0 |
 | Tool Runtime — schema validation, freshness, conflict detection, provenance | `F-TOOL-01/02/03/04` | 0.14.0 |
 | Stable release gate — lockstep version checks, release hygiene, API stability and LTS policy | — | 1.0.0 |
+| Runtime event/export contract — metadata-safe JSONL exporters and integration recipes | `F-EXP-01` | 1.1.0 |
 | **Providers** — OpenAI · Anthropic · Gemini · Azure OpenAI · Ollama · Mock (all stdlib HTTP, no vendor SDKs) | — | 0.1–0.2 |
 | **OpenRouter provider adapter** — direct OpenAI-compatible integration with attribution headers | `F-ADP-02` | 0.13.0 |
 
@@ -403,6 +408,8 @@ the [interceptors guide](./docs/interceptors.md) for every built-in interceptor.
 | [docs/architecture.md](./docs/architecture.md) | Request lifecycle, the interceptor chain, data model |
 | [docs/interceptors.md](./docs/interceptors.md) | Every built-in interceptor + writing your own |
 | [docs/inspector.md](./docs/inspector.md) | The Inspector: dev visualizer, agent DAGs, replay, production dashboard |
+| [docs/runtime-events.md](./docs/runtime-events.md) | Runtime event/export contract and JSONL exporter |
+| [docs/integrations.md](./docs/integrations.md) | How Gavio fits beside gateway, observability, and eval tools |
 | [docs/otel-mapping.md](./docs/otel-mapping.md) | InspectorEvent → OpenTelemetry spans · [Grafana dashboard](./docs/grafana/gavio-dashboard.json) |
 | [docs/packages/](./docs/packages/) | Deep guide per SDK |
 | [examples/](./examples/) | Runnable example projects in all three languages |

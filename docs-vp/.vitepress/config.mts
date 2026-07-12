@@ -67,7 +67,7 @@ export default defineConfig({
     nav: [
       { text: 'Docs', link: '/guide/getting-started', activeMatch: '/guide/' },
       {
-        text: 'v1.0.0',
+        text: 'v1.1.0',
         items: [
           { text: 'Changelog', link: 'https://github.com/manojmallick/gavio/blob/main/CHANGELOG.md' },
           { text: 'Releasing', link: 'https://github.com/manojmallick/gavio/blob/main/RELEASING.md' },
@@ -84,6 +84,8 @@ export default defineConfig({
           { text: 'Architecture', link: '/guide/architecture' },
           { text: 'Interceptors', link: '/guide/interceptors' },
           { text: 'Inspector', link: '/guide/inspector' },
+          { text: 'Runtime Events', link: '/guide/runtime-events' },
+          { text: 'Integrations', link: '/guide/integrations' },
           { text: 'Stability', link: '/guide/stability' },
         ],
       },

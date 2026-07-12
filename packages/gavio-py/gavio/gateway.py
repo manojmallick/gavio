@@ -12,6 +12,7 @@ from typing import Any
 
 from .context import InterceptorContext
 from .exceptions import ConfigurationError
+from .exporters.base import GavioRuntimeExporter
 from .inspector import Inspector, InspectorConfig
 from .inspector.emitter import TraceEmitter
 from .inspector.inspector import compute_lints
@@ -274,6 +275,7 @@ class GatewayBuilder:
         self._dry_run = False
         self._pricing = PricingProvider()
         self._inspect: InspectorConfig | None = None
+        self._exporters: list[GavioRuntimeExporter] = []
 
     def provider(self, provider: Provider | str) -> GatewayBuilder:
         self._provider = Provider.coerce(provider)
@@ -315,6 +317,16 @@ class GatewayBuilder:
             self._inspect = InspectorConfig(enabled=True) if value else None
         return self
 
+    def exporter(self, exporter: GavioRuntimeExporter) -> GatewayBuilder:
+        """Subscribe a runtime event exporter.
+
+        Exporters use the Inspector event stream but do not start the web UI by
+        default. If inspection was otherwise disabled, adding an exporter enables
+        metadata-mode events with ``start_server=False``.
+        """
+        self._exporters.append(exporter)
+        return self
+
     def build(self) -> Gateway:
         adapter = self._resolve_adapter()
         model = self._model or _default_model(adapter)
@@ -325,6 +337,9 @@ class GatewayBuilder:
             interceptors.insert(0, AuditInterceptor())
 
         inspector = self._build_inspector(adapter, model, interceptors)
+        if inspector is not None:
+            for exporter in self._exporters:
+                inspector.bus.subscribe(exporter.export_event)
         return Gateway(adapter, model, interceptors, dry_run=self._dry_run, inspector=inspector)
 
     def _build_inspector(
@@ -334,6 +349,8 @@ class GatewayBuilder:
         interceptors: list[Interceptor],
     ) -> Inspector | None:
         config = self._resolve_inspector_config()
+        if config is None and self._exporters:
+            config = InspectorConfig(enabled=True, mode="metadata", start_server=False)
         if config is None or not config.enabled:
             return None
         config.validate(dev_mode=self._dev_mode)

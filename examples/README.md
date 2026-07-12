@@ -12,6 +12,7 @@ implemented per SDK, so you can compare the APIs side by side.
 | 05 | **Inspector & multi-agent tracing** — trace waterfall, PII diff, agent DAG, sessions | [py](./python/05-inspector/) | [js](./javascript/05-inspector/) | — | no |
 | 06 | **Policy Packs** — core PII + FinTech + custom regex pack | [py](./python/06-policy-packs/) | [js](./javascript/06-policy-packs/) | [java](./java/06-policy-packs/) | no |
 | 07 | **Tool Runtime** — schema, freshness, conflicts, confidence, provenance | [py](./python/07-tool-runtime/) | [js](./javascript/07-tool-runtime/) | [java](./java/07-tool-runtime/) | no |
+| 08 | **Runtime Export** — metadata-safe runtime events and JSONL export | [py](./python/08-runtime-export/) | [js](./javascript/08-runtime-export/) | [java](./java/08-runtime-export/) | no |
 
 Only example 02 needs a key — it uses a real provider if `ANTHROPIC_API_KEY` or
 `OPENAI_API_KEY` is set, and otherwise falls back to the mock provider so it
@@ -41,4 +42,4 @@ cd examples/java/01-quickstart
 mvn -q compile exec:java
 ```
 
-All examples are verified to run against the published `1.0.0` packages.
+All examples are verified to run against the published `1.1.0` packages.

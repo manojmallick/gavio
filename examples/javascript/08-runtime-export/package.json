@@ -1,0 +1,7 @@
+{
+  "name": "gavio-example-runtime-export",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node runtime-export.mjs" },
+  "dependencies": { "gavio": "^1.1.0" }
+}
