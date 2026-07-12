@@ -102,6 +102,10 @@
         <div id="rollouts" class="empty"></div>
       </section>
       <section>
+        <h2>Enterprise Admin</h2>
+        <div id="enterprise" class="empty"></div>
+      </section>
+      <section>
         <h2>Recent Events</h2>
         <div id="events" class="empty"></div>
       </section>
@@ -115,11 +119,15 @@
         ["projects", "/api/projects"],
         ["environments", "/api/environments"],
         ["keys", "/api/keys"],
+        ["admin keys", "/api/admin-keys"],
+        ["identity providers", "/api/identity-providers"],
         ["policies", "/api/policies"],
         ["rollouts", "/api/policy-rollouts"],
+        ["approvals", "/api/policy-approvals"],
         ["budgets", "/api/budgets"],
         ["events", "/api/events"],
         ["audit", "/api/audit-records"],
+        ["retention", "/api/retention-policies"],
       ];
 
       async function get(path) {
@@ -151,6 +159,10 @@
           .map(([name]) => `<div><strong>${data[name].length}</strong><br /><span class="empty">${name}</span></div>`)
           .join("");
         document.getElementById("rollouts").innerHTML = table(data.rollouts, ["id", "projectId", "environment", "policySource", "policyId", "status"]);
+        document.getElementById("enterprise").innerHTML =
+          table(data["identity providers"], ["id", "protocol", "issuer", "status"]) +
+          table(data["admin keys"], ["id", "name", "prefix", "scopes", "status"]) +
+          table(data.retention, ["id", "resource", "maxAgeDays", "status"]);
         document.getElementById("events").innerHTML = table(data.events.slice(-20).reverse(), ["id", "traceId", "tenant", "feature", "provider", "model", "risk"]);
         document.getElementById("audit").innerHTML = table(data.audit.slice(-20).reverse(), ["id", "actor", "action", "resource", "resourceId"]);
       }

@@ -234,7 +234,8 @@ const gw = new Gateway({ devMode: true })
 Control Plane support (v1.7.0) loads runtime config from an optional
 self-hosted server and caches the last successful config for offline
 fail-open/fail-closed behavior. v2.3.0 adds durable JSON file, SQLite, and
-Postgres storage modes to the control-plane app.
+Postgres storage modes to the control-plane app. v2.6.0 adds Enterprise Admin
+v2 controls in the app while keeping the SDK runtime config contract unchanged.
 
 ```typescript
 import { Gateway } from 'gavio'

@@ -8,12 +8,15 @@ const API_RESOURCES = new Map([
   ['/api/projects', 'projects'],
   ['/api/environments', 'environments'],
   ['/api/teams', 'teams'],
+  ['/api/identity-providers', 'identityProviders'],
   ['/api/policies', 'policies'],
   ['/api/policy-rollouts', 'policyRollouts'],
+  ['/api/policy-approvals', 'policyApprovals'],
   ['/api/budgets', 'budgets'],
   ['/api/events', 'events'],
   ['/api/audit-records', 'auditRecords'],
   ['/api/config-snapshots', 'configSnapshots'],
+  ['/api/retention-policies', 'retentionPolicies'],
 ])
 
 export async function startControlPlane(options = {}) {
@@ -52,11 +55,39 @@ async function handleRequest(req, res, store) {
     const config = await store.runtimeConfig(policySource, token, url.searchParams.get('fail_mode') ?? 'open')
     return sendJson(res, config)
   }
+  if (req.method === 'GET' && url.pathname === '/api/audit-export') {
+    await requireAdminScope(req, store, ROLES.WRITE_ADMIN, 'audit:export')
+    const exportPayload = await store.auditExport(Object.fromEntries(url.searchParams))
+    if (url.searchParams.get('format') === 'jsonl') {
+      return sendText(res, `${exportPayload.items.map((item) => JSON.stringify(item)).join('\n')}\n`, 'application/x-ndjson')
+    }
+    return sendJson(res, exportPayload)
+  }
+  if (req.method === 'POST' && url.pathname === '/api/retention/apply') {
+    const actor = await requireAdminScope(req, store, ROLES.WRITE_ADMIN, 'retention:write')
+    return sendJson(res, await store.applyRetention(await readJson(req), actor))
+  }
+  const approvalMatch = /^\/api\/policy-rollouts\/([^/]+)\/approvals$/.exec(url.pathname)
+  if (approvalMatch) {
+    if (req.method !== 'POST') return sendError(res, httpError(405, 'method not allowed'))
+    const actor = await requireAdminScope(req, store, ROLES.WRITE_POLICY, 'policy:approve')
+    return sendJson(res, await store.approvePolicyRollout(decodeURIComponent(approvalMatch[1]), await readJson(req), actor), 201)
+  }
   if (url.pathname === '/api/keys') {
     if (req.method === 'GET') return sendJson(res, { items: await store.listKeys() })
     if (req.method === 'POST') {
-      requireRole(req, ROLES.WRITE_ADMIN)
-      return sendJson(res, await store.createRuntimeKey(await readJson(req), role(req)), 201)
+      const actor = await requireAdminScope(req, store, ROLES.WRITE_ADMIN, 'admin:keys.write')
+      return sendJson(res, await store.createRuntimeKey(await readJson(req), actor), 201)
+    }
+  }
+  if (url.pathname === '/api/admin-keys') {
+    if (req.method === 'GET') {
+      await requireAdminScope(req, store, ROLES.WRITE_ADMIN, 'admin:keys.read')
+      return sendJson(res, { items: await store.listAdminKeys() })
+    }
+    if (req.method === 'POST') {
+      const actor = await requireAdminScope(req, store, ROLES.WRITE_ADMIN, 'admin:keys.write')
+      return sendJson(res, await store.createAdminKey(await readJson(req), actor), 201)
     }
   }
   const resource = API_RESOURCES.get(url.pathname)
@@ -65,8 +96,8 @@ async function handleRequest(req, res, store) {
     return sendJson(res, { items: await store.list(resource, Object.fromEntries(url.searchParams)) })
   }
   if (req.method === 'POST') {
-    await requireMutation(req, resource, store)
-    const item = await store.create(resource, await readJson(req), role(req))
+    const actor = await requireMutation(req, resource, store)
+    const item = await store.create(resource, await readJson(req), actor)
     return sendJson(res, item, 201)
   }
   return sendError(res, httpError(405, 'method not allowed'))
@@ -77,12 +108,17 @@ async function requireMutation(req, resource, store) {
     const token = bearerToken(req, false)
     if (token) {
       if (!(await store.verifyRuntimeKey(token))) throw httpError(401, 'invalid runtime key')
-      return
+      return 'runtime'
     }
     return requireRole(req, ROLES.WRITE_EVENT)
   }
-  if (resource === 'policies' || resource === 'policyRollouts') return requireRole(req, ROLES.WRITE_POLICY)
-  return requireRole(req, ROLES.WRITE_ADMIN)
+  if (resource === 'policies' || resource === 'policyRollouts') {
+    return requireAdminScope(req, store, ROLES.WRITE_POLICY, 'policy:write')
+  }
+  if (resource === 'identityProviders') return requireAdminScope(req, store, ROLES.WRITE_ADMIN, 'identity:write')
+  if (resource === 'retentionPolicies') return requireAdminScope(req, store, ROLES.WRITE_ADMIN, 'retention:write')
+  if (resource === 'policyApprovals') return requireAdminScope(req, store, ROLES.WRITE_POLICY, 'policy:approve')
+  return requireAdminScope(req, store, ROLES.WRITE_ADMIN, 'admin:write')
 }
 
 function role(req) {
@@ -92,6 +128,17 @@ function role(req) {
 function requireRole(req, allowed) {
   const value = role(req)
   if (!allowed.has(value)) throw httpError(403, `role ${value} cannot perform this action`)
+  return value
+}
+
+async function requireAdminScope(req, store, allowedRoles, scope) {
+  const token = bearerToken(req, false)
+  if (token) {
+    const key = await store.verifyAdminKey(token, scope)
+    if (!key) throw httpError(403, `admin key cannot perform ${scope}`)
+    return `admin-key:${key.id}`
+  }
+  return requireRole(req, allowedRoles)
 }
 
 function bearerToken(req, required = true) {
@@ -124,6 +171,14 @@ function sendJson(res, payload, status = 200) {
   const body = `${JSON.stringify(payload, null, 2)}\n`
   res.writeHead(status, {
     'content-type': 'application/json; charset=utf-8',
+    'content-length': Buffer.byteLength(body),
+  })
+  res.end(body)
+}
+
+function sendText(res, body, contentType, status = 200) {
+  res.writeHead(status, {
+    'content-type': `${contentType}; charset=utf-8`,
     'content-length': Buffer.byteLength(body),
   })
   res.end(body)

@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.dev/spec/EnterpriseAdminControl.schema.json",
+  "title": "Gavio Enterprise Admin v2",
+  "type": "object",
+  "required": ["schemaVersion"],
+  "properties": {
+    "schemaVersion": {
+      "const": "gavio.enterprise-admin.v1"
+    },
+    "identityProviders": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/identityProvider" }
+    },
+    "adminKeys": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/adminKey" }
+    },
+    "policyApprovals": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/policyApproval" }
+    },
+    "auditExport": {
+      "$ref": "#/$defs/auditExport"
+    },
+    "retentionPolicies": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/retentionPolicy" }
+    }
+  },
+  "$defs": {
+    "identityProvider": {
+      "type": "object",
+      "required": ["id", "protocol", "issuer"],
+      "properties": {
+        "id": { "type": "string" },
+        "protocol": { "enum": ["oidc", "saml"] },
+        "issuer": { "type": "string" },
+        "clientId": { "type": "string" },
+        "entityId": { "type": "string" },
+        "ssoUrl": { "type": "string" },
+        "domainHints": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "roleMapping": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "status": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "adminKey": {
+      "type": "object",
+      "required": ["id", "prefix", "scopes", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "prefix": { "type": "string" },
+        "scopes": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "status": { "type": "string" },
+        "expiresAt": { "type": "string" }
+      },
+      "not": {
+        "required": ["keyHash"]
+      },
+      "additionalProperties": true
+    },
+    "policyApproval": {
+      "type": "object",
+      "required": ["id", "rolloutId", "actor", "decision"],
+      "properties": {
+        "id": { "type": "string" },
+        "rolloutId": { "type": "string" },
+        "actor": { "type": "string" },
+        "decision": { "enum": ["approved", "rejected"] },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "auditExport": {
+      "type": "object",
+      "required": ["schemaVersion", "exportedAt", "items"],
+      "properties": {
+        "schemaVersion": { "const": "gavio.enterprise-admin.v1" },
+        "exportedAt": { "type": "string" },
+        "filters": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "retentionPolicy": {
+      "type": "object",
+      "required": ["id", "resource", "maxAgeDays", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "resource": {
+          "enum": ["events", "auditRecords", "configSnapshots", "all"]
+        },
+        "maxAgeDays": {
+          "type": "number",
+          "minimum": 1
+        },
+        "status": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  }
+}

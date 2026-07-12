@@ -22,6 +22,7 @@ offending SDK's test-vector run goes red.
 | [`integrations/catalog.json`](./integrations/catalog.json) | Ecosystem integration recipes — verify compatibility metadata, role boundaries, docs paths, and offline example paths across SDKs. |
 | [`integrations/adapters.json`](./integrations/adapters.json) | Ecosystem adapter payload cases — verify LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and Vercel AI SDK payload shapes, trace propagation, metadata hashes, and raw-content omission across SDKs. |
 | [`platform-runtime/profile.json`](./platform-runtime/profile.json) | Platform Runtime Profile cases — verify deterministic profile hashing, metadata-only posture, required runtime surfaces, readiness score, and gap codes. |
+| [`control-plane/enterprise-admin-v2.json`](./control-plane/enterprise-admin-v2.json) | Enterprise Admin v2 cases — verify OIDC/SAML-lite metadata redaction, scoped admin-key behavior, rollout approval gates, audit export privacy, and retention apply semantics. |
 | [`runtime-events/export-redaction.json`](./runtime-events/export-redaction.json) | Runtime exporter privacy contract (F-EXP-01) — verify metadata-only export strips content-bearing event fields while preserving trace and decision metadata. |
 | [`otel/spans.json`](./otel/spans.json) | OTel bridge cases (F-OBS-07) — map runtime events into OpenTelemetry-style spans with parent links, status, timestamps, attributes, and metadata-only privacy. |
 | [`prompts/registry-evals.json`](./prompts/registry-evals.json) | Prompt Registry + Evals cases (`F-EVAL-01/02`) — render versioned prompt templates, validate missing variables, attach metadata-only lineage, score eval cases, and keep raw outputs out of reports. |
@@ -86,6 +87,21 @@ offending SDK's test-vector run goes red.
     "expected": { "projectId": "proj_support", "policyPack": "support" }
   },
   "offlineCacheCase": { "firstLoad": "control_plane", "secondLoad": "cache" }
+}
+```
+
+`control-plane/enterprise-admin-v2.json`:
+```json
+{
+  "featureId": "F-ADMIN-02",
+  "adminKeyCase": {
+    "tokenPrefix": "gav_admin_",
+    "scopes": ["audit:export", "policy:approve"]
+  },
+  "rolloutApprovalCase": {
+    "beforeApprovalStatus": "pending_approval",
+    "afterApprovalStatus": "active"
+  }
 }
 ```
 

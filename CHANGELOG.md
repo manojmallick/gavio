@@ -11,7 +11,12 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Enterprise Admin v2 (control-plane app, `F-ADMIN-02`)** — added
+  OIDC/SAML-lite identity-provider metadata records, scoped admin API keys,
+  approval-gated policy rollouts, filtered JSON/JSONL audit export, retention
+  policy dry-run/apply controls, schema/vector coverage, docs, and an offline
+  example. Feature issue #95.
 
 ---
 

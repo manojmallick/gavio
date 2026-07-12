@@ -10,7 +10,7 @@ Start here, then dive into the language you use.
 - [Inspector](./inspector.md) — dev-time visualizer: live traces, waterfalls, PII diffs; v0.7.0 adds agent DAGs, replay, and the read-only dashboard
 - [Runtime events](./runtime-events.md) — metadata-safe runtime event/export contract, JSONL exporter, and OTel span bridge
 - [Prompt Registry + Evals](./prompt-registry-evals.md) — signed prompt manifests, semver templates, metadata-safe eval reports, CI gates, prompt/eval links, and release bundles
-- [Self-hosted Control Plane](./control-plane.md) — local project, key, policy, budget, audit search, and config snapshot APIs
+- [Self-hosted Control Plane](./control-plane.md) — local project, key, policy, budget, audit search, enterprise admin, and config snapshot APIs
 - [Production Trust Package](./trust-package.md) — metadata-only release evidence bundles and verification
 - [Integrations](./integrations.md) — how Gavio fits beside gateways, observability, and eval tools
 - [Platform Runtime Profile](./platform-runtime.md) — metadata-only readiness score and production posture gaps
@@ -32,6 +32,7 @@ Start here, then dive into the language you use.
 - [Eval report schema](../spec/EvalReport.schema.json) — metadata-safe eval report contract
 - [Control-plane runtime config schema](../spec/ControlPlaneRuntimeConfig.schema.json) — SDK config fetched from the self-hosted control plane
 - [Control-plane event schema](../spec/ControlPlaneEvent.schema.json) — metadata-only runtime events accepted by the self-hosted control plane
+- [Enterprise admin control schema](../spec/EnterpriseAdminControl.schema.json) — scoped admin keys, rollout approvals, audit export, and retention controls
 - [Production trust bundle schema](../spec/ProductionTrustBundle.schema.json) — metadata-only release evidence bundle contract
 - [Platform runtime profile schema](../spec/PlatformRuntimeProfile.schema.json) — metadata-only readiness profile contract
 - [OTel mapping](./otel-mapping.md) — InspectorEvent → OpenTelemetry spans · [Grafana dashboard](./grafana/gavio-dashboard.json)

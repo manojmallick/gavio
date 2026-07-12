@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "gavio.enterprise-admin.v1",
+  "featureId": "F-ADMIN-02",
+  "identityProviderCase": {
+    "input": {
+      "id": "idp_acme_oidc",
+      "protocol": "oidc",
+      "issuer": "https://login.acme.example",
+      "clientId": "gavio-admin",
+      "clientSecret": "do-not-store-plaintext",
+      "domainHints": ["acme.example"],
+      "roleMapping": {
+        "admins": "admin",
+        "auditors": "auditor"
+      }
+    },
+    "expected": {
+      "protocol": "oidc",
+      "forbiddenKeys": ["clientSecret", "privateKey", "signingSecret"]
+    }
+  },
+  "adminKeyCase": {
+    "tokenPrefix": "gav_admin_",
+    "storedPrefixLength": 18,
+    "scopes": ["audit:export", "policy:approve", "policy:write", "retention:write"],
+    "deniedScope": "admin:keys.write",
+    "forbiddenListKeys": ["keyHash", "token"]
+  },
+  "rolloutApprovalCase": {
+    "rollout": {
+      "id": "rollout_enterprise_prod",
+      "policySource": "project:enterprise-prod",
+      "requiresApproval": true,
+      "requiredApprovals": 1
+    },
+    "beforeApprovalStatus": "pending_approval",
+    "afterApprovalStatus": "active",
+    "approvalMetadata": {
+      "ticket": "SEC-42",
+      "content": "must be stripped"
+    },
+    "expectedApprovalMetadata": {
+      "ticket": "SEC-42"
+    }
+  },
+  "auditExportCase": {
+    "format": "jsonl",
+    "filters": {
+      "trace": "trace-enterprise-audit",
+      "tenant": "acme",
+      "feature": "enterprise-admin"
+    },
+    "forbiddenStrings": ["raw audit content", "raw prompt", "raw response"]
+  },
+  "retentionCase": {
+    "policy": {
+      "id": "retention_enterprise_events_30d",
+      "resource": "events",
+      "maxAgeDays": 30
+    },
+    "now": "2026-07-12T00:00:00.000Z",
+    "expiredRecord": {
+      "id": "evt_enterprise_old",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
+    "dryRunDeletes": false,
+    "applyDeletes": true
+  }
+}
