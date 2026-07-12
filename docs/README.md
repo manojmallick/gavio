@@ -11,6 +11,7 @@ Start here, then dive into the language you use.
 - [Runtime events](./runtime-events.md) — metadata-safe runtime event/export contract, JSONL exporter, and OTel span bridge
 - [Prompt Registry + Evals](./prompt-registry-evals.md) — versioned prompt templates and metadata-safe eval reports
 - [Self-hosted Control Plane](./control-plane.md) — local project, key, policy, budget, audit search, and config snapshot APIs
+- [Production Trust Package](./trust-package.md) — metadata-only release evidence bundles and verification
 - [Integrations](./integrations.md) — how Gavio fits beside gateways, observability, and eval tools
 - [Stability](./stability.md) — API stability, LTS policy, and stable release gate
 
@@ -30,6 +31,7 @@ Start here, then dive into the language you use.
 - [Eval report schema](../spec/EvalReport.schema.json) — metadata-safe eval report contract
 - [Control-plane runtime config schema](../spec/ControlPlaneRuntimeConfig.schema.json) — SDK config fetched from the self-hosted control plane
 - [Control-plane event schema](../spec/ControlPlaneEvent.schema.json) — metadata-only runtime events accepted by the self-hosted control plane
+- [Production trust bundle schema](../spec/ProductionTrustBundle.schema.json) — metadata-only release evidence bundle contract
 - [OTel mapping](./otel-mapping.md) — InspectorEvent → OpenTelemetry spans · [Grafana dashboard](./grafana/gavio-dashboard.json)
 - [CHANGELOG](../CHANGELOG.md) — release history + feature IDs
 - [RELEASING](../RELEASING.md) — how releases are cut

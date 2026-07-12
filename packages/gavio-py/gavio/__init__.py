@@ -1,6 +1,6 @@
 """Gavio — AI request runtime and inspector for production systems.
 
-Stable public API surface (v1.7.0):
+Stable public API surface (v1.8.0):
 
     from gavio import Gateway, GavioRequest, GavioResponse, Provider
 
@@ -28,6 +28,12 @@ from .gateway import Gateway, GatewayBuilder
 from .prompts import EvalSuite, PromptRegistry, PromptTemplate, RenderedPrompt
 from .request import GavioRequest
 from .response import GavioResponse
+from .trust import (
+    TrustBundleVerification,
+    build_production_trust_bundle,
+    trust_bundle_hash,
+    verify_production_trust_bundle,
+)
 from .types import (
     CacheType,
     GuardrailOutcome,
@@ -40,7 +46,7 @@ from .types import (
     TokenUsage,
 )
 
-__version__ = "1.7.0"
+__version__ = "1.8.0"
 
 __all__ = [
     "__version__",
@@ -68,6 +74,10 @@ __all__ = [
     "RenderedPrompt",
     "PromptRegistry",
     "EvalSuite",
+    "TrustBundleVerification",
+    "build_production_trust_bundle",
+    "trust_bundle_hash",
+    "verify_production_trust_bundle",
     # exceptions
     "GavioError",
     "ConfigurationError",

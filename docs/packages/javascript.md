@@ -10,6 +10,7 @@ Source: [`packages/gavio-js`](../../packages/gavio-js/).
 - [Interceptors](#interceptors)
 - [Providers](#providers)
 - [Runtime export](#runtime-export)
+- [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
 - [Module format & runtimes](#module-format--runtimes)
@@ -75,6 +76,7 @@ import { stdoutSink }       from 'gavio/interceptors/audit/sinks'
 import { retryInterceptor, timeoutPolicy, fallbackChain } from 'gavio/interceptors/reliability'
 import { toolRuntime }      from 'gavio/interceptors/tool-runtime'
 import { jsonlRuntimeExporter, otelSpanExporter } from 'gavio/exporters'
+import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio/trust'
 import { EvalSuite, PromptRegistry, PromptTemplate } from 'gavio/prompts'
 import { anthropicAdapter, openaiAdapter, openrouterAdapter } from 'gavio/providers'
 import { GavioTestKit, mockProvider }      from 'gavio/testing'
@@ -298,6 +300,33 @@ const gw = await Gateway.fromConfig({
 
 Use `ControlPlaneClient` or `loadControlPlaneConfig` directly when you need to
 inspect or preload the fetched config before constructing a gateway.
+
+## Production Trust Package
+
+Production Trust Package support (v1.8.0, `F-TRUST-01`) creates deterministic,
+metadata-only release evidence bundles for audit-chain, runtime-event, policy,
+benchmark, and document review.
+
+```typescript
+import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
+
+const bundle = buildProductionTrustBundle({
+  bundleId: 'trust-prod-support-2026-07-12',
+  generatedAt: '2026-07-12T12:00:00Z',
+  release: { version: '1.8.0', tag: 'v1.8.0' },
+  runtime: {
+    environment: 'production',
+    policySource: 'project:prod-support',
+    eventExportMode: 'metadata_only',
+  },
+  auditRecords,
+})
+
+console.log(verifyProductionTrustBundle(bundle).valid)
+```
+
+See [Production Trust Package](../trust-package.md) for the bundle schema,
+threat model, privacy boundary, and cross-SDK examples.
 
 ## Prompt Registry + Evals
 

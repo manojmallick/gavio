@@ -12,6 +12,7 @@ pull only what you need.
 - [Interceptors](#interceptors)
 - [Providers](#providers)
 - [Runtime export](#runtime-export)
+- [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
 - [Notes](#notes)
@@ -25,19 +26,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.7.0</version>
+  <version>1.8.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.7.0</version>
+  <version>1.8.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:1.7.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:1.7.0")
+implementation("io.github.manojmallick:gavio-core:1.8.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:1.8.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -49,7 +50,7 @@ implementation("io.github.manojmallick:gavio-interceptor-pii:1.7.0")
 
 | Artifact | Contains |
 |---|---|
-| `gavio-core` | Gateway, request/response records, interceptor chain, Tool Runtime, providers base, Mock |
+| `gavio-core` | Gateway, request/response records, interceptor chain, Tool Runtime, Production Trust Package, providers base, Mock |
 | `gavio-interceptor-pii` | `PiiGuard`, scanners (Email/Iban/Bsn/CreditCard/Phone/IpAddress/Ssn/Secret) |
 | `gavio-interceptor-audit` | `AuditInterceptor`, `AuditRecord`, `StdoutSink`, hash-chain + call-graph |
 | `gavio-interceptor-cache` | `SemanticCache`, `MemoryCacheBackend`, `RedisCacheBackend`/`RedisVectorBackend` (F-CACHE-04) |
@@ -323,6 +324,29 @@ Gateway gw = Gateway.builder()
 
 Use `io.gavio.controlplane.ControlPlaneClient` directly when you need to inspect
 or preload the fetched config before constructing a gateway.
+
+## Production Trust Package
+
+Production Trust Package support (v1.8.0, `F-TRUST-01`) creates deterministic,
+metadata-only release evidence bundles for audit-chain, runtime-event, policy,
+benchmark, and document review.
+
+```java
+import io.gavio.trust.ProductionTrust;
+import io.gavio.trust.ProductionTrustVerification;
+
+Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
+    .generatedAt("2026-07-12T12:00:00Z")
+    .release("1.8.0", "v1.8.0", commit)
+    .runtime("production", "project:prod-support", true, "metadata_only")
+    .auditChain(recordCount, chainOk, headHash, tailHash)
+    .build();
+
+ProductionTrustVerification result = ProductionTrust.verify(bundle);
+```
+
+See [Production Trust Package](../trust-package.md) for the bundle schema,
+threat model, privacy boundary, and cross-SDK examples.
 
 ## Prompt Registry + Evals
 

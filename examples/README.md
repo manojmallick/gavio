@@ -16,6 +16,7 @@ implemented per SDK, so you can compare the APIs side by side.
 | 09 | **Prompt Registry + Evals** — versioned templates and metadata-safe eval reports | [py](./python/09-prompt-registry-evals/) | [js](./javascript/09-prompt-registry-evals/) | [java](./java/09-prompt-registry-evals/) | no |
 | 12 | **Domain Policy Pack Catalog** — signed domain packs, overrides, suppression | [py](./python/12-domain-policy-packs/) | [js](./javascript/12-domain-policy-packs/) | [java](./java/12-domain-policy-packs/) | no |
 | 13 | **Self-hosted Control Plane** — runtime config, policy source, cached fallback | [py](./python/13-control-plane/) | [js](./javascript/13-control-plane/) | [java](./java/13-control-plane/) | no |
+| 14 | **Production Trust Package** — metadata-only release evidence bundle and verifier | [py](./python/14-production-trust/) | [js](./javascript/14-production-trust/) | [java](./java/14-production-trust/) | no |
 
 Only example 02 needs a key — it uses a real provider if `ANTHROPIC_API_KEY` or
 `OPENAI_API_KEY` is set, and otherwise falls back to the mock provider so it
@@ -45,4 +46,4 @@ cd examples/java/01-quickstart
 mvn -q compile exec:java
 ```
 
-All examples target the `1.7.0` package line.
+All examples target the `1.8.0` package line.
