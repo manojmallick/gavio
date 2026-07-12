@@ -81,6 +81,12 @@ from .types import (
     Sensitivity,
     TokenUsage,
 )
+from .workflow import (
+    PlatformWorkflowReleaseResult,
+    build_platform_workflow_release,
+    platform_workflow_release_hash,
+    run_platform_workflow_release_file,
+)
 
 __version__ = "2.7.0"
 
@@ -141,6 +147,10 @@ __all__ = [
     "build_production_trust_bundle",
     "trust_bundle_hash",
     "verify_production_trust_bundle",
+    "PlatformWorkflowReleaseResult",
+    "build_platform_workflow_release",
+    "platform_workflow_release_hash",
+    "run_platform_workflow_release_file",
     # exceptions
     "GavioError",
     "ConfigurationError",

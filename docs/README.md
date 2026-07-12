@@ -10,6 +10,7 @@ Start here, then dive into the language you use.
 - [Inspector](./inspector.md) — dev-time visualizer: live traces, waterfalls, PII diffs; v0.7.0 adds agent DAGs, replay, and the read-only dashboard
 - [Runtime events](./runtime-events.md) — metadata-safe runtime event/export contract, JSONL exporter, and OTel span bridge
 - [Prompt Registry + Evals](./prompt-registry-evals.md) — signed prompt manifests, semver templates, metadata-safe eval reports, CI gates, prompt/eval links, and release bundles
+- [Platform Workflow Release](./platform-workflow-release.md) — unified prompt, eval, policy, trust, and runtime-profile release artifacts
 - [Self-hosted Control Plane](./control-plane.md) — local project, key, policy, budget, audit search, enterprise admin, and config snapshot APIs
 - [Production Trust Package](./trust-package.md) — metadata-only release evidence bundles and verification
 - [Integrations](./integrations.md) — how Gavio fits beside gateways, observability, and eval tools

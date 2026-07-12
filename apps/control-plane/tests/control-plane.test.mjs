@@ -283,6 +283,34 @@ test('enterprise admin v2 handles scoped keys, approvals, audit export, and rete
   assert.equal(retained.items.length, 0)
 })
 
+test('stores platform workflow releases with sanitized metadata', async () => {
+  const release = await post('/api/workflow-releases', {
+    id: 'workflow_release_support_300',
+    workflowId: 'support-platform-release',
+    releaseVersion: '3.0.0',
+    status: 'blocked',
+    policySource: 'project:prod-support',
+    profileId: 'platform-prod-support',
+    workflowHash: 'sha256:abc123',
+    metadata: {
+      owner: 'platform',
+      content: 'raw release narrative must not persist',
+      nested: {
+        messages: [{ role: 'user', content: 'raw prompt must not persist' }],
+        ticket: 'REL-300',
+      },
+    },
+  })
+
+  assert.equal(release.id, 'workflow_release_support_300')
+  assert.deepEqual(release.metadata, { owner: 'platform', nested: { ticket: 'REL-300' } })
+
+  const listed = await get('/api/workflow-releases?policySource=project:prod-support')
+  assert.equal(listed.items.length, 1)
+  assert.equal(listed.items[0].workflowHash, 'sha256:abc123')
+  assert.deepEqual(listed.items[0].metadata, { owner: 'platform', nested: { ticket: 'REL-300' } })
+})
+
 test('sqlite storage migrates and persists control-plane records across restarts', { skip: !hasNodeSqlite }, async () => {
   const dir = mkdtempSync(join(tmpdir(), 'gavio-control-plane-sqlite-'))
   const sqlitePath = join(dir, 'control-plane.sqlite')

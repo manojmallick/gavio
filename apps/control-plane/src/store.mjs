@@ -21,6 +21,7 @@ const RESOURCE_NAMES = Object.freeze([
   'auditRecords',
   'configSnapshots',
   'retentionPolicies',
+  'workflowReleases',
 ])
 
 const MIGRATIONS = Object.freeze([
@@ -160,7 +161,7 @@ class JsonFileControlPlaneStore {
 
   async create(resource, input, actor = 'owner') {
     let item = withDefaults(resource, input)
-    if (resource === 'events' || resource === 'auditRecords' || resource === 'policyApprovals') {
+    if (sanitizesMetadata(resource)) {
       item.metadata = sanitizeMetadata(item.metadata ?? {})
     }
     if (resource === 'identityProviders') item = sanitizeIdentityProvider(item)
@@ -300,7 +301,7 @@ class DurableControlPlaneStore {
 
   async create(resource, input, actor = 'owner') {
     let item = withDefaults(resource, input)
-    if (resource === 'events' || resource === 'auditRecords' || resource === 'policyApprovals') {
+    if (sanitizesMetadata(resource)) {
       item.metadata = sanitizeMetadata(item.metadata ?? {})
     }
     if (resource === 'identityProviders') item = sanitizeIdentityProvider(item)
@@ -739,6 +740,7 @@ function withDefaults(resource, input) {
     auditRecords: 'audit',
     configSnapshots: 'snap',
     retentionPolicies: 'retention',
+    workflowReleases: 'workflow',
   }[resource]
   const item = {
     id: input.id ?? nextVersion(idPrefix),
@@ -837,6 +839,10 @@ function isAdminResource(resource) {
   return !['events', 'auditRecords', 'configSnapshots'].includes(resource)
 }
 
+function sanitizesMetadata(resource) {
+  return ['events', 'auditRecords', 'policyApprovals', 'workflowReleases'].includes(resource)
+}
+
 function buildAuditExport(records, filters) {
   const items = searchRecords(records, filters).map((record) => ({
     ...record,
@@ -918,6 +924,7 @@ function searchRecords(records, filters) {
     if (!matches(record.model, filters.model)) return false
     if (!matches(record.provider, filters.provider)) return false
     if (!matches(record.risk, filters.risk)) return false
+    if (!matches(record.policySource, filters.policySource ?? filters.policy_source)) return false
     if (start !== null && Date.parse(record.createdAt) < start) return false
     if (end !== null && Date.parse(record.createdAt) > end) return false
     return true
