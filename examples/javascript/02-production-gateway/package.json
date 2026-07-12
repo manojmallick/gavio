@@ -4,5 +4,5 @@
   "private": true,
   "type": "module",
   "scripts": { "start": "node gateway.mjs" },
-  "dependencies": { "gavio": "^1.3.0" }
+  "dependencies": { "gavio": "^1.4.0" }
 }

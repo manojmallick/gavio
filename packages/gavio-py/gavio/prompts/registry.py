@@ -13,7 +13,7 @@ import inspect
 import re
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ..request import GavioRequest
 from ..types import Message, PromptLineage, Provider
@@ -270,7 +270,10 @@ class EvalReport:
         }
 
 
-CompletionFn = Callable[[RenderedPrompt, EvalCase], str | Awaitable[str]]
+if TYPE_CHECKING:
+    CompletionFn = Callable[[RenderedPrompt, EvalCase], str | Awaitable[str]]
+else:
+    CompletionFn = Callable[..., object]
 
 
 @dataclass(frozen=True)

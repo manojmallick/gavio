@@ -15,6 +15,47 @@ Nothing yet.
 
 ---
 
+## [1.4.0] — 2026-07-12
+
+### Summary
+**Prompt Registry + Evals.** v1.4.0 adds a cross-SDK prompt registry and
+deterministic eval foundation. Python, JavaScript, and Java can now register
+versioned chat templates, render them with metadata-only prompt lineage, and
+run eval suites that report pass/fail scores, assertion details, and SHA-256
+output hashes without storing raw model output. Feature IDs `F-EVAL-01` and
+`F-EVAL-02`. Feature PR #71 (#70).
+
+Tests: Python 271 · JavaScript 277 · Java modules green · docs build green ·
+stable release gate green · JS package hygiene green · Inspector benchmarks
+green (Python 4.76%/8.98%, JavaScript 1.41%/0.43%, Java 0.65%/0.37%
+metadata/full p50 overhead).
+
+### Added
+- **Prompt Registry (all SDKs, `F-EVAL-01`)** — Python exposes
+  `PromptTemplate`, `PromptRegistry`, and `RenderedPrompt`; JavaScript exposes
+  the same surface from `gavio` and `gavio/prompts`; Java exposes
+  `io.gavio.prompts.*`. Rendered prompts attach `PromptLineage` with template
+  id, template version, variables, and RAG source references while keeping raw
+  rendered prompt text out of lineage.
+- **Eval suites (all SDKs, `F-EVAL-02`)** — added deterministic eval cases with
+  built-in `contains`, `not_contains`, `equals`, and `regex` assertions. Reports
+  include total/passed/failed counts, scores, assertion details, lineage, and
+  `outputHash` instead of raw outputs.
+- **Prompt/eval contracts and vectors** — added
+  `spec/PromptTemplate.schema.json`, `spec/EvalReport.schema.json`, and
+  `test-vectors/prompts/registry-evals.json` for cross-SDK rendering,
+  missing-variable, lineage, scoring, and privacy conformance.
+- **Prompt Registry + Evals docs and examples** — added dedicated docs pages
+  and `09-prompt-registry-evals` examples for Python, JavaScript, and Java.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, and package/runtime versions to
+  the `1.4.0` release line while keeping historical feature "since" labels
+  intact.
+
+---
+
 ## [1.3.0] — 2026-07-12
 
 ### Summary
@@ -901,7 +942,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/manojmallick/gavio/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/manojmallick/gavio/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/manojmallick/gavio/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/manojmallick/gavio/compare/v1.0.0...v1.1.0

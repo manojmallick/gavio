@@ -261,6 +261,6 @@ enforced by the
 [`benchmarks/inspector/`](https://github.com/manojmallick/gavio/tree/main/benchmarks/inspector)
 harnesses, which run in CI for all three SDKs against a delay-padded mock
 provider. Latest local release-prep p50 overhead per request (2026-07-12):
-Python `metadata` 1.52% / `full` 3.33%, JavaScript `metadata` -0.07% /
-`full` 0.15%, Java `metadata` 1.08% / `full` 1.30%; all are below the CI
+Python `metadata` 4.76% / `full` 8.98%, JavaScript `metadata` 1.41% /
+`full` 0.43%, Java `metadata` 0.65% / `full` 0.37%; all are below the CI
 thresholds (`metadata` < 10%, `full` < 25%).
