@@ -11,12 +11,39 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [2.6.0] — 2026-07-12
+
+### Summary
+**Enterprise Admin v2.** v2.6.0 adds enterprise administration primitives to
+the self-hosted control-plane app: OIDC/SAML-lite identity-provider metadata,
+scoped admin API keys, approval-gated policy rollouts, filtered audit export,
+and retention policy dry-run/apply controls. Secrets are hashed or redacted at
+rest, audit/export payloads stay metadata-only, and the release includes
+schema/vector coverage plus an offline example. Feature ID `F-ADMIN-02`.
+Feature PR #96 (#95).
+
+Tests: Python 311 · JavaScript typecheck/build/309 tests green · Java modules
+green · control-plane app 7 · docs build green · stable release gate green ·
+Enterprise Admin v2 example green. GitHub Actions matrix green. Inspector
+benchmarks were not rerun locally because this release changes control-plane
+admin workflows/docs/examples, not Inspector runtime overhead.
+
 ### Added
 - **Enterprise Admin v2 (control-plane app, `F-ADMIN-02`)** — added
   OIDC/SAML-lite identity-provider metadata records, scoped admin API keys,
   approval-gated policy rollouts, filtered JSON/JSONL audit export, retention
   policy dry-run/apply controls, schema/vector coverage, docs, and an offline
-  example. Feature issue #95.
+  example.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, package/runtime versions, and
+  control-plane docs to the `2.6.0` release line while keeping historical
+  feature "since" labels intact.
 
 ---
 
@@ -1357,7 +1384,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.6.0...HEAD
+[2.6.0]: https://github.com/manojmallick/gavio/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/manojmallick/gavio/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/manojmallick/gavio/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/manojmallick/gavio/compare/v2.2.0...v2.3.0
