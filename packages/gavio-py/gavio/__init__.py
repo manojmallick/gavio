@@ -1,6 +1,6 @@
 """Gavio — AI request runtime and inspector for production systems.
 
-Stable public API surface (v1.8.0):
+Stable public API surface (v1.9.0):
 
     from gavio import Gateway, GavioRequest, GavioResponse, Provider
 
@@ -53,7 +53,7 @@ from .types import (
     TokenUsage,
 )
 
-__version__ = "1.8.0"
+__version__ = "1.9.0"
 
 __all__ = [
     "__version__",

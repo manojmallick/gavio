@@ -146,6 +146,24 @@ exporter strips `messages`, `content`, and `diff` by default, even when the
 local Inspector is in full capture mode. Observability + OTel (v1.3.0) maps
 the same stream into OpenTelemetry-style span JSON (`F-OBS-07`).
 
+## Ecosystem integrations
+
+```python
+from gavio import compatibility_matrix, integration_metadata
+
+metadata = integration_metadata(
+    "litellm",
+    tenant="acme",
+    feature="support-chat",
+    environment="prod",
+)
+rows = compatibility_matrix()
+```
+
+Ecosystem integration helpers (v1.9.0, `F-INT-01`) provide dependency-light
+metadata labels and compatibility rows for common gateways, observability
+tools, eval tools, frameworks, and provider SDKs.
+
 ## Self-hosted Control Plane
 
 ```python
@@ -177,7 +195,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "1.8.0", "tag": "v1.8.0"},
+    release={"version": "1.9.0", "tag": "v1.9.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",

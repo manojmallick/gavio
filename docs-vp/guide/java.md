@@ -15,6 +15,7 @@ pull only what you need.
 - [Gateway API](#gateway-api)
 - [Interceptors](#interceptors)
 - [Providers](#providers)
+- [Ecosystem Integrations](#ecosystem-integrations)
 - [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
@@ -29,19 +30,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.8.0</version>
+  <version>1.9.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.8.0</version>
+  <version>1.9.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:1.8.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:1.8.0")
+implementation("io.github.manojmallick:gavio-core:1.9.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:1.9.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -278,6 +279,21 @@ Gateway gw = Gateway.builder()
 Use `io.gavio.controlplane.ControlPlaneClient` directly when you need to inspect
 or preload the fetched config before constructing a gateway.
 
+## Ecosystem Integrations
+
+Ecosystem integration helpers (v1.9.0, `F-INT-01`) provide dependency-light
+metadata labels and compatibility rows for common gateways, observability
+tools, eval tools, frameworks, and provider SDKs.
+
+```java
+import io.gavio.integrations.IntegrationCatalog;
+
+var metadata = IntegrationCatalog.metadata(
+    "langchain",
+    Map.of("tenant", "acme", "feature", "support-chat", "environment", "prod"));
+var rows = IntegrationCatalog.compatibilityMatrix();
+```
+
 ## Production Trust Package
 
 Production Trust Package support (v1.8.0, `F-TRUST-01`) creates deterministic,
@@ -290,7 +306,7 @@ import io.gavio.trust.ProductionTrustVerification;
 
 Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
     .generatedAt("2026-07-12T12:00:00Z")
-    .release("1.8.0", "v1.8.0", commit)
+    .release("1.9.0", "v1.9.0", commit)
     .runtime("production", "project:prod-support", true, "metadata_only")
     .auditChain(recordCount, chainOk, headHash, tailHash)
     .build();

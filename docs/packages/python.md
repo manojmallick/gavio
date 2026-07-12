@@ -10,6 +10,7 @@ The Python SDK is the **reference implementation**. Source:
 - [Interceptors](#interceptors)
 - [Providers](#providers)
 - [Runtime export](#runtime-export)
+- [Ecosystem Integrations](#ecosystem-integrations)
 - [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
@@ -297,6 +298,24 @@ Existing runtime-event JSONL can be converted through the CLI:
 gavio events convert --from runtime-events.jsonl --to otel-json --service-name checkout-api
 ```
 
+## Ecosystem Integrations
+
+Ecosystem integration helpers (v1.9.0, `F-INT-01`) provide dependency-light
+metadata labels and compatibility rows for common gateways, observability
+tools, eval tools, frameworks, and provider SDKs.
+
+```python
+from gavio import compatibility_matrix, integration_metadata
+
+metadata = integration_metadata(
+    "litellm",
+    tenant="acme",
+    feature="support-chat",
+    environment="prod",
+)
+rows = compatibility_matrix()
+```
+
 ## Self-hosted Control Plane
 
 Control Plane support (v1.7.0) loads runtime config from an optional
@@ -334,7 +353,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "1.8.0", "tag": "v1.8.0"},
+    release={"version": "1.9.0", "tag": "v1.9.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",
