@@ -36,6 +36,9 @@ test-case export, and the `gavio inspect --store` read-only dashboard.
 embedding inputs through the same pre-interceptor chain (PII guard included)
 before the provider's embedding API.
 
+**v0.11.0** — Cost Intelligence (`F-COST-01/02/04`): spend attribution,
+cost reports, retry overhead, cache savings, and scoped budget fallback.
+
 ---
 
 ## PII Guard (`F-SEC-01`)
@@ -248,6 +251,25 @@ ModelPolicy(roles={"analyst": ["gpt-4o-mini"], "admin": ["*"]})              # R
 Budget blocks with `BudgetExceededError`, rate limiting with
 `RateLimitExceededError`, and RBAC with `ModelNotAllowedError` (role read from
 `request.metadata["role"]`).
+
+In v0.11.0, `CostControl` can scope spend by `global`, `agent`, `session`,
+`model`, `tenant`, `feature`, or `user`. Tenant/feature/user scopes are read
+from `request.metadata.costDimensions` (or flat aliases like `tenant_id` and
+`featureId`). A hard cap still blocks by default, or can fall back to a cheaper
+model:
+
+```python
+CostControl(
+    hard_cap_usd=50,
+    soft_cap_usd=40,
+    scope="tenant",
+    window="month",
+    fallback_model="gpt-4o-mini",
+)
+```
+
+Soft warnings and hard-cap fallback/block decisions surface as Inspector
+`governance.event` records with `kind="budget"`.
 
 #### Cost-optimiser routing (`F-GOV-06`)
 

@@ -11,6 +11,20 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.11.0] — 2026-07-12
+
+### Summary
+**Cost Intelligence.** Spend attribution, cost reporting, retry overhead,
+cache savings, and scoped budget fallback now ship across **Python, Java, and
+JavaScript**. Feature IDs `F-COST-01`, `F-COST-02`, and `F-COST-04`. Feature
+PR #49.
+
+Tests: Python 232 · JavaScript 246 · Java modules green.
+
 ### Added
 - **Cost Intelligence (all SDKs, `F-COST-01/02/04`)** — request metadata can now
   carry scalar cost dimensions (`tenant`, `feature`, `user`, `endpoint`,
@@ -682,7 +696,8 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/manojmallick/gavio/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/manojmallick/gavio/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/manojmallick/gavio/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/manojmallick/gavio/compare/v0.7.0...v0.8.0
