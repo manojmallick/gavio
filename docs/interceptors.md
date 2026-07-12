@@ -40,6 +40,9 @@ before the provider's embedding API.
 core/FinTech manifests, detector action metadata, redaction strategies, and
 custom regex-rule packs.
 
+**v0.14.0** — [Tool Runtime](#tool-runtime-f-tool-01020304): schema,
+freshness, conflict, confidence, and provenance checks for tool calls/results.
+
 ---
 
 ## PII Guard (`F-SEC-01`)
@@ -170,6 +173,31 @@ uses `PolicyPacks.core()`, `PolicyPacks.fintech()`, `PolicyPacks.custom()` and
 Per-rule `confidence` still combines with `PiiGuard` sensitivity thresholds.
 The action and redaction strategy are manifest metadata in this slice; runtime
 blocking/redaction behavior is still controlled by `PiiGuard` mode.
+
+---
+
+## Tool Runtime (`F-TOOL-01/02/03/04`)
+
+Tool Runtime validates structured tool context before tool results re-enter
+model context. It reads `metadata.tools.calls[]`, validates declared
+input/output schemas, checks freshness with per-call or context TTLs, detects
+conflicts across configured result keys, computes confidence, and records
+provenance under runtime context plus Inspector decision state.
+
+```python
+from gavio.interceptors.tool_runtime import ToolRuntimeInterceptor
+
+gw = Gateway.builder().use(
+    ToolRuntimeInterceptor(
+        on_failure="error",
+        max_age_seconds=120,
+        conflict_keys=["delivery_date"],
+    )
+).build()
+```
+
+JavaScript imports `toolRuntime` from `gavio/interceptors/tool-runtime`; Java
+uses `io.gavio.interceptors.toolruntime.ToolRuntimeInterceptor`.
 
 ---
 

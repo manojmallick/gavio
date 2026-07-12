@@ -21,22 +21,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>0.13.0</version>
+  <version>0.14.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>0.13.0</version>
+  <version>0.14.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>0.13.0</version>
+  <version>0.14.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>0.13.0</version>
+  <version>0.14.0</version>
 </dependency>
 ```
 
@@ -197,11 +197,11 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `0.13.0`.
+All artifacts share the `io.github.manojmallick` group id and version `0.14.0`.
 
 | Artifact | Contains |
 |---|---|
-| `gavio-core` | Gateway, request/response model, interceptor chain, pricing, inspector, OpenAI shim, zero-dep JSON |
+| `gavio-core` | Gateway, request/response model, interceptor chain, Tool Runtime, pricing, inspector, OpenAI shim, zero-dep JSON |
 | `gavio-interceptor-pii` | PiiGuard, PiiScanner SPI, built-in scanners, SecretScanner, PromptInjectionGuard |
 | `gavio-interceptor-audit` | AuditInterceptor, AuditSink, AuditRecord, hash chain, StdoutSink |
 | `gavio-interceptor-reliability` | RetryInterceptor, FallbackChain, CircuitBreaker, LoadBalancer, TimeoutPolicy |

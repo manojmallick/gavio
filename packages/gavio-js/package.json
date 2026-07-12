@@ -1,7 +1,7 @@
 {
   "name": "gavio",
-  "version": "0.13.0",
-  "description": "AI request runtime and inspector for production systems — PII guarding, audit, reliability, cost intelligence, and policy packs.",
+  "version": "0.14.0",
+  "description": "AI request runtime and inspector for production systems — PII guarding, audit, reliability, cost intelligence, policy packs, and tool runtime checks.",
   "license": "MIT",
   "repository": {
     "type": "git",

@@ -11,12 +11,20 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.14.0] — 2026-07-12
+
 ### Summary
 **Tool Runtime.** v0.14.0 adds a cross-SDK Tool Runtime interceptor for
 validating tool inputs/outputs, checking tool-result freshness, detecting
 conflicting tool outputs, and recording tool provenance decisions before tool
 results re-enter model context. Feature IDs `F-TOOL-01`, `F-TOOL-02`,
-`F-TOOL-03`, and `F-TOOL-04`. Feature issue #55.
+`F-TOOL-03`, and `F-TOOL-04`. Feature PR #56 (#55).
+
+Tests: Python 246 · JavaScript 260 · Java modules green · docs build green.
 
 ### Added
 - **Tool Runtime (all SDKs, `F-TOOL-01/02/03/04`)** — Python, JavaScript, and
@@ -759,7 +767,8 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/manojmallick/gavio/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/manojmallick/gavio/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/manojmallick/gavio/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/manojmallick/gavio/compare/v0.10.0...v0.11.0
