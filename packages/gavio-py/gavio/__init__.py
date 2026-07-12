@@ -1,6 +1,6 @@
 """Gavio — AI request runtime and inspector for production systems.
 
-Stable public API surface (v2.4.0):
+Stable public API surface (v2.5.0):
 
     from gavio import Gateway, GavioRequest, GavioResponse, Provider
 
@@ -26,11 +26,20 @@ from .exceptions import (
 from .exporters import GavioRuntimeExporter, JsonlRuntimeExporter, OtelSpanExporter
 from .gateway import Gateway, GatewayBuilder
 from .integrations import (
+    ADAPTER_SCHEMA_VERSION,
     IntegrationRecipe,
     compatibility_matrix,
     get_integration,
+    integration_adapter_payload,
     integration_metadata,
+    langchain_adapter_payload,
+    langfuse_adapter_payload,
+    langgraph_adapter_payload,
     list_integrations,
+    litellm_adapter_payload,
+    openlit_adapter_payload,
+    promptfoo_adapter_payload,
+    vercel_ai_sdk_adapter_payload,
 )
 from .platform_runtime import (
     PlatformRuntimeVerification,
@@ -73,17 +82,26 @@ from .types import (
     TokenUsage,
 )
 
-__version__ = "2.4.0"
+__version__ = "2.5.0"
 
 __all__ = [
     "__version__",
     "Gateway",
     "GatewayBuilder",
+    "ADAPTER_SCHEMA_VERSION",
     "IntegrationRecipe",
     "list_integrations",
     "get_integration",
     "integration_metadata",
     "compatibility_matrix",
+    "integration_adapter_payload",
+    "litellm_adapter_payload",
+    "promptfoo_adapter_payload",
+    "langfuse_adapter_payload",
+    "openlit_adapter_payload",
+    "langchain_adapter_payload",
+    "langgraph_adapter_payload",
+    "vercel_ai_sdk_adapter_payload",
     "GavioRequest",
     "GavioResponse",
     "InterceptorContext",

@@ -148,7 +148,7 @@ the same stream into OpenTelemetry-style span JSON (`F-OBS-07`).
 ## Ecosystem integrations
 
 ```typescript
-import { compatibilityMatrix, integrationMetadata } from 'gavio/integrations'
+import { compatibilityMatrix, integrationAdapterPayload, integrationMetadata } from 'gavio/integrations'
 
 const metadata = integrationMetadata('openlit', {
   tenant: 'acme',
@@ -156,11 +156,18 @@ const metadata = integrationMetadata('openlit', {
   environment: 'prod',
 })
 const rows = compatibilityMatrix()
+const adapter = integrationAdapterPayload(
+  'openlit',
+  { traceId: 'trace_123', data: { status: 'ok', provider: 'openai' } },
+  { metadata: { ...metadata, prompt: 'raw prompt text' } },
+)
 ```
 
 Ecosystem integration helpers (v1.9.0, `F-INT-01`) provide dependency-light
 metadata labels and compatibility rows for common gateways, observability
-tools, eval tools, frameworks, and provider SDKs.
+tools, eval tools, frameworks, and provider SDKs. Ecosystem adapter helpers
+(v2.5.0, `F-INT-02`) add metadata-only payload fragments for LiteLLM,
+promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and the Vercel AI SDK.
 
 ## Platform Runtime Profile
 
@@ -215,7 +222,7 @@ import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
 const bundle = buildProductionTrustBundle({
   bundleId: 'trust-prod-support-2026-07-12',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '2.4.0', tag: 'v2.4.0' },
+  release: { version: '2.5.0', tag: 'v2.5.0' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',

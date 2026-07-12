@@ -58,3 +58,66 @@ var metadata = IntegrationCatalog.metadata(
 
 These scalar labels flow into runtime events and cost dimensions without
 exporting raw prompt or response text.
+
+## Adapter payloads
+
+Since: `2.5.0`
+
+Adapter payload helpers build metadata-only fragments for ecosystem SDK calls,
+configs, callbacks, or telemetry wrappers. They do not import external SDKs.
+
+| Tool | Payload target |
+|---|---|
+| LiteLLM | completion kwargs metadata and trace headers |
+| promptfoo | default test metadata, Gavio vars, runtime assertions |
+| Langfuse | trace and generation metadata |
+| OpenLIT | OTel/OpenLIT span attributes |
+| LangChain | `RunnableConfig` metadata and tags |
+| LangGraph | `RunnableConfig` metadata, tags, and configurable ids |
+| Vercel AI SDK | request headers and experimental telemetry metadata |
+
+All adapter payloads share this envelope:
+
+```json
+{
+  "schemaVersion": "gavio.integration-adapter.v1",
+  "adapter": "langfuse",
+  "target": "langfuse",
+  "kind": "observability",
+  "payload": {}
+}
+```
+
+Content-bearing metadata fields such as `messages`, `content`, `diff`,
+`prompt`, `response`, `output`, `renderedPrompt`, and `rendered_prompt` are
+replaced with SHA-256 hash fields. Runtime-event source content is not copied
+into the adapter summary.
+
+```python
+from gavio import integration_adapter_payload
+
+payload = integration_adapter_payload(
+    "langfuse",
+    {"traceId": "trace_123", "data": {"status": "ok", "provider": "openai"}},
+    metadata={"tenant": "acme", "prompt": "raw text"},
+)
+```
+
+```ts
+import { integrationAdapterPayload } from "gavio/integrations"
+
+const payload = integrationAdapterPayload(
+  "vercel-ai-sdk",
+  { traceId: "trace_123", data: { status: "ok", provider: "openai" } },
+  { metadata: { tenant: "acme", prompt: "raw text" } },
+)
+```
+
+```java
+import io.gavio.integrations.IntegrationAdapters;
+
+var payload = IntegrationAdapters.payload(
+    "langchain",
+    Map.of("traceId", "trace_123", "data", Map.of("status", "ok", "provider", "openai")),
+    Map.of("tenant", "acme", "prompt", "raw text"));
+```

@@ -20,6 +20,7 @@ offending SDK's test-vector run goes red.
 | [`control-plane/runtime-config.json`](./control-plane/runtime-config.json) | Self-hosted control-plane cases — verify runtime config shape, policy source loading, event search filters, RBAC denial, metadata stripping, and offline cache fallback. |
 | [`trust/production-trust-bundle.json`](./trust/production-trust-bundle.json) | Production Trust Package case — verify deterministic bundle hashing, metadata-only privacy posture, audit-chain evidence, runtime event evidence, and release-review controls. |
 | [`integrations/catalog.json`](./integrations/catalog.json) | Ecosystem integration recipes — verify compatibility metadata, role boundaries, docs paths, and offline example paths across SDKs. |
+| [`integrations/adapters.json`](./integrations/adapters.json) | Ecosystem adapter payload cases — verify LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and Vercel AI SDK payload shapes, trace propagation, metadata hashes, and raw-content omission across SDKs. |
 | [`platform-runtime/profile.json`](./platform-runtime/profile.json) | Platform Runtime Profile cases — verify deterministic profile hashing, metadata-only posture, required runtime surfaces, readiness score, and gap codes. |
 | [`runtime-events/export-redaction.json`](./runtime-events/export-redaction.json) | Runtime exporter privacy contract (F-EXP-01) — verify metadata-only export strips content-bearing event fields while preserving trace and decision metadata. |
 | [`otel/spans.json`](./otel/spans.json) | OTel bridge cases (F-OBS-07) — map runtime events into OpenTelemetry-style spans with parent links, status, timestamps, attributes, and metadata-only privacy. |
@@ -113,6 +114,16 @@ offending SDK's test-vector run goes red.
       "examplePath": "examples/integrations/litellm/recipe.py"
     }
   ]
+}
+```
+
+`integrations/adapters.json`:
+```json
+{
+  "source": { "traceId": "trace_123", "type": "trace.end", "data": { "status": "ok" } },
+  "metadata": { "tenant": "acme", "prompt": "synthetic prompt text" },
+  "forbiddenStrings": ["synthetic prompt text"],
+  "adapters": [{ "id": "litellm", "expects": [{ "path": ["payload", "completionKwargs"] }] }]
 }
 ```
 

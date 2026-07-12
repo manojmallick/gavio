@@ -233,7 +233,7 @@ public final class PlatformRuntime {
     public static final class Builder {
         private final String profileId;
         private String generatedAt;
-        private Map<String, Object> sdk = mapOf("name", "gavio-java", "version", "2.4.0");
+        private Map<String, Object> sdk = mapOf("name", "gavio-java", "version", "2.5.0");
         private Map<String, Object> runtime = new LinkedHashMap<>();
         private List<String> surfaces = new ArrayList<>();
         private List<String> exporters = new ArrayList<>();

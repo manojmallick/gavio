@@ -66,6 +66,88 @@ var metadata = IntegrationCatalog.metadata(
 var rows = IntegrationCatalog.compatibilityMatrix();
 ```
 
+## Adapter Payloads
+
+Since: `2.5.0`
+
+The catalog helpers describe where each tool fits. Adapter payload helpers build
+metadata-only payload fragments you can pass into ecosystem SDK calls, configs,
+callbacks, or telemetry wrappers. They do not import external SDKs.
+
+| Tool | Helper | Payload target |
+|---|---|---|
+| LiteLLM | `litellm_adapter_payload` / `litellmAdapterPayload` / `IntegrationAdapters.litellm` | completion kwargs metadata and trace headers |
+| promptfoo | `promptfoo_adapter_payload` / `promptfooAdapterPayload` / `IntegrationAdapters.promptfoo` | default test metadata, Gavio vars, runtime assertions |
+| Langfuse | `langfuse_adapter_payload` / `langfuseAdapterPayload` / `IntegrationAdapters.langfuse` | trace and generation metadata |
+| OpenLIT | `openlit_adapter_payload` / `openlitAdapterPayload` / `IntegrationAdapters.openlit` | OTel/OpenLIT span attributes |
+| LangChain | `langchain_adapter_payload` / `langchainAdapterPayload` / `IntegrationAdapters.langchain` | `RunnableConfig` metadata and tags |
+| LangGraph | `langgraph_adapter_payload` / `langgraphAdapterPayload` / `IntegrationAdapters.langgraph` | `RunnableConfig` metadata, tags, and configurable ids |
+| Vercel AI SDK | `vercel_ai_sdk_adapter_payload` / `vercelAiSdkAdapterPayload` / `IntegrationAdapters.vercelAiSdk` | request headers and experimental telemetry metadata |
+
+All adapter payloads share this outer envelope:
+
+```json
+{
+  "schemaVersion": "gavio.integration-adapter.v1",
+  "adapter": "langfuse",
+  "target": "langfuse",
+  "kind": "observability",
+  "payload": {}
+}
+```
+
+Content-bearing metadata fields such as `messages`, `content`, `diff`,
+`prompt`, `response`, `output`, `renderedPrompt`, and `rendered_prompt` are
+replaced with SHA-256 hash fields such as `promptHash`. Runtime-event source
+content is not copied into the adapter summary.
+
+```python
+from gavio import integration_adapter_payload
+
+event = {
+    "traceId": "trace_123",
+    "type": "trace.end",
+    "data": {"status": "ok", "provider": "openai", "model": "gpt-4o-mini"},
+}
+payload = integration_adapter_payload(
+    "langfuse",
+    event,
+    metadata={"tenant": "acme", "feature": "support-chat", "prompt": "raw text"},
+)
+
+langfuse_trace = payload["payload"]["trace"]
+```
+
+```ts
+import { integrationAdapterPayload } from "gavio/integrations"
+
+const payload = integrationAdapterPayload(
+  "vercel-ai-sdk",
+  {
+    traceId: "trace_123",
+    type: "trace.end",
+    data: { status: "ok", provider: "openai", model: "gpt-4o-mini" },
+  },
+  { metadata: { tenant: "acme", feature: "support-chat", prompt: "raw text" } },
+)
+
+const telemetry = payload.payload.request
+```
+
+```java
+import io.gavio.integrations.IntegrationAdapters;
+
+var payload = IntegrationAdapters.payload(
+    "langchain",
+    Map.of(
+        "traceId", "trace_123",
+        "type", "trace.end",
+        "data", Map.of("status", "ok", "provider", "openai", "model", "gpt-4o-mini")),
+    Map.of("tenant", "acme", "feature", "support-chat", "prompt", "raw text"));
+
+var runnableConfig = ((Map<?, ?>) payload.get("payload")).get("runnableConfig");
+```
+
 ## Metadata Contract
 
 Use these request metadata fields consistently across integrations:

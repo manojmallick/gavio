@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "1.0",
+  "since": "2.5.0",
+  "source": {
+    "schemaVersion": "1.0",
+    "eventId": "evt_123",
+    "traceId": "trace_123",
+    "type": "trace.end",
+    "tNs": 42000000,
+    "seq": 7,
+    "data": {
+      "status": "ok",
+      "latencyMs": 42,
+      "costUsd": 0.0123,
+      "piiEntityTypes": ["EMAIL"],
+      "interceptorsFired": ["pii_guard", "audit"],
+      "model": "gpt-4o-mini",
+      "provider": "openai",
+      "content": "raw model text"
+    }
+  },
+  "metadata": {
+    "tenant": "acme",
+    "feature": "support-chat",
+    "environment": "prod",
+    "workflow": "triage",
+    "prompt": "customer raw prompt"
+  },
+  "forbiddenStrings": ["customer raw prompt", "raw model text"],
+  "adapters": [
+    {
+      "id": "litellm",
+      "kind": "gateway",
+      "expects": [
+        {
+          "path": ["payload", "completionKwargs", "extraHeaders", "x-gavio-trace-id"],
+          "value": "trace_123"
+        },
+        {
+          "path": ["payload", "completionKwargs", "metadata", "promptHash"],
+          "value": "f730fd8911fbc2172080327ae17da2852b342272ec2c05290547d199feb501b6"
+        },
+        {
+          "path": ["payload", "completionKwargs", "metadata", "gavio.status"],
+          "value": "ok"
+        }
+      ]
+    },
+    {
+      "id": "promptfoo",
+      "kind": "eval",
+      "expects": [
+        {
+          "path": ["payload", "defaultTest", "metadata", "integration"],
+          "value": "promptfoo"
+        },
+        {
+          "path": ["payload", "defaultTest", "assert", 0, "metric"],
+          "value": "gavio_status"
+        },
+        {
+          "path": ["payload", "vars", "gavio", "failedCases"],
+          "absent": true
+        }
+      ]
+    },
+    {
+      "id": "langfuse",
+      "kind": "observability",
+      "expects": [
+        {
+          "path": ["payload", "trace", "id"],
+          "value": "trace_123"
+        },
+        {
+          "path": ["payload", "trace", "tags", 1],
+          "value": "integration:langfuse"
+        },
+        {
+          "path": ["payload", "generation", "model"],
+          "value": "gpt-4o-mini"
+        }
+      ]
+    },
+    {
+      "id": "openlit",
+      "kind": "observability",
+      "expects": [
+        {
+          "path": ["payload", "span", "attributes", "gavio.trace_id"],
+          "value": "trace_123"
+        },
+        {
+          "path": ["payload", "span", "attributes", "gen_ai.system"],
+          "value": "openai"
+        },
+        {
+          "path": ["payload", "span", "attributes", "gavio.label.promptHash"],
+          "value": "f730fd8911fbc2172080327ae17da2852b342272ec2c05290547d199feb501b6"
+        }
+      ]
+    },
+    {
+      "id": "langchain",
+      "kind": "framework",
+      "expects": [
+        {
+          "path": ["payload", "runnableConfig", "run_name"],
+          "value": "gavio.request"
+        },
+        {
+          "path": ["payload", "runnableConfig", "tags", 1],
+          "value": "integration:langchain"
+        },
+        {
+          "path": ["payload", "runnableConfig", "metadata", "gavio.provider"],
+          "value": "openai"
+        }
+      ]
+    },
+    {
+      "id": "langgraph",
+      "kind": "framework",
+      "expects": [
+        {
+          "path": ["payload", "runnableConfig", "configurable", "thread_id"],
+          "value": "triage"
+        },
+        {
+          "path": ["payload", "runnableConfig", "configurable", "gavio_trace_id"],
+          "value": "trace_123"
+        },
+        {
+          "path": ["payload", "runnableConfig", "tags", 1],
+          "value": "integration:langgraph"
+        }
+      ]
+    },
+    {
+      "id": "vercel-ai-sdk",
+      "kind": "framework",
+      "expects": [
+        {
+          "path": ["payload", "request", "headers", "x-gavio-integration"],
+          "value": "vercel-ai-sdk"
+        },
+        {
+          "path": ["payload", "request", "experimental_telemetry", "functionId"],
+          "value": "gavio.route"
+        },
+        {
+          "path": ["payload", "request", "experimental_telemetry", "metadata", "gavio.model"],
+          "value": "gpt-4o-mini"
+        }
+      ]
+    }
+  ]
+}

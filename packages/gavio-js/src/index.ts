@@ -42,12 +42,21 @@ export { uuid7, newTraceId } from './ids.js'
 export { PricingProvider, estimateTokens } from './pricing.js'
 
 export {
+  ADAPTER_SCHEMA_VERSION,
   compatibilityMatrix,
   getIntegration,
+  integrationAdapterPayload,
   integrationMetadata,
+  langchainAdapterPayload,
+  langfuseAdapterPayload,
+  langgraphAdapterPayload,
+  litellmAdapterPayload,
   listIntegrations,
+  openlitAdapterPayload,
+  promptfooAdapterPayload,
+  vercelAiSdkAdapterPayload,
 } from './integrations.js'
-export type { IntegrationRecipe } from './integrations.js'
+export type { IntegrationAdapterPayload, IntegrationRecipe } from './integrations.js'
 
 export {
   DEFAULT_PLATFORM_REQUIRED_SURFACES,
