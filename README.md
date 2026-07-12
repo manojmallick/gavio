@@ -78,6 +78,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `1.7.0` | Self-hosted Control Plane | Local/private runtime config, policy rollout, budget config, audit search, snapshots, and SDK cache fallback |
 | `1.8.0` | Production Trust Package | Metadata-only release evidence bundles, deterministic verification, threat model, benchmark and reference-architecture docs |
 | `1.9.0` | Ecosystem + Integrations | Integration catalog helpers, shared compatibility vector/schema, common AI stack recipes, and full-stack integration smoke example |
+| `2.0.0` | Platform-Grade Runtime | Metadata-only platform runtime profile, readiness score, deterministic gap checks, and cross-SDK posture helpers |
 
 ---
 
@@ -404,6 +405,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Self-hosted Control Plane — runtime config, policy rollout, budget config, audit search, snapshots | — | 1.7.0 |
 | Production Trust Package — metadata-only release evidence bundle and verifier | `F-TRUST-01` | 1.8.0 |
 | Ecosystem integration catalog — compatibility matrix, metadata helpers, JS subpath, and offline recipes | `F-INT-01` | 1.9.0 |
+| Platform Runtime Profile — metadata-only readiness score, platform surfaces, evidence, and gap checks | `F-PLAT-01` | 2.0.0 |
 | Stable release gate — lockstep version checks, release hygiene, API stability and LTS policy | — | 1.0.0 |
 | Runtime event/export contract — metadata-safe JSONL exporters and integration recipes | `F-EXP-01` | 1.1.0 |
 | Cost Governance v2 CLI — `gavio cost report` over JSONL records and budget policies | `F-COST-05` | 1.2.0 |
@@ -444,6 +446,7 @@ the [interceptors guide](./docs/interceptors.md) for every built-in interceptor.
 | [docs/control-plane.md](./docs/control-plane.md) | Self-hosted Control Plane runtime config, policy rollout, budget config, and audit search |
 | [docs/trust-package.md](./docs/trust-package.md) | Production trust bundle threat model, privacy boundary, and SDK APIs |
 | [docs/integrations.md](./docs/integrations.md) | How Gavio fits beside gateway, observability, and eval tools |
+| [docs/platform-runtime.md](./docs/platform-runtime.md) | Platform runtime readiness profile, metadata-only posture checks, and SDK APIs |
 | [docs/otel-mapping.md](./docs/otel-mapping.md) | InspectorEvent → OpenTelemetry spans · [Grafana dashboard](./docs/grafana/gavio-dashboard.json) |
 | [docs/packages/](./docs/packages/) | Deep guide per SDK |
 | [examples/](./examples/) | Runnable example projects in all three languages |

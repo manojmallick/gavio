@@ -14,6 +14,7 @@ Source: [`packages/gavio-js`](https://github.com/manojmallick/gavio/tree/main/pa
 - [Interceptors](#interceptors)
 - [Providers](#providers)
 - [Ecosystem Integrations](#ecosystem-integrations)
+- [Platform Runtime Profile](#platform-runtime-profile)
 - [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
@@ -267,6 +268,47 @@ const metadata = integrationMetadata('openlit', {
 })
 const rows = compatibilityMatrix()
 ```
+
+## Platform Runtime Profile
+
+Platform Runtime Profile support (v2.0.0, `F-PLAT-01`) summarizes production
+readiness across runtime events, audit hashes, policy packs, cost governance,
+tool runtime, and trust evidence without storing prompts or responses.
+
+```typescript
+import {
+  buildPlatformRuntimeProfile,
+  verifyPlatformRuntimeProfile,
+} from 'gavio/platform-runtime'
+
+const profile = buildPlatformRuntimeProfile({
+  profileId: 'platform-prod-support',
+  generatedAt: '2026-07-12T12:00:00Z',
+  release: { version: '2.0.0', tag: 'v2.0.0' },
+  runtime: {
+    environment: 'production',
+    policySource: 'project:prod-support',
+    eventExportMode: 'metadata_only',
+  },
+  evidence: {
+    surfaces: [
+      'runtime_events',
+      'audit_hashes',
+      'policy_packs',
+      'cost_governance',
+      'tool_runtime',
+      'trust_evidence',
+    ],
+    runtimeEventsContentFree: true,
+    auditChainVerified: true,
+  },
+})
+
+console.log(verifyPlatformRuntimeProfile(profile).valid)
+```
+
+See [Platform Runtime Profile](./platform-runtime.md) for the schema, readiness
+scoring contract, and cross-SDK test vector.
 
 ## Production Trust Package
 

@@ -13,6 +13,7 @@ pull only what you need.
 - [Providers](#providers)
 - [Runtime export](#runtime-export)
 - [Ecosystem Integrations](#ecosystem-integrations)
+- [Platform Runtime Profile](#platform-runtime-profile)
 - [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
@@ -51,7 +52,7 @@ implementation("io.github.manojmallick:gavio-interceptor-pii:1.9.0")
 
 | Artifact | Contains |
 |---|---|
-| `gavio-core` | Gateway, request/response records, interceptor chain, Tool Runtime, Production Trust Package, providers base, Mock |
+| `gavio-core` | Gateway, request/response records, interceptor chain, Tool Runtime, Platform Runtime Profile, Production Trust Package, providers base, Mock |
 | `gavio-interceptor-pii` | `PiiGuard`, scanners (Email/Iban/Bsn/CreditCard/Phone/IpAddress/Ssn/Secret) |
 | `gavio-interceptor-audit` | `AuditInterceptor`, `AuditRecord`, `StdoutSink`, hash-chain + call-graph |
 | `gavio-interceptor-cache` | `SemanticCache`, `MemoryCacheBackend`, `RedisCacheBackend`/`RedisVectorBackend` (F-CACHE-04) |
@@ -340,6 +341,35 @@ var metadata = IntegrationCatalog.metadata(
     Map.of("tenant", "acme", "feature", "support-chat", "environment", "prod"));
 var rows = IntegrationCatalog.compatibilityMatrix();
 ```
+
+## Platform Runtime Profile
+
+Platform Runtime Profile support (v2.0.0, `F-PLAT-01`) summarizes production
+readiness across runtime events, audit hashes, policy packs, cost governance,
+tool runtime, and trust evidence without storing prompts or responses.
+
+```java
+import io.gavio.platform.PlatformRuntime;
+import io.gavio.platform.PlatformRuntimeVerification;
+
+Map<String, Object> profile = PlatformRuntime.builder("platform-prod-support")
+    .generatedAt("2026-07-12T12:00:00Z")
+    .release("2.0.0", "v2.0.0", commit)
+    .runtime("production", "project:prod-support", "metadata_only")
+    .evidence(List.of(
+        "runtime_events",
+        "audit_hashes",
+        "policy_packs",
+        "cost_governance",
+        "tool_runtime",
+        "trust_evidence"), true, true)
+    .build();
+
+PlatformRuntimeVerification result = PlatformRuntime.verify(profile);
+```
+
+See [Platform Runtime Profile](../platform-runtime.md) for the schema,
+readiness scoring contract, and cross-SDK test vector.
 
 ## Production Trust Package
 

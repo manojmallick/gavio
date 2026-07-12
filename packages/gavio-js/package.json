@@ -110,6 +110,11 @@
       "import": "./dist/esm/integrations.js",
       "require": "./dist/cjs/integrations.js"
     },
+    "./platform-runtime": {
+      "types": "./dist/esm/platform-runtime.d.ts",
+      "import": "./dist/esm/platform-runtime.js",
+      "require": "./dist/cjs/platform-runtime.js"
+    },
     "./trust": {
       "types": "./dist/esm/trust.d.ts",
       "import": "./dist/esm/trust.js",

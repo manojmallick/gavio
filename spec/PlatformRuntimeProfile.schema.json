@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.dev/schemas/PlatformRuntimeProfile.v2.json",
+  "title": "PlatformRuntimeProfile",
+  "description": "Metadata-only platform-grade runtime posture profile for production Gavio deployments.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "profileId",
+    "generatedAt",
+    "sdk",
+    "runtime",
+    "surfaces",
+    "exporters",
+    "integrations",
+    "controls",
+    "evidence",
+    "requirements",
+    "readiness",
+    "profileHash"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "2.0" },
+    "profileId": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "sdk": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["environment", "eventExportMode"],
+      "properties": {
+        "environment": { "type": "string", "minLength": 1 },
+        "provider": { "type": "string" },
+        "model": { "type": "string" },
+        "eventExportMode": {
+          "type": "string",
+          "enum": ["metadata_only", "full_local_debug"]
+        },
+        "controlPlaneEnabled": { "type": "boolean" },
+        "policySource": { "type": "string" }
+      }
+    },
+    "surfaces": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "runtime_events",
+          "otel_spans",
+          "audit_hashes",
+          "cost_governance",
+          "policy_packs",
+          "tool_runtime",
+          "prompt_evals",
+          "control_plane",
+          "trust_evidence",
+          "integration_catalog"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "exporters": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["jsonl", "otel", "control_plane", "custom"]
+      },
+      "uniqueItems": true
+    },
+    "integrations": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "controls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["id", "type", "status"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "type": {
+            "type": "string",
+            "enum": [
+              "policy_pack",
+              "budget_policy",
+              "tool_runtime",
+              "eval_suite",
+              "trust_bundle",
+              "release_gate",
+              "integration",
+              "other"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pass", "warn", "fail", "not_applicable"]
+          },
+          "source": { "type": "string" }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["auditChain", "runtimeEvents"],
+      "properties": {
+        "auditChain": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["recordCount", "verified"],
+          "properties": {
+            "recordCount": { "type": "integer", "minimum": 0 },
+            "verified": { "type": "boolean" }
+          }
+        },
+        "runtimeEvents": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["eventCount", "contentFree"],
+          "properties": {
+            "eventCount": { "type": "integer", "minimum": 0 },
+            "contentFree": { "type": "boolean" }
+          }
+        },
+        "trustBundle": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "present": { "type": "boolean" },
+            "verified": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["requiredSurfaces"],
+      "properties": {
+        "requiredSurfaces": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ready", "score", "requiredSurfaces", "gaps"],
+      "properties": {
+        "ready": { "type": "boolean" },
+        "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "requiredSurfaces": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["code", "severity", "message"],
+            "properties": {
+              "code": { "type": "string", "minLength": 1 },
+              "severity": { "type": "string", "enum": ["error"] },
+              "message": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    "profileHash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

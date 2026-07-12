@@ -18,6 +18,7 @@ implemented per SDK, so you can compare the APIs side by side.
 | 13 | **Self-hosted Control Plane** — runtime config, policy source, cached fallback | [py](./python/13-control-plane/) | [js](./javascript/13-control-plane/) | [java](./java/13-control-plane/) | no |
 | 14 | **Production Trust Package** — metadata-only release evidence bundle and verifier | [py](./python/14-production-trust/) | [js](./javascript/14-production-trust/) | [java](./java/14-production-trust/) | no |
 | 15 | **Ecosystem integrations** — compatibility matrix, metadata labels, full-stack runtime/export/eval/audit smoke | [py](./integrations/) | — | — | no |
+| 20 | **Platform Runtime Profile** — metadata-only production readiness profile and deterministic gaps | [py](./python/20-platform-runtime/) | — | — | no |
 
 Only example 02 needs a key — it uses a real provider if `ANTHROPIC_API_KEY` or
 `OPENAI_API_KEY` is set, and otherwise falls back to the mock provider so it

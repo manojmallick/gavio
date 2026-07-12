@@ -89,6 +89,7 @@ export default defineConfig({
           { text: 'Control Plane', link: '/guide/control-plane' },
           { text: 'Trust Package', link: '/guide/trust-package' },
           { text: 'Integrations', link: '/guide/integrations' },
+          { text: 'Platform Runtime', link: '/guide/platform-runtime' },
           { text: 'Stability', link: '/guide/stability' },
         ],
       },

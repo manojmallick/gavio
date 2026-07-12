@@ -24,6 +24,7 @@ serialise to shapes valid against these schemas.
 | [`ControlPlaneEvent.schema.json`](./ControlPlaneEvent.schema.json) | Metadata-only audit/event records searchable by trace, tenant, feature, provider, model, risk, and time |
 | [`ProductionTrustBundle.schema.json`](./ProductionTrustBundle.schema.json) | Metadata-only production release evidence bundle with audit-chain, runtime-event, control, benchmark, and document pointers |
 | [`IntegrationRecipe.schema.json`](./IntegrationRecipe.schema.json) | Ecosystem integration compatibility recipe with role boundaries, supported Gavio surfaces, docs path, and example path |
+| [`PlatformRuntimeProfile.schema.json`](./PlatformRuntimeProfile.schema.json) | Metadata-only platform-grade runtime profile with enabled surfaces, evidence, readiness score, and deterministic gaps |
 | [`BudgetPolicy.schema.json`](./BudgetPolicy.schema.json) | Cost Governance v2 scoped budget policy |
 | [`BudgetDecision.schema.json`](./BudgetDecision.schema.json) | Cost Governance v2 allow/warn/block/fallback decision |
 | [`CostReport.schema.json`](./CostReport.schema.json) | Cost Governance v2 spend, overhead, savings, and budget report |

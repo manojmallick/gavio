@@ -161,6 +161,29 @@ Ecosystem integration helpers (v1.9.0, `F-INT-01`) provide dependency-light
 metadata labels and compatibility rows for common gateways, observability
 tools, eval tools, frameworks, and provider SDKs.
 
+## Platform Runtime Profile
+
+```typescript
+import { buildPlatformRuntimeProfile } from 'gavio/platform-runtime'
+
+const profile = buildPlatformRuntimeProfile({
+  profileId: 'platform-prod-support',
+  generatedAt: '2026-07-12T12:00:00Z',
+  runtime: { environment: 'production', eventExportMode: 'metadata_only' },
+  surfaces: [
+    'runtime_events',
+    'audit_hashes',
+    'policy_packs',
+    'cost_governance',
+    'tool_runtime',
+    'trust_evidence',
+  ],
+})
+```
+
+Platform Runtime Profile support (v2.0.0, `F-PLAT-01`) creates deterministic,
+metadata-only readiness reports for production runtime posture.
+
 ## Self-hosted Control Plane
 
 ```typescript

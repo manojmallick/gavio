@@ -11,7 +11,12 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Platform Runtime Profile (all SDKs, `F-PLAT-01`)** — added a
+  metadata-only platform readiness profile contract, shared schema/vector,
+  Python/JavaScript/Java helpers for deterministic profile hashing and
+  readiness gap checks, plus docs and an offline example for production posture
+  review.
 
 ---
 
