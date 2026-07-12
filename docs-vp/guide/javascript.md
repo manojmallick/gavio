@@ -13,6 +13,7 @@ Source: [`packages/gavio-js`](https://github.com/manojmallick/gavio/tree/main/pa
 - [Sub-path imports](#sub-path-imports)
 - [Interceptors](#interceptors)
 - [Providers](#providers)
+- [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
 - [Module format & runtimes](#module-format--runtimes)
 
@@ -220,6 +221,38 @@ const policy: BudgetPolicy = {
 
 const gw = new Gateway({ devMode: true })
   .use(budgetPolicyControl({ policy, estimatedRequestCostUsd: 0.02 }))
+```
+
+## Prompt Registry + Evals
+
+Prompt Registry + Evals (v1.4.0, `F-EVAL-01/02`) renders versioned chat
+templates with metadata-only `PromptLineage` and runs deterministic eval cases
+without storing raw model output in reports.
+
+```typescript
+import { EvalSuite, PromptRegistry, PromptTemplate } from 'gavio/prompts'
+
+const registry = new PromptRegistry([
+  new PromptTemplate({
+    id: 'support.reply',
+    version: '2026-07-12',
+    messages: [
+      { role: 'system', content: 'You are concise.' },
+      { role: 'user', content: 'Reply to {{ customer }} about {{ topic }}.' },
+    ],
+    requiredVariables: ['customer', 'topic'],
+  }),
+])
+
+const report = await new EvalSuite({
+  id: 'support-smoke',
+  cases: [{
+    id: 'refund',
+    templateId: 'support.reply',
+    variables: { customer: 'Avery', topic: 'refund' },
+    assertions: [{ type: 'contains', value: 'refund' }],
+  }],
+}).run(registry, () => 'Avery refund approved')
 ```
 
 ## Embeddings

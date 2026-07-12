@@ -15,6 +15,7 @@ pull only what you need.
 - [Gateway API](#gateway-api)
 - [Interceptors](#interceptors)
 - [Providers](#providers)
+- [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
 - [Notes](#notes)
 
@@ -255,6 +256,32 @@ Gateway gw = Gateway.builder()
         .estimatedRequestCostUsd(0.02)
         .build())
     .build();
+```
+
+## Prompt Registry + Evals
+
+Prompt Registry + Evals (v1.4.0, `F-EVAL-01/02`) renders versioned chat
+templates with metadata-only `PromptLineage` and runs deterministic eval cases
+without storing raw model output in reports.
+
+```java
+PromptRegistry registry = new PromptRegistry();
+registry.register(new PromptTemplate(
+    "support.reply",
+    "2026-07-12",
+    List.of(
+        Message.of("system", "You are concise."),
+        Message.of("user", "Reply to {{ customer }} about {{ topic }}.")),
+    List.of("customer", "topic"),
+    Map.of()));
+
+EvalReport report = new EvalSuite("support-smoke", List.of(new EvalCase(
+    "refund",
+    "support.reply",
+    null,
+    Map.of("customer", "Avery", "topic", "refund"),
+    List.of(new EvalAssertion("contains", "refund", false)),
+    Map.of()))).run(registry, (prompt, testCase) -> "Avery refund approved");
 ```
 
 ## Embeddings

@@ -30,6 +30,25 @@ export { uuid7, newTraceId } from './ids.js'
 export { PricingProvider, estimateTokens } from './pricing.js'
 
 export {
+  PromptTemplate,
+  PromptRegistry,
+  EvalAssertion,
+  EvalCase,
+  EvalSuite,
+} from './prompts/index.js'
+export type {
+  PromptTemplateInit,
+  RenderedPrompt,
+  EvalAssertionInit,
+  EvalAssertionResult,
+  EvalAssertionType,
+  EvalCaseInit,
+  EvalCaseResult,
+  EvalReport,
+  CompletionFn,
+} from './prompts/index.js'
+
+export {
   jsonlRuntimeExporter,
   metadataOnlyEvent,
   otelSpanExporter,

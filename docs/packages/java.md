@@ -12,6 +12,7 @@ pull only what you need.
 - [Interceptors](#interceptors)
 - [Providers](#providers)
 - [Runtime export](#runtime-export)
+- [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
 - [Notes](#notes)
 
@@ -303,6 +304,46 @@ Gateway gw = Gateway.builder()
     .exporter(new OtelSpanExporter(Path.of("otel-spans.jsonl"), "checkout-api"))
     .build();
 ```
+
+## Prompt Registry + Evals
+
+Prompt Registry + Evals (v1.4.0, `F-EVAL-01/02`) renders versioned chat
+templates with metadata-only `PromptLineage` and runs deterministic eval cases
+without storing raw model output in reports.
+
+```java
+import io.gavio.prompts.EvalAssertion;
+import io.gavio.prompts.EvalCase;
+import io.gavio.prompts.EvalReport;
+import io.gavio.prompts.EvalSuite;
+import io.gavio.prompts.PromptRegistry;
+import io.gavio.prompts.PromptTemplate;
+import io.gavio.types.Message;
+
+PromptRegistry registry = new PromptRegistry();
+registry.register(new PromptTemplate(
+    "support.reply",
+    "2026-07-12",
+    List.of(
+        Message.of("system", "You are concise."),
+        Message.of("user", "Reply to {{ customer }} about {{ topic }}.")),
+    List.of("customer", "topic"),
+    Map.of()));
+
+EvalSuite suite = new EvalSuite("support-smoke", List.of(new EvalCase(
+    "refund",
+    "support.reply",
+    null,
+    Map.of("customer", "Avery", "topic", "refund"),
+    List.of(new EvalAssertion("contains", "refund", false)),
+    Map.of())));
+
+EvalReport report = suite.run(registry, (prompt, testCase) -> "Avery refund approved");
+System.out.println(report.score());
+```
+
+See [Prompt Registry + Evals](../prompt-registry-evals.md) for all SDKs and the
+shared schemas.
 
 ## Embeddings
 

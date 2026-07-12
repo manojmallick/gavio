@@ -10,6 +10,7 @@ The Python SDK is the **reference implementation**. Source:
 - [Interceptors](#interceptors)
 - [Providers](#providers)
 - [Runtime export](#runtime-export)
+- [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
 - [Version support](#version-support)
 
@@ -292,6 +293,44 @@ Existing runtime-event JSONL can be converted through the CLI:
 ```bash
 gavio events convert --from runtime-events.jsonl --to otel-json --service-name checkout-api
 ```
+
+## Prompt Registry + Evals
+
+Prompt Registry + Evals (v1.4.0, `F-EVAL-01/02`) renders versioned chat
+templates with metadata-only `PromptLineage` and runs deterministic eval cases
+without storing raw model output in reports.
+
+```python
+from gavio import EvalSuite, PromptRegistry, PromptTemplate
+
+registry = PromptRegistry([
+    PromptTemplate(
+        id="support.reply",
+        version="2026-07-12",
+        messages=[
+            {"role": "system", "content": "You are concise."},
+            {"role": "user", "content": "Reply to {{ customer }} about {{ topic }}."},
+        ],
+        required_variables=("customer", "topic"),
+    )
+])
+
+suite = EvalSuite.from_dict({
+    "id": "support-smoke",
+    "cases": [{
+        "id": "refund",
+        "templateId": "support.reply",
+        "variables": {"customer": "Avery", "topic": "refund"},
+        "assertions": [{"type": "contains", "value": "refund"}],
+    }],
+})
+
+report = await suite.run(registry, lambda _prompt, _case: "Avery refund approved")
+assert report.score == 1.0
+```
+
+See [Prompt Registry + Evals](../prompt-registry-evals.md) for all SDKs and the
+shared schemas.
 
 ## Embeddings
 

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/EvalReport.v1.json",
+  "title": "EvalReport",
+  "description": "Metadata-safe Prompt Registry eval report.",
+  "type": "object",
+  "required": ["suiteId", "totalCases", "passedCases", "failedCases", "score", "cases"],
+  "properties": {
+    "suiteId": { "type": "string" },
+    "totalCases": { "type": "integer", "minimum": 0 },
+    "passedCases": { "type": "integer", "minimum": 0 },
+    "failedCases": { "type": "integer", "minimum": 0 },
+    "score": { "type": "number", "minimum": 0, "maximum": 1 },
+    "cases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/caseResult" }
+    }
+  },
+  "$defs": {
+    "caseResult": {
+      "type": "object",
+      "required": [
+        "id",
+        "templateId",
+        "templateVersion",
+        "passed",
+        "score",
+        "outputHash",
+        "assertions",
+        "lineage"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "templateId": { "type": "string" },
+        "templateVersion": { "type": "string" },
+        "passed": { "type": "boolean" },
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "outputHash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "SHA-256 hash of model output; raw output is not stored in the report."
+        },
+        "assertions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/assertionResult" }
+        },
+        "lineage": { "$ref": "#/$defs/promptLineage" }
+      },
+      "additionalProperties": false
+    },
+    "assertionResult": {
+      "type": "object",
+      "required": ["type", "passed", "expected", "reason"],
+      "properties": {
+        "type": { "type": "string", "enum": ["contains", "not_contains", "equals", "regex"] },
+        "passed": { "type": "boolean" },
+        "expected": {},
+        "reason": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "promptLineage": {
+      "type": "object",
+      "required": ["templateId", "templateVersion", "variables", "ragChunks"],
+      "properties": {
+        "templateId": { "type": ["string", "null"] },
+        "templateVersion": { "type": ["string", "null"] },
+        "variables": { "type": "object", "additionalProperties": true },
+        "ragChunks": { "type": "array" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

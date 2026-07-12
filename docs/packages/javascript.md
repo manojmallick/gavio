@@ -10,6 +10,7 @@ Source: [`packages/gavio-js`](../../packages/gavio-js/).
 - [Interceptors](#interceptors)
 - [Providers](#providers)
 - [Runtime export](#runtime-export)
+- [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
 - [Module format & runtimes](#module-format--runtimes)
 
@@ -74,6 +75,7 @@ import { stdoutSink }       from 'gavio/interceptors/audit/sinks'
 import { retryInterceptor, timeoutPolicy, fallbackChain } from 'gavio/interceptors/reliability'
 import { toolRuntime }      from 'gavio/interceptors/tool-runtime'
 import { jsonlRuntimeExporter, otelSpanExporter } from 'gavio/exporters'
+import { EvalSuite, PromptRegistry, PromptTemplate } from 'gavio/prompts'
 import { anthropicAdapter, openaiAdapter, openrouterAdapter } from 'gavio/providers'
 import { GavioTestKit, mockProvider }      from 'gavio/testing'
 ```
@@ -271,6 +273,44 @@ const gw = new Gateway({
   })],
 })
 ```
+
+## Prompt Registry + Evals
+
+Prompt Registry + Evals (v1.4.0, `F-EVAL-01/02`) renders versioned chat
+templates with metadata-only `PromptLineage` and runs deterministic eval cases
+without storing raw model output in reports.
+
+```typescript
+import { EvalSuite, PromptRegistry, PromptTemplate } from 'gavio/prompts'
+
+const registry = new PromptRegistry([
+  new PromptTemplate({
+    id: 'support.reply',
+    version: '2026-07-12',
+    messages: [
+      { role: 'system', content: 'You are concise.' },
+      { role: 'user', content: 'Reply to {{ customer }} about {{ topic }}.' },
+    ],
+    requiredVariables: ['customer', 'topic'],
+  }),
+])
+
+const suite = new EvalSuite({
+  id: 'support-smoke',
+  cases: [{
+    id: 'refund',
+    templateId: 'support.reply',
+    variables: { customer: 'Avery', topic: 'refund' },
+    assertions: [{ type: 'contains', value: 'refund' }],
+  }],
+})
+
+const report = await suite.run(registry, () => 'Avery refund approved')
+console.log(report.score)
+```
+
+See [Prompt Registry + Evals](../prompt-registry-evals.md) for all SDKs and the
+shared schemas.
 
 ## Embeddings
 

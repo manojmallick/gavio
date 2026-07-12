@@ -85,6 +85,7 @@ export default defineConfig({
           { text: 'Interceptors', link: '/guide/interceptors' },
           { text: 'Inspector', link: '/guide/inspector' },
           { text: 'Runtime Events', link: '/guide/runtime-events' },
+          { text: 'Prompt Registry + Evals', link: '/guide/prompt-registry-evals' },
           { text: 'Integrations', link: '/guide/integrations' },
           { text: 'Stability', link: '/guide/stability' },
         ],

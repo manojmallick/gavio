@@ -105,6 +105,11 @@
       "import": "./dist/esm/exporters/index.js",
       "require": "./dist/cjs/exporters/index.js"
     },
+    "./prompts": {
+      "types": "./dist/esm/prompts/index.d.ts",
+      "import": "./dist/esm/prompts/index.js",
+      "require": "./dist/cjs/prompts/index.js"
+    },
     "./shim/openai": {
       "types": "./dist/esm/shim/openai.d.ts",
       "import": "./dist/esm/shim/openai.js",

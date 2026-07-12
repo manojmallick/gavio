@@ -24,6 +24,7 @@ from .exceptions import (
 )
 from .exporters import GavioRuntimeExporter, JsonlRuntimeExporter, OtelSpanExporter
 from .gateway import Gateway, GatewayBuilder
+from .prompts import EvalSuite, PromptRegistry, PromptTemplate, RenderedPrompt
 from .request import GavioRequest
 from .response import GavioResponse
 from .types import (
@@ -59,6 +60,10 @@ __all__ = [
     "GavioRuntimeExporter",
     "JsonlRuntimeExporter",
     "OtelSpanExporter",
+    "PromptTemplate",
+    "RenderedPrompt",
+    "PromptRegistry",
+    "EvalSuite",
     # exceptions
     "GavioError",
     "ConfigurationError",
