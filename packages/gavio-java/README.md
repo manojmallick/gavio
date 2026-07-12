@@ -1,8 +1,8 @@
 # Gavio — Java SDK
 
 > AI request runtime and inspector for production systems. PII protection,
-> audit trails, runtime events, reliability, cost intelligence, policy packs, and provider
-> adapters as composable interceptors.
+> audit trails, runtime events, reliability, cost intelligence, policy packs,
+> production trust packages, and provider adapters as composable interceptors.
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
@@ -21,22 +21,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.7.0</version>
+  <version>1.8.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.7.0</version>
+  <version>1.8.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>1.7.0</version>
+  <version>1.8.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>1.7.0</version>
+  <version>1.8.0</version>
 </dependency>
 ```
 
@@ -183,6 +183,26 @@ self-hosted server, caches the last successful config, and can fail open or
 closed during outages. The same surface is available through
 `io.gavio.controlplane.ControlPlaneClient`.
 
+## Production Trust Package
+
+```java
+import io.gavio.trust.ProductionTrust;
+import io.gavio.trust.ProductionTrustVerification;
+
+Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
+    .generatedAt("2026-07-12T12:00:00Z")
+    .release("1.8.0", "v1.8.0", commit)
+    .runtime("production", "project:prod-support", true, "metadata_only")
+    .auditChain(recordCount, chainOk, headHash, tailHash)
+    .build();
+
+ProductionTrustVerification result = ProductionTrust.verify(bundle);
+```
+
+Production Trust Package support (v1.8.0, `F-TRUST-01`) creates deterministic,
+metadata-only release evidence bundles for audit-chain, runtime-event, policy,
+benchmark, and document review.
+
 ## Prompt Registry + Evals
 
 ```java
@@ -242,6 +262,9 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
 - **Control Plane** — optional self-hosted runtime config with policy rollout,
   budget config, audit search, config snapshots, SDK cache fallback, and
   `io.gavio.controlplane.ControlPlaneClient` (v1.7.0).
+- **Production Trust Package** — metadata-only release evidence bundles with
+  deterministic hashes, privacy checks, audit-chain evidence, runtime-event
+  evidence, and document/control pointers (`F-TRUST-01`).
 - **Quality** — `GuardrailsInterceptor` with `JsonSchemaValidator` and regex
   validators (`F-QUA-01/02`), composite `RiskScorer` (`F-QUA-06`).
 - **Inspector** — dev-time visualizer (`F-DX-09/10`), agent call graphs and
@@ -266,11 +289,11 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `1.7.0`.
+All artifacts share the `io.github.manojmallick` group id and version `1.8.0`.
 
 | Artifact | Contains |
 |---|---|
-| `gavio-core` | Gateway, request/response model, interceptor chain, Tool Runtime, pricing, inspector, OpenAI shim, zero-dep JSON |
+| `gavio-core` | Gateway, request/response model, interceptor chain, Tool Runtime, Production Trust Package, pricing, inspector, OpenAI shim, zero-dep JSON |
 | `gavio-interceptor-pii` | PiiGuard, PiiScanner SPI, built-in scanners, SecretScanner, PromptInjectionGuard |
 | `gavio-interceptor-audit` | AuditInterceptor, AuditSink, AuditRecord, hash chain, StdoutSink |
 | `gavio-interceptor-reliability` | RetryInterceptor, FallbackChain, CircuitBreaker, LoadBalancer, TimeoutPolicy |

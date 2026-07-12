@@ -1,8 +1,8 @@
 # Gavio — JavaScript / TypeScript SDK
 
 > AI request runtime and inspector for production systems. PII protection,
-> audit trails, runtime events, reliability, cost intelligence, policy packs, and provider
-> adapters as composable interceptors.
+> audit trails, runtime events, reliability, cost intelligence, policy packs,
+> production trust packages, and provider adapters as composable interceptors.
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
@@ -101,6 +101,7 @@ import { semanticCache }     from 'gavio/interceptors/cache'
 import { costControl, budgetPolicyControl } from 'gavio/interceptors/governance'
 import { guardrails }        from 'gavio/interceptors/guardrails'
 import { jsonlRuntimeExporter, otelSpanExporter } from 'gavio/exporters'
+import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio/trust'
 import { anthropicAdapter }  from 'gavio/providers/anthropic'
 import { openrouterAdapter } from 'gavio/providers/openrouter'
 import { GavioOpenAI }       from 'gavio/shim/openai'
@@ -163,6 +164,30 @@ Control Plane support (v1.7.0) loads runtime config from an optional
 self-hosted server, caches the last successful config, and can fail open or
 closed during outages. The same surface is available as `ControlPlaneClient`
 and `loadControlPlaneConfig`.
+
+## Production Trust Package
+
+```typescript
+import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
+
+const bundle = buildProductionTrustBundle({
+  bundleId: 'trust-prod-support-2026-07-12',
+  generatedAt: '2026-07-12T12:00:00Z',
+  release: { version: '1.8.0', tag: 'v1.8.0' },
+  runtime: {
+    environment: 'production',
+    policySource: 'project:prod-support',
+    eventExportMode: 'metadata_only',
+  },
+  auditRecords,
+})
+
+console.log(verifyProductionTrustBundle(bundle).valid)
+```
+
+Production Trust Package support (v1.8.0, `F-TRUST-01`) creates deterministic,
+metadata-only release evidence bundles for audit-chain, runtime-event, policy,
+benchmark, and document review.
 
 ## Prompt Registry + Evals
 
@@ -228,6 +253,9 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
 - **Control Plane** — optional self-hosted runtime config with policy rollout,
   budget config, audit search, config snapshots, SDK cache fallback, and
   `ControlPlaneClient` (v1.7.0).
+- **Production Trust Package** — metadata-only release evidence bundles with
+  deterministic hashes, privacy checks, audit-chain evidence, runtime-event
+  evidence, and document/control pointers (`F-TRUST-01`).
 - **Quality** — `guardrails()` with JSON-schema and regex validators
   (`F-QUA-01/02`), composite `riskScorer()` (`F-QUA-06`).
 - **Inspector** — dev-time visualizer (`F-DX-09/10`), agent call graphs and

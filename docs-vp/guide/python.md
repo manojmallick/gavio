@@ -13,6 +13,7 @@ The Python SDK is the **reference implementation**. Source:
 - [Gateway API](#gateway-api)
 - [Interceptors](#interceptors)
 - [Providers](#providers)
+- [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
 - [Version support](#version-support)
@@ -262,6 +263,33 @@ gw = (
 
 Use `ControlPlaneClient` or `load_control_plane_config` directly when you need
 to inspect or preload the fetched config before constructing a gateway.
+
+## Production Trust Package
+
+Production Trust Package support (v1.8.0, `F-TRUST-01`) creates deterministic,
+metadata-only release evidence bundles for audit-chain, runtime-event, policy,
+benchmark, and document review.
+
+```python
+from gavio import build_production_trust_bundle, verify_production_trust_bundle
+
+bundle = build_production_trust_bundle(
+    bundle_id="trust-prod-support-2026-07-12",
+    generated_at="2026-07-12T12:00:00Z",
+    release={"version": "1.8.0", "tag": "v1.8.0"},
+    runtime={
+        "environment": "production",
+        "policySource": "project:prod-support",
+        "eventExportMode": "metadata_only",
+    },
+    audit_records=audit_records,
+)
+
+assert verify_production_trust_bundle(bundle).valid
+```
+
+See [Production Trust Package](./trust-package.md) for the bundle schema,
+threat model, privacy boundary, and cross-SDK examples.
 
 ## Prompt Registry + Evals
 

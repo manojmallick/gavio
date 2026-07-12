@@ -4,11 +4,11 @@
   "generatedAt": "2026-07-12T12:00:00Z",
   "sdk": {
     "name": "gavio-python",
-    "version": "1.7.0"
+    "version": "1.8.0"
   },
   "release": {
-    "version": "1.7.0",
-    "tag": "v1.7.0",
+    "version": "1.8.0",
+    "tag": "v1.8.0",
     "commit": "b1ff1be"
   },
   "runtime": {
@@ -70,5 +70,5 @@
       "sha256": "sha256:b51c91ff9ff68571996e8c831887d337669fec8d20838c81c6a12d8b8752252f"
     }
   ],
-  "bundleHash": "sha256:fd96bb89871c84dee7f44ac8081c95d9f283297cc550122d5d005eec95af92ed"
+  "bundleHash": "sha256:ceb897822174d5251cae64eda1660bc2ef56ee102046b5773907d514f9c21214"
 }

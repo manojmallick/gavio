@@ -15,6 +15,46 @@ Nothing yet.
 
 ---
 
+## [1.8.0] — 2026-07-12
+
+### Summary
+**Production Trust Package.** v1.8.0 adds metadata-only release evidence
+bundles for production review. Python, JavaScript, and Java can now build and
+verify deterministic trust bundles that summarize audit-chain integrity,
+runtime-event privacy posture, control evidence, benchmark/document pointers,
+release identity, and bundle tamper checks without storing raw prompt,
+response, tool input, or tool output content. Feature ID `F-TRUST-01`.
+Feature PR #79 (#78).
+
+Tests: Python 291 · JavaScript 296 · Java modules green · docs build green ·
+stable release gate green · Inspector benchmarks green (Python 4.18%/1.39%,
+JavaScript 2.17%/1.26%, Java 1.00%/0.38% metadata/full p50 overhead).
+
+### Added
+- **Production Trust Bundle helpers (all SDKs, `F-TRUST-01`)** — Python
+  exposes `build_production_trust_bundle`, `verify_production_trust_bundle`,
+  `trust_bundle_hash`, and `TrustBundleVerification`; JavaScript exposes
+  `buildProductionTrustBundle`, `verifyProductionTrustBundle`,
+  `trustBundleHash`, `TRUST_SCHEMA_VERSION`, and the `gavio/trust` subpath;
+  Java exposes `io.gavio.trust.ProductionTrust` and
+  `ProductionTrustVerification`.
+- **Trust bundle contract and vector** — added
+  `spec/ProductionTrustBundle.schema.json` and
+  `test-vectors/trust/production-trust-bundle.json` for deterministic bundle
+  hashing, metadata-only privacy checks, audit-chain evidence, runtime-event
+  evidence, and release-review controls.
+- **Trust package docs and examples** — added `docs/trust-package.md`, the
+  docs-site Trust Package guide, SDK guide sections, and
+  `14-production-trust` runnable examples for Python, JavaScript, and Java.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, and package/runtime versions to
+  the `1.8.0` release line while keeping historical feature "since" labels
+  intact.
+
+---
+
 ## [1.7.0] — 2026-07-12
 
 ### Summary
@@ -1083,7 +1123,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/manojmallick/gavio/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/manojmallick/gavio/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/manojmallick/gavio/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/manojmallick/gavio/compare/v1.4.0...v1.5.0

@@ -46,4 +46,4 @@ cd examples/java/01-quickstart
 mvn -q compile exec:java
 ```
 
-All examples target the `1.7.0` package line.
+All examples target the `1.8.0` package line.

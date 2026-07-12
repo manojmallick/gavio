@@ -22,7 +22,7 @@ const second = new AuditRecord({
 const bundle = buildProductionTrustBundle({
   bundleId: 'trust-prod-support-2026-07-12',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '1.7.0', tag: 'v1.7.0', commit: 'b1ff1be' },
+  release: { version: '1.8.0', tag: 'v1.8.0', commit: 'b1ff1be' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',

@@ -34,8 +34,8 @@ def test_builds_and_verifies_metadata_only_trust_bundle() -> None:
     bundle = build_production_trust_bundle(
         bundle_id="trust-prod-support-2026-07-12",
         generated_at="2026-07-12T12:00:00Z",
-        sdk={"name": "gavio-python", "version": "1.7.0"},
-        release={"version": "1.7.0", "tag": "v1.7.0", "commit": "b1ff1be"},
+        sdk={"name": "gavio-python", "version": "1.8.0"},
+        release={"version": "1.8.0", "tag": "v1.8.0", "commit": "b1ff1be"},
         runtime={
             "environment": "production",
             "policySource": "project:prod-support",
@@ -80,8 +80,8 @@ def test_rejects_tampered_or_content_bearing_bundle() -> None:
     bundle = build_production_trust_bundle(
         bundle_id="trust-prod-support-2026-07-12",
         generated_at="2026-07-12T12:00:00Z",
-        sdk={"name": "gavio-python", "version": "1.7.0"},
-        release={"version": "1.7.0"},
+        sdk={"name": "gavio-python", "version": "1.8.0"},
+        release={"version": "1.8.0"},
         runtime={
             "environment": "production",
             "policySource": "project:prod-support",
