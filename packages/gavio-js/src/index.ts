@@ -50,6 +50,24 @@ export {
 export type { IntegrationRecipe } from './integrations.js'
 
 export {
+  DEFAULT_PLATFORM_REQUIRED_SURFACES,
+  PLATFORM_RUNTIME_SCHEMA_VERSION,
+  buildPlatformRuntimeProfile,
+  platformProfileHash,
+  platformRuntimeReadiness,
+  verifyPlatformRuntimeProfile,
+} from './platform-runtime.js'
+export type {
+  PlatformJsonValue,
+  PlatformRuntimeGap,
+  PlatformRuntimeProfile,
+  PlatformRuntimeProfileOptions,
+  PlatformRuntimeReadiness,
+  PlatformRuntimeSurface,
+  PlatformRuntimeVerification,
+} from './platform-runtime.js'
+
+export {
   PromptTemplate,
   PromptRegistry,
   EvalAssertion,

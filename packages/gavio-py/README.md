@@ -2,7 +2,8 @@
 
 > AI request runtime and inspector for production systems. PII protection,
 > audit trails, runtime events, reliability, cost intelligence, policy packs,
-> production trust packages, and provider adapters as composable interceptors.
+> production trust packages, platform runtime profiles, and provider adapters
+> as composable interceptors.
 
 `gavio` sits between your application and any LLM provider. The same request
 passes through a pre/post interceptor chain — PII redaction, retries, caching,
@@ -164,6 +165,29 @@ Ecosystem integration helpers (v1.9.0, `F-INT-01`) provide dependency-light
 metadata labels and compatibility rows for common gateways, observability
 tools, eval tools, frameworks, and provider SDKs.
 
+## Platform Runtime Profile
+
+```python
+from gavio import build_platform_runtime_profile
+
+profile = build_platform_runtime_profile(
+    profile_id="platform-prod-support",
+    generated_at="2026-07-12T12:00:00Z",
+    runtime={"environment": "production", "eventExportMode": "metadata_only"},
+    surfaces=[
+        "runtime_events",
+        "audit_hashes",
+        "policy_packs",
+        "cost_governance",
+        "tool_runtime",
+        "trust_evidence",
+    ],
+)
+```
+
+Platform Runtime Profile support (v2.0.0, `F-PLAT-01`) creates deterministic,
+metadata-only readiness reports for production runtime posture.
+
 ## Self-hosted Control Plane
 
 ```python
@@ -195,7 +219,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "1.9.0", "tag": "v1.9.0"},
+    release={"version": "2.0.0", "tag": "v2.0.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",

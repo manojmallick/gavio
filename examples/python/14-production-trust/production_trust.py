@@ -30,7 +30,7 @@ def main() -> None:
     bundle = build_production_trust_bundle(
         bundle_id="trust-prod-support-2026-07-12",
         generated_at="2026-07-12T12:00:00Z",
-        release={"version": "1.9.0", "tag": "v1.9.0", "commit": "b1ff1be"},
+        release={"version": "2.0.0", "tag": "v2.0.0", "commit": "b1ff1be"},
         runtime={
             "environment": "production",
             "policySource": "project:prod-support",

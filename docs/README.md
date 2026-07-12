@@ -13,6 +13,7 @@ Start here, then dive into the language you use.
 - [Self-hosted Control Plane](./control-plane.md) — local project, key, policy, budget, audit search, and config snapshot APIs
 - [Production Trust Package](./trust-package.md) — metadata-only release evidence bundles and verification
 - [Integrations](./integrations.md) — how Gavio fits beside gateways, observability, and eval tools
+- [Platform Runtime Profile](./platform-runtime.md) — metadata-only readiness score and production posture gaps
 - [Stability](./stability.md) — API stability, LTS policy, and stable release gate
 
 ## Per-package guides
@@ -32,6 +33,7 @@ Start here, then dive into the language you use.
 - [Control-plane runtime config schema](../spec/ControlPlaneRuntimeConfig.schema.json) — SDK config fetched from the self-hosted control plane
 - [Control-plane event schema](../spec/ControlPlaneEvent.schema.json) — metadata-only runtime events accepted by the self-hosted control plane
 - [Production trust bundle schema](../spec/ProductionTrustBundle.schema.json) — metadata-only release evidence bundle contract
+- [Platform runtime profile schema](../spec/PlatformRuntimeProfile.schema.json) — metadata-only readiness profile contract
 - [OTel mapping](./otel-mapping.md) — InspectorEvent → OpenTelemetry spans · [Grafana dashboard](./grafana/gavio-dashboard.json)
 - [CHANGELOG](../CHANGELOG.md) — release history + feature IDs
 - [RELEASING](../RELEASING.md) — how releases are cut

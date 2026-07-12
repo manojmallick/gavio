@@ -1,6 +1,6 @@
 """Gavio — AI request runtime and inspector for production systems.
 
-Stable public API surface (v1.9.0):
+Stable public API surface (v2.0.0):
 
     from gavio import Gateway, GavioRequest, GavioResponse, Provider
 
@@ -32,6 +32,13 @@ from .integrations import (
     integration_metadata,
     list_integrations,
 )
+from .platform_runtime import (
+    PlatformRuntimeVerification,
+    build_platform_runtime_profile,
+    platform_profile_hash,
+    platform_runtime_readiness,
+    verify_platform_runtime_profile,
+)
 from .prompts import EvalSuite, PromptRegistry, PromptTemplate, RenderedPrompt
 from .request import GavioRequest
 from .response import GavioResponse
@@ -53,7 +60,7 @@ from .types import (
     TokenUsage,
 )
 
-__version__ = "1.9.0"
+__version__ = "2.0.0"
 
 __all__ = [
     "__version__",
@@ -86,6 +93,11 @@ __all__ = [
     "RenderedPrompt",
     "PromptRegistry",
     "EvalSuite",
+    "PlatformRuntimeVerification",
+    "build_platform_runtime_profile",
+    "platform_runtime_readiness",
+    "platform_profile_hash",
+    "verify_platform_runtime_profile",
     "TrustBundleVerification",
     "build_production_trust_bundle",
     "trust_bundle_hash",

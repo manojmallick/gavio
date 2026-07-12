@@ -4,8 +4,8 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gavio"
-version = "1.9.0"
-description = "AI request runtime and inspector for production systems — PII protection, audit trails, runtime events, reliability, cost intelligence, policy packs, tool runtime checks, evals, and production trust packages."
+version = "2.0.0"
+description = "AI request runtime and inspector for production systems — PII protection, audit trails, runtime events, reliability, cost intelligence, policy packs, tool runtime checks, evals, production trust packages, and platform runtime profiles."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

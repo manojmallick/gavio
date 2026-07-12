@@ -1,3 +1,3 @@
 /** SDK version — keep in sync with package.json. */
 
-export const VERSION = '1.9.0'
+export const VERSION = '2.0.0'

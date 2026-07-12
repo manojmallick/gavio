@@ -16,6 +16,7 @@ pull only what you need.
 - [Interceptors](#interceptors)
 - [Providers](#providers)
 - [Ecosystem Integrations](#ecosystem-integrations)
+- [Platform Runtime Profile](#platform-runtime-profile)
 - [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
@@ -30,19 +31,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.9.0</version>
+  <version>2.0.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.9.0</version>
+  <version>2.0.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:1.9.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:1.9.0")
+implementation("io.github.manojmallick:gavio-core:2.0.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:2.0.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -54,7 +55,7 @@ implementation("io.github.manojmallick:gavio-interceptor-pii:1.9.0")
 
 | Artifact | Contains |
 |---|---|
-| `gavio-core` | Gateway, request/response records, interceptor chain, Tool Runtime, Production Trust Package, providers base, Mock |
+| `gavio-core` | Gateway, request/response records, interceptor chain, Tool Runtime, Platform Runtime Profile, Production Trust Package, providers base, Mock |
 | `gavio-interceptor-pii` | `PiiGuard`, scanners (Email/Iban/Bsn/CreditCard/Phone/IpAddress/Ssn/Secret) |
 | `gavio-interceptor-audit` | `AuditInterceptor`, `AuditRecord`, `StdoutSink`, hash-chain + call-graph |
 | `gavio-interceptor-cache` | `SemanticCache`, `MemoryCacheBackend`, `RedisCacheBackend`/`RedisVectorBackend` (F-CACHE-04) |
@@ -294,6 +295,40 @@ var metadata = IntegrationCatalog.metadata(
 var rows = IntegrationCatalog.compatibilityMatrix();
 ```
 
+## Platform Runtime Profile
+
+Platform Runtime Profile support (v2.0.0, `F-PLAT-01`) summarizes production
+readiness across runtime events, audit hashes, policy packs, cost governance,
+tool runtime, and trust evidence without storing prompts or responses.
+
+```java
+import io.gavio.platform.PlatformRuntime;
+import io.gavio.platform.PlatformRuntimeVerification;
+
+Map<String, Object> profile = PlatformRuntime.builder("platform-prod-support")
+    .generatedAt("2026-07-12T12:00:00Z")
+    .runtime(Map.of(
+        "environment", "production",
+        "policySource", "project:prod-support",
+        "eventExportMode", "metadata_only"))
+    .surfaces(List.of(
+        "runtime_events",
+        "audit_hashes",
+        "policy_packs",
+        "cost_governance",
+        "tool_runtime",
+        "trust_evidence"))
+    .evidence(Map.of(
+        "auditChain", Map.of("recordCount", 42, "verified", true),
+        "runtimeEvents", Map.of("eventCount", 168, "contentFree", true)))
+    .build();
+
+PlatformRuntimeVerification result = PlatformRuntime.verify(profile);
+```
+
+See [Platform Runtime Profile](./platform-runtime.md) for the schema, readiness
+scoring contract, and cross-SDK test vector.
+
 ## Production Trust Package
 
 Production Trust Package support (v1.8.0, `F-TRUST-01`) creates deterministic,
@@ -306,7 +341,7 @@ import io.gavio.trust.ProductionTrustVerification;
 
 Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
     .generatedAt("2026-07-12T12:00:00Z")
-    .release("1.9.0", "v1.9.0", commit)
+    .release("2.0.0", "v2.0.0", commit)
     .runtime("production", "project:prod-support", true, "metadata_only")
     .auditChain(recordCount, chainOk, headHash, tailHash)
     .build();

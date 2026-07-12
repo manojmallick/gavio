@@ -15,6 +15,35 @@ Nothing yet.
 
 ---
 
+## [2.0.0] — 2026-07-12
+
+### Summary
+**Platform-Grade Runtime.** v2.0.0 adds a metadata-only Platform Runtime
+Profile across Python, JavaScript, and Java. The profile summarizes production
+runtime posture with deterministic readiness scoring, platform surface checks,
+privacy/content-key validation, profile hashing, and cross-SDK conformance via
+a shared schema and test vector. Feature ID `F-PLAT-01`. Feature PR #83 (#82).
+
+Tests: Python 299 · JavaScript 303 · Java modules green · docs build green ·
+stable release gate green · platform example smoke green · Inspector
+benchmarks green (Python 2.54%/5.05%, JavaScript 0.51%/0.64%, Java
+1.27%/0.07% metadata/full p50 overhead).
+
+### Added
+- **Platform Runtime Profile (all SDKs, `F-PLAT-01`)** — added a
+  metadata-only platform readiness profile contract, shared schema/vector,
+  Python/JavaScript/Java helpers for deterministic profile hashing and
+  readiness gap checks, plus docs and an offline example for production posture
+  review.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, package/runtime versions, and
+  security policy references to the `2.0.0` release line while keeping
+  historical feature "since" labels intact.
+
+---
+
 ## [1.9.0] — 2026-07-12
 
 ### Summary
@@ -1159,7 +1188,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/manojmallick/gavio/compare/v1.9.0...v2.0.0
 [1.9.0]: https://github.com/manojmallick/gavio/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/manojmallick/gavio/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/manojmallick/gavio/compare/v1.6.0...v1.7.0

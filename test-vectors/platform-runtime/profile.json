@@ -1,0 +1,271 @@
+{
+  "schemaVersion": "2.0",
+  "since": "2.0.0",
+  "featureId": "F-PLAT-01",
+  "readyProfileInput": {
+    "profileId": "platform-prod-support",
+    "generatedAt": "2026-07-12T12:00:00Z",
+    "sdk": {
+      "name": "gavio",
+      "version": "2.0.0"
+    },
+    "runtime": {
+      "environment": "production",
+      "provider": "openai",
+      "model": "gpt-4o",
+      "eventExportMode": "metadata_only",
+      "controlPlaneEnabled": true,
+      "policySource": "project:prod-support"
+    },
+    "surfaces": [
+      "runtime_events",
+      "audit_hashes",
+      "policy_packs",
+      "cost_governance",
+      "tool_runtime",
+      "trust_evidence",
+      "integration_catalog",
+      "otel_spans"
+    ],
+    "exporters": [
+      "jsonl",
+      "otel"
+    ],
+    "integrations": [
+      "litellm",
+      "openlit",
+      "promptfoo"
+    ],
+    "controls": [
+      {
+        "id": "support-policy",
+        "type": "policy_pack",
+        "status": "pass",
+        "source": "policy-packs/support/manifest.json"
+      },
+      {
+        "id": "monthly-budget",
+        "type": "budget_policy",
+        "status": "pass",
+        "source": "budgets/prod-support.json"
+      },
+      {
+        "id": "tool-approval",
+        "type": "tool_runtime",
+        "status": "pass",
+        "source": "test-vectors/tool-runtime/permissions.json"
+      },
+      {
+        "id": "release-gate",
+        "type": "release_gate",
+        "status": "pass",
+        "source": "scripts/stable_release_gate.py"
+      }
+    ],
+    "evidence": {
+      "auditChain": {
+        "recordCount": 42,
+        "verified": true
+      },
+      "runtimeEvents": {
+        "eventCount": 168,
+        "contentFree": true
+      },
+      "trustBundle": {
+        "present": true,
+        "verified": true
+      }
+    }
+  },
+  "readyProfile": {
+    "schemaVersion": "2.0",
+    "profileId": "platform-prod-support",
+    "generatedAt": "2026-07-12T12:00:00Z",
+    "sdk": {
+      "name": "gavio",
+      "version": "2.0.0"
+    },
+    "runtime": {
+      "environment": "production",
+      "provider": "openai",
+      "model": "gpt-4o",
+      "eventExportMode": "metadata_only",
+      "controlPlaneEnabled": true,
+      "policySource": "project:prod-support"
+    },
+    "surfaces": [
+      "audit_hashes",
+      "cost_governance",
+      "integration_catalog",
+      "otel_spans",
+      "policy_packs",
+      "runtime_events",
+      "tool_runtime",
+      "trust_evidence"
+    ],
+    "exporters": [
+      "jsonl",
+      "otel"
+    ],
+    "integrations": [
+      "litellm",
+      "openlit",
+      "promptfoo"
+    ],
+    "controls": [
+      {
+        "id": "support-policy",
+        "type": "policy_pack",
+        "status": "pass",
+        "source": "policy-packs/support/manifest.json"
+      },
+      {
+        "id": "monthly-budget",
+        "type": "budget_policy",
+        "status": "pass",
+        "source": "budgets/prod-support.json"
+      },
+      {
+        "id": "tool-approval",
+        "type": "tool_runtime",
+        "status": "pass",
+        "source": "test-vectors/tool-runtime/permissions.json"
+      },
+      {
+        "id": "release-gate",
+        "type": "release_gate",
+        "status": "pass",
+        "source": "scripts/stable_release_gate.py"
+      }
+    ],
+    "evidence": {
+      "auditChain": {
+        "recordCount": 42,
+        "verified": true
+      },
+      "runtimeEvents": {
+        "eventCount": 168,
+        "contentFree": true
+      },
+      "trustBundle": {
+        "present": true,
+        "verified": true
+      }
+    },
+    "requirements": {
+      "requiredSurfaces": [
+        "audit_hashes",
+        "cost_governance",
+        "policy_packs",
+        "runtime_events",
+        "tool_runtime",
+        "trust_evidence"
+      ]
+    },
+    "readiness": {
+      "ready": true,
+      "score": 100,
+      "requiredSurfaces": [
+        "audit_hashes",
+        "cost_governance",
+        "policy_packs",
+        "runtime_events",
+        "tool_runtime",
+        "trust_evidence"
+      ],
+      "gaps": []
+    },
+    "profileHash": "sha256:04d3e03c78b546788aae6be045d8ba4908eafa7f047f9448073a3d43101c0a4d"
+  },
+  "gapCase": {
+    "input": {
+      "profileId": "platform-staging-gap",
+      "generatedAt": "2026-07-12T12:00:00Z",
+      "sdk": {
+        "name": "gavio",
+        "version": "2.0.0"
+      },
+      "runtime": {
+        "environment": "staging",
+        "eventExportMode": "full_local_debug",
+        "controlPlaneEnabled": false
+      },
+      "surfaces": [
+        "runtime_events",
+        "audit_hashes",
+        "cost_governance"
+      ],
+      "exporters": [
+        "jsonl"
+      ],
+      "integrations": [],
+      "controls": [
+        {
+          "id": "pii-policy",
+          "type": "policy_pack",
+          "status": "fail",
+          "source": "policy-packs/support/manifest.json"
+        }
+      ],
+      "evidence": {
+        "auditChain": {
+          "recordCount": 2,
+          "verified": false
+        },
+        "runtimeEvents": {
+          "eventCount": 8,
+          "contentFree": false
+        }
+      }
+    },
+    "expectedReadiness": {
+      "ready": false,
+      "score": 30,
+      "requiredSurfaces": [
+        "audit_hashes",
+        "cost_governance",
+        "policy_packs",
+        "runtime_events",
+        "tool_runtime",
+        "trust_evidence"
+      ],
+      "gaps": [
+        {
+          "code": "missing_surface:policy_packs",
+          "severity": "error",
+          "message": "required surface policy_packs is not enabled"
+        },
+        {
+          "code": "missing_surface:tool_runtime",
+          "severity": "error",
+          "message": "required surface tool_runtime is not enabled"
+        },
+        {
+          "code": "missing_surface:trust_evidence",
+          "severity": "error",
+          "message": "required surface trust_evidence is not enabled"
+        },
+        {
+          "code": "runtime.event_export_mode",
+          "severity": "error",
+          "message": "runtime.eventExportMode must be metadata_only"
+        },
+        {
+          "code": "runtime_events.content_free",
+          "severity": "error",
+          "message": "runtime event evidence must be content-free"
+        },
+        {
+          "code": "audit_chain.verified",
+          "severity": "error",
+          "message": "audit-chain evidence must be verified"
+        },
+        {
+          "code": "control_failed:pii-policy",
+          "severity": "error",
+          "message": "control pii-policy failed"
+        }
+      ]
+    }
+  }
+}
