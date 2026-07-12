@@ -81,6 +81,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `1.9.0` | Ecosystem + Integrations | Integration catalog helpers, shared compatibility vector/schema, common AI stack recipes, and full-stack integration smoke example |
 | `2.0.0` | Platform-Grade Runtime | Metadata-only platform runtime profile, readiness score, deterministic gap checks, and cross-SDK posture helpers |
 | `2.1.0` | Eval Runner + CI Gates | `gavio eval run` for JSON/YAML suites, baseline comparison, fail-under gates, and JSON/JUnit reports |
+| `2.2.0` | Prompt Registry v2 | File-backed prompt manifests, semver selectors, approval metadata, metadata-safe diffs, and HMAC signatures |
 
 ---
 
@@ -135,7 +136,7 @@ pipeline in reverse order:
 - **AI Request Inspector** — opt-in live traces, per-interceptor waterfall, replay, agent DAGs, RED stats, and production audit-store views.
 - **Runtime Event Export** — metadata-safe JSONL and OpenTelemetry-style span streams for gateways, observability systems, and eval workflows.
 - **Ecosystem Integrations** — compatibility matrix, metadata helpers, and offline recipes for common gateways, observability tools, eval tools, frameworks, and provider SDKs.
-- **Prompt Registry + Evals** — versioned chat templates, prompt lineage, deterministic pass/fail eval reports, output hashes instead of raw model output, and `gavio eval run` CI gates.
+- **Prompt Registry + Evals** — file-backed semver prompt manifests, approval metadata, metadata-safe diffs, prompt lineage, deterministic eval reports, and `gavio eval run` CI gates.
 - **Cost Intelligence** — tenant/feature/user attribution, `/api/cost-report`, retry overhead, cache savings, and scoped budget fallback.
 - **Cost Governance v2** — budget policy/decision contracts, projected-spend controls, fallback/downgrade/dry-run actions, budget-aware reports, and `gavio cost report`.
 - **Domain-aware Policy Packs** — signed catalog manifests for core, finance, healthcare, legal, HR, support, code security, and regional identifiers, plus custom regex-rule packs with overrides and false-positive suppression.
@@ -262,6 +263,7 @@ compared side by side.
 | 20 | Platform Runtime Profile — metadata-only readiness profile and deterministic gaps | [py](./examples/python/20-platform-runtime/) | — | — | no |
 | 21 | Eval CI Gate — `gavio eval run`, YAML/JSON suites, baseline comparison, JSON/JUnit reports | [py](./examples/python/21-eval-ci-gate/) | — | — | no |
 | 22 | Platform Feature Tour — all major v2.x surfaces in one offline project | [py](./examples/python/22-platform-feature-tour/) | — | — | no |
+| 23 | Prompt Registry v2 — signed manifests, semver selectors, approvals, metadata-safe diffs | [py](./examples/python/23-prompt-registry-v2/) | — | — | no |
 
 Example 02 uses a real provider if `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is
 set; otherwise it falls back to the mock provider. All other examples run with

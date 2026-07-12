@@ -9,16 +9,110 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import hmac
 import inspect
+import json
 import re
 from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from ..request import GavioRequest
 from ..types import Message, PromptLineage, Provider
 
 _PLACEHOLDER = re.compile(r"{{\s*([A-Za-z_][A-Za-z0-9_.-]*)\s*}}")
+_SEMVER = re.compile(
+    r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+    r"(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$"
+)
+PROMPT_MANIFEST_SCHEMA_VERSION = "gavio.prompt-registry.v2"
+PROMPT_MANIFEST_SIGNATURE_ALGORITHM = "HMAC-SHA256"
+
+
+@dataclass(frozen=True)
+class PromptApproval:
+    """Human approval metadata for a prompt template version."""
+
+    status: str
+    approved_by: str | None = None
+    approved_at: str | None = None
+    reviewers: tuple[str, ...] = ()
+    reason: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> PromptApproval:
+        return cls(
+            status=str(data["status"]),
+            approved_by=_optional_str(data.get("approvedBy", data.get("approved_by"))),
+            approved_at=_optional_str(data.get("approvedAt", data.get("approved_at"))),
+            reviewers=tuple(str(item) for item in data.get("reviewers", ())),
+            reason=_optional_str(data.get("reason")),
+            metadata=dict(data.get("metadata") or {}),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {
+            "status": self.status,
+            "reviewers": list(self.reviewers),
+        }
+        if self.approved_by is not None:
+            data["approvedBy"] = self.approved_by
+        if self.approved_at is not None:
+            data["approvedAt"] = self.approved_at
+        if self.reason is not None:
+            data["reason"] = self.reason
+        if self.metadata:
+            data["metadata"] = dict(self.metadata)
+        return data
+
+
+@dataclass(frozen=True)
+class PromptDiffChange:
+    """Metadata-safe description of one prompt-template difference."""
+
+    path: str
+    type: str
+    before_hash: str | None = None
+    after_hash: str | None = None
+    before: Any = None
+    after: Any = None
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {"path": self.path, "type": self.type}
+        if self.before_hash is not None:
+            data["beforeHash"] = self.before_hash
+        if self.after_hash is not None:
+            data["afterHash"] = self.after_hash
+        if self.before is not None:
+            data["before"] = self.before
+        if self.after is not None:
+            data["after"] = self.after
+        return data
+
+
+@dataclass(frozen=True)
+class PromptDiff:
+    """Prompt-template diff that hashes message text instead of exposing it."""
+
+    from_id: str
+    from_version: str
+    to_id: str
+    to_version: str
+    changes: tuple[PromptDiffChange, ...]
+
+    @property
+    def has_changes(self) -> bool:
+        return bool(self.changes)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "from": {"id": self.from_id, "version": self.from_version},
+            "to": {"id": self.to_id, "version": self.to_version},
+            "hasChanges": self.has_changes,
+            "changes": [change.to_dict() for change in self.changes],
+        }
 
 
 @dataclass(frozen=True)
@@ -53,9 +147,11 @@ class PromptTemplate:
     messages: list[Message]
     required_variables: tuple[str, ...] = ()
     metadata: dict[str, Any] = field(default_factory=dict)
+    approval: PromptApproval | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> PromptTemplate:
+        approval = data.get("approval", data.get("approvalMetadata"))
         return cls(
             id=str(data["id"]),
             version=str(data["version"]),
@@ -65,16 +161,20 @@ class PromptTemplate:
                 for v in data.get("requiredVariables", data.get("required_variables", ()))
             ),
             metadata=dict(data.get("metadata") or {}),
+            approval=PromptApproval.from_dict(approval) if isinstance(approval, dict) else None,
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data = {
             "id": self.id,
             "version": self.version,
             "messages": [dict(message) for message in self.messages],
             "requiredVariables": list(self.required_variables),
             "metadata": dict(self.metadata),
         }
+        if self.approval is not None:
+            data["approval"] = self.approval.to_dict()
+        return data
 
     def placeholders(self) -> set[str]:
         found: set[str] = set()
@@ -102,9 +202,17 @@ class PromptTemplate:
         )
         return RenderedPrompt(messages=rendered, lineage=lineage)
 
+    def diff(self, other: PromptTemplate) -> PromptDiff:
+        return diff_prompt_templates(self, other)
+
 
 class PromptRegistry:
-    """In-memory registry for versioned prompt templates."""
+    """Registry for versioned prompt templates.
+
+    Templates can be registered in memory or loaded from a prompt manifest file.
+    Semver template versions resolve by highest semantic version; legacy
+    non-semver versions keep the previous registration-order behavior.
+    """
 
     def __init__(self, templates: Iterable[PromptTemplate | dict[str, Any]] = ()) -> None:
         self._templates: dict[tuple[str, str], PromptTemplate] = {}
@@ -120,11 +228,11 @@ class PromptRegistry:
         )
         key = (parsed.id, parsed.version)
         self._templates[key] = parsed
-        self._latest[parsed.id] = parsed.version
+        self._latest[parsed.id] = self._resolve_latest_after_register(parsed.id, parsed.version)
         return parsed
 
     def get(self, template_id: str, version: str | None = None) -> PromptTemplate:
-        resolved = version or self._latest.get(template_id)
+        resolved = self._resolve_version(template_id, version)
         if resolved is None or (template_id, resolved) not in self._templates:
             raise KeyError(f"prompt template not found: {template_id}@{version or 'latest'}")
         return self._templates[(template_id, resolved)]
@@ -137,6 +245,102 @@ class PromptRegistry:
         version: str | None = None,
     ) -> RenderedPrompt:
         return self.get(template_id, version).render(variables)
+
+    def versions(self, template_id: str) -> tuple[str, ...]:
+        versions = [version for item_id, version in self._templates if item_id == template_id]
+        return tuple(sorted(versions, key=_version_sort_key))
+
+    def diff(
+        self,
+        template_id: str,
+        from_version: str,
+        to_version: str | None = None,
+    ) -> PromptDiff:
+        return self.get(template_id, from_version).diff(self.get(template_id, to_version))
+
+    @classmethod
+    def from_manifest(
+        cls,
+        data: dict[str, Any],
+        *,
+        verify_secret: str | bytes | None = None,
+        validate_semver: bool | None = None,
+    ) -> PromptRegistry:
+        if verify_secret is not None and not verify_prompt_manifest_signature(data, verify_secret):
+            raise ValueError("prompt manifest signature verification failed")
+        require_semver = (
+            validate_semver
+            if validate_semver is not None
+            else data.get("schemaVersion") == PROMPT_MANIFEST_SCHEMA_VERSION
+        )
+        registry = cls()
+        for raw_template in data.get("templates", ()):
+            template = PromptTemplate.from_dict(dict(raw_template))
+            if require_semver:
+                validate_semantic_version(template.version)
+            registry.register(template)
+        return registry
+
+    @classmethod
+    def from_file(
+        cls,
+        path: str | Path,
+        *,
+        verify_secret: str | bytes | None = None,
+        validate_semver: bool | None = None,
+    ) -> PromptRegistry:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+        return cls.from_manifest(
+            data,
+            verify_secret=verify_secret,
+            validate_semver=validate_semver,
+        )
+
+    def to_manifest(
+        self,
+        *,
+        registry_id: str = "default",
+        metadata: dict[str, Any] | None = None,
+        sign_secret: str | bytes | None = None,
+        key_id: str = "local",
+    ) -> dict[str, Any]:
+        manifest: dict[str, Any] = {
+            "schemaVersion": PROMPT_MANIFEST_SCHEMA_VERSION,
+            "registryId": registry_id,
+            "metadata": dict(metadata or {}),
+            "templates": [
+                self._templates[key].to_dict()
+                for key in sorted(
+                    self._templates,
+                    key=lambda item: (item[0], _version_sort_key(item[1])),
+                )
+            ],
+        }
+        if sign_secret is not None:
+            return sign_prompt_manifest(manifest, sign_secret, key_id=key_id)
+        return manifest
+
+    def _resolve_version(self, template_id: str, selector: str | None) -> str | None:
+        if selector is None or selector == "latest":
+            return self._latest.get(template_id)
+        if (template_id, selector) in self._templates:
+            return selector
+        candidates = [
+            version
+            for item_id, version in self._templates
+            if item_id == template_id and _parse_semver(version) is not None
+        ]
+        for candidate in sorted(candidates, key=_version_sort_key, reverse=True):
+            if _matches_semver_selector(candidate, selector):
+                return candidate
+        return selector
+
+    def _resolve_latest_after_register(self, template_id: str, registered: str) -> str:
+        versions = [version for item_id, version in self._templates if item_id == template_id]
+        semver_versions = [version for version in versions if _parse_semver(version) is not None]
+        if len(semver_versions) == len(versions):
+            return max(semver_versions, key=_version_sort_key)
+        return registered
 
 
 @dataclass(frozen=True)
@@ -361,3 +565,264 @@ def _lineage_to_camel(lineage: PromptLineage) -> dict[str, Any]:
         "variables": dict(lineage.variables),
         "ragChunks": [chunk.to_dict() for chunk in lineage.rag_chunks],
     }
+
+
+def diff_prompt_templates(before: PromptTemplate, after: PromptTemplate) -> PromptDiff:
+    """Return a metadata-safe diff between two prompt template versions."""
+
+    changes: list[PromptDiffChange] = []
+    max_messages = max(len(before.messages), len(after.messages))
+    for idx in range(max_messages):
+        path = f"messages[{idx}]"
+        if idx >= len(before.messages):
+            changes.append(
+                PromptDiffChange(
+                    path=path,
+                    type="added",
+                    after_hash=_sha256_json(after.messages[idx]),
+                )
+            )
+            continue
+        if idx >= len(after.messages):
+            changes.append(
+                PromptDiffChange(
+                    path=path,
+                    type="removed",
+                    before_hash=_sha256_json(before.messages[idx]),
+                )
+            )
+            continue
+        before_message = before.messages[idx]
+        after_message = after.messages[idx]
+        for key in sorted(set(before_message) | set(after_message)):
+            if before_message.get(key) != after_message.get(key):
+                changes.append(
+                    PromptDiffChange(
+                        path=f"{path}.{key}",
+                        type=_change_type(key in before_message, key in after_message),
+                        before_hash=_sha256_json(before_message.get(key))
+                        if key in before_message
+                        else None,
+                        after_hash=_sha256_json(after_message.get(key))
+                        if key in after_message
+                        else None,
+                    )
+                )
+
+    before_required = set(before.required_variables)
+    after_required = set(after.required_variables)
+    if before_required != after_required:
+        changes.append(
+            PromptDiffChange(
+                path="requiredVariables",
+                type="changed",
+                before=sorted(before_required - after_required),
+                after=sorted(after_required - before_required),
+            )
+        )
+
+    _diff_mapping("metadata", before.metadata, after.metadata, changes)
+    _diff_mapping(
+        "approval",
+        before.approval.to_dict() if before.approval else {},
+        after.approval.to_dict() if after.approval else {},
+        changes,
+    )
+    return PromptDiff(
+        from_id=before.id,
+        from_version=before.version,
+        to_id=after.id,
+        to_version=after.version,
+        changes=tuple(changes),
+    )
+
+
+def validate_semantic_version(version: str) -> bool:
+    if _parse_semver(version) is None:
+        raise ValueError(f"invalid semantic version: {version}")
+    return True
+
+
+def sign_prompt_manifest(
+    manifest: dict[str, Any],
+    secret: str | bytes,
+    *,
+    key_id: str = "local",
+) -> dict[str, Any]:
+    """Return a manifest copy with a deterministic HMAC-SHA256 signature."""
+
+    signed = dict(manifest)
+    signed["signature"] = {
+        "algorithm": PROMPT_MANIFEST_SIGNATURE_ALGORITHM,
+        "keyId": key_id,
+        "value": _manifest_signature_value(manifest, secret),
+    }
+    return signed
+
+
+def verify_prompt_manifest_signature(manifest: dict[str, Any], secret: str | bytes) -> bool:
+    signature = manifest.get("signature")
+    if not isinstance(signature, dict):
+        return False
+    if signature.get("algorithm") != PROMPT_MANIFEST_SIGNATURE_ALGORITHM:
+        return False
+    value = signature.get("value")
+    if not isinstance(value, str):
+        return False
+    expected = _manifest_signature_value(manifest, secret)
+    return hmac.compare_digest(value, expected)
+
+
+def prompt_manifest_digest(manifest: dict[str, Any]) -> str:
+    return hashlib.sha256(canonical_prompt_manifest(manifest).encode("utf-8")).hexdigest()
+
+
+def canonical_prompt_manifest(manifest: dict[str, Any]) -> str:
+    return json.dumps(
+        _without_signature(manifest),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
+
+
+def _manifest_signature_value(manifest: dict[str, Any], secret: str | bytes) -> str:
+    raw_secret = secret.encode("utf-8") if isinstance(secret, str) else secret
+    payload = canonical_prompt_manifest(manifest).encode("utf-8")
+    return hmac.new(raw_secret, payload, hashlib.sha256).hexdigest()
+
+
+def _without_signature(manifest: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in manifest.items() if key != "signature"}
+
+
+def _diff_mapping(
+    prefix: str,
+    before: dict[str, Any],
+    after: dict[str, Any],
+    changes: list[PromptDiffChange],
+) -> None:
+    for key in sorted(set(before) | set(after)):
+        if before.get(key) == after.get(key):
+            continue
+        changes.append(
+            PromptDiffChange(
+                path=f"{prefix}.{key}",
+                type=_change_type(key in before, key in after),
+                before=before.get(key) if key in before else None,
+                after=after.get(key) if key in after else None,
+            )
+        )
+
+
+def _change_type(has_before: bool, has_after: bool) -> str:
+    if has_before and has_after:
+        return "changed"
+    if has_after:
+        return "added"
+    return "removed"
+
+
+def _sha256_json(value: Any) -> str:
+    return hashlib.sha256(
+        json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode(
+            "utf-8"
+        )
+    ).hexdigest()
+
+
+def _optional_str(value: Any) -> str | None:
+    return None if value is None else str(value)
+
+
+def _parse_semver(version: str) -> tuple[int, int, int, str | None] | None:
+    match = _SEMVER.match(version)
+    if match is None:
+        return None
+    return (
+        int(match.group(1)),
+        int(match.group(2)),
+        int(match.group(3)),
+        match.group(4),
+    )
+
+
+def _version_sort_key(version: str) -> tuple[int, int, int, int, str, str]:
+    parsed = _parse_semver(version)
+    if parsed is None:
+        return (-1, -1, -1, -1, "", version)
+    major, minor, patch, prerelease = parsed
+    release_weight = 1 if prerelease is None else 0
+    return (major, minor, patch, release_weight, prerelease or "", "")
+
+
+def _matches_semver_selector(version: str, selector: str) -> bool:
+    parsed = _parse_semver(version)
+    if parsed is None:
+        return False
+    if selector in {"*", "latest"}:
+        return True
+    if selector.startswith("^"):
+        base = _parse_semver(selector[1:])
+        if base is None:
+            return False
+        lower = _compare_semver(parsed, base) >= 0
+        if base[0] > 0:
+            upper = parsed[0] == base[0]
+        elif base[1] > 0:
+            upper = parsed[0] == 0 and parsed[1] == base[1]
+        else:
+            upper = parsed[:3] == base[:3]
+        return lower and upper
+    if selector.startswith("~"):
+        base = _parse_semver(selector[1:])
+        return (
+            base is not None
+            and _compare_semver(parsed, base) >= 0
+            and parsed[0] == base[0]
+            and parsed[1] == base[1]
+        )
+    constraints = selector.split()
+    if not constraints:
+        return False
+    return all(_matches_constraint(parsed, constraint) for constraint in constraints)
+
+
+def _matches_constraint(
+    version: tuple[int, int, int, str | None],
+    constraint: str,
+) -> bool:
+    for operator in (">=", "<=", ">", "<", "="):
+        if constraint.startswith(operator):
+            base = _parse_semver(constraint[len(operator) :])
+            if base is None:
+                return False
+            cmp = _compare_semver(version, base)
+            return {
+                ">=": cmp >= 0,
+                "<=": cmp <= 0,
+                ">": cmp > 0,
+                "<": cmp < 0,
+                "=": cmp == 0,
+            }[operator]
+    base = _parse_semver(constraint)
+    return base is not None and _compare_semver(version, base) == 0
+
+
+def _compare_semver(
+    left: tuple[int, int, int, str | None],
+    right: tuple[int, int, int, str | None],
+) -> int:
+    left_core = left[:3]
+    right_core = right[:3]
+    if left_core != right_core:
+        return 1 if left_core > right_core else -1
+    left_pre = left[3]
+    right_pre = right[3]
+    if left_pre == right_pre:
+        return 0
+    if left_pre is None:
+        return 1
+    if right_pre is None:
+        return -1
+    return 1 if left_pre > right_pre else -1

@@ -1,6 +1,6 @@
 # Prompt Registry + Evals
 
-> Feature IDs: `F-EVAL-01` (Prompt Registry) · `F-EVAL-02` (Evals) · `F-EVAL-03` (Eval Runner + CI Gates) | Since: v1.4.0; runner since v2.1.0
+> Feature IDs: `F-EVAL-01` (Prompt Registry) · `F-EVAL-02` (Evals) · `F-EVAL-03` (Eval Runner + CI Gates) · `F-EVAL-04` (Prompt Registry v2) | Since: v1.4.0; runner since v2.1.0; registry v2 since v2.2.0
 
 The Prompt Registry stores versioned chat templates and renders them into
 provider-agnostic Gavio messages. Rendering attaches the existing
@@ -11,6 +11,55 @@ call without storing raw rendered prompt text in lineage.
 Eval suites run deterministic prompt cases against a supplied completion
 function. Reports contain pass/fail, numeric scores, assertion details, and a
 SHA-256 output hash; raw model output is intentionally not stored in the report.
+
+## Prompt Registry v2
+
+v2.2.0 adds file-backed prompt manifests for production prompt workflows. A
+manifest contains semver prompt template versions, approval metadata, registry
+metadata, and an optional deterministic `HMAC-SHA256` signature. SDKs can load
+the manifest from disk, verify the signature, resolve selectors such as
+`latest`, `^1.0.0`, `~1.1.0`, and `>=1.0.0 <2.0.0`, and diff prompt versions
+without exposing raw prompt message content.
+
+```json
+{
+  "schemaVersion": "gavio.prompt-registry.v2",
+  "registryId": "support-prompts",
+  "templates": [{
+    "id": "support.reply",
+    "version": "1.1.0",
+    "messages": [
+      { "role": "system", "content": "You are concise." },
+      { "role": "user", "content": "Reply to {{ customer }} about {{ topic }}." }
+    ],
+    "requiredVariables": ["customer", "topic"],
+    "approval": {
+      "status": "approved",
+      "approvedBy": "support-lead",
+      "approvedAt": "2026-07-12T10:00:00Z",
+      "reviewers": ["support"]
+    }
+  }],
+  "signature": {
+    "algorithm": "HMAC-SHA256",
+    "keyId": "prompt-registry-prod",
+    "value": "<64 hex chars>"
+  }
+}
+```
+
+```python
+from gavio.prompts import PromptRegistry, verify_prompt_manifest_signature
+
+secret = "registry-v2-test-secret"
+registry = PromptRegistry.from_file("prompts.json", verify_secret=secret)
+rendered = registry.render(
+    "support.reply",
+    {"customer": "Avery", "topic": "refund"},
+    version="^1.0.0",
+)
+diff = registry.diff("support.reply", "1.0.0", "1.1.0")
+```
 
 ## Python
 
@@ -191,10 +240,14 @@ System.out.println(report.score());
 ## Shared Contract
 
 - `spec/PromptTemplate.schema.json` defines the registered template shape.
+- `spec/PromptManifest.schema.json` defines the signed v2 manifest shape.
 - `spec/EvalReport.schema.json` defines the metadata-safe report shape.
 - `test-vectors/prompts/registry-evals.json` verifies rendering, missing
   variables, lineage shape, passing/failing evals, scoring, and raw-output
   privacy across Python, JavaScript, and Java.
+- `test-vectors/prompts/registry-v2.json` verifies signed manifest loading,
+  semantic-version selection, approval metadata, metadata-safe prompt diffs,
+  and deterministic signatures across Python, JavaScript, and Java.
 
 ## Examples
 
@@ -203,3 +256,6 @@ System.out.println(report.score());
 - [`examples/python/21-eval-ci-gate`](../examples/python/21-eval-ci-gate/)
   shows a release-style prompt candidate gate: YAML suite input, baseline
   comparison, fail-under threshold, regression check, and JSON/JUnit reports.
+- [`examples/python/23-prompt-registry-v2`](../examples/python/23-prompt-registry-v2/)
+  shows signed manifest loading, semver selectors, approval metadata, and
+  metadata-safe prompt diffs.

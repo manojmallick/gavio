@@ -18,7 +18,8 @@
       "items": { "type": "string", "minLength": 1 },
       "uniqueItems": true
     },
-    "metadata": { "type": "object", "additionalProperties": true }
+    "metadata": { "type": "object", "additionalProperties": true },
+    "approval": { "$ref": "#/$defs/approval" }
   },
   "$defs": {
     "message": {
@@ -29,6 +30,27 @@
         "content": { "type": "string" }
       },
       "additionalProperties": true
+    },
+    "approval": {
+      "type": "object",
+      "description": "Human approval metadata for this prompt template version.",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["draft", "pending", "approved", "rejected", "deprecated"]
+        },
+        "approvedBy": { "type": "string" },
+        "approvedAt": { "type": "string", "format": "date-time" },
+        "reviewers": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "reason": { "type": "string" },
+        "metadata": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": false
     }
   }
 }

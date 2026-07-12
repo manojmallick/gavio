@@ -1,12 +1,35 @@
 # Prompt Registry + Evals
 
 > Since v1.4.0: `F-EVAL-01` and `F-EVAL-02`. Since v2.1.0: `F-EVAL-03`.
+> Since v2.2.0: `F-EVAL-04`.
 
 The Prompt Registry stores versioned chat templates and renders them into Gavio
 messages with `PromptLineage` attached. Eval suites run deterministic cases
 against a supplied completion function and return metadata-safe reports with
 pass/fail, score, assertion details, and output hashes instead of raw model
 output.
+
+## Prompt Registry v2
+
+v2.2.0 adds file-backed prompt manifests with semantic versions, approval
+metadata, metadata-safe prompt diffs, and deterministic `HMAC-SHA256`
+signatures.
+
+```python
+from gavio.prompts import PromptRegistry
+
+registry = PromptRegistry.from_file("prompts.json", verify_secret="registry-v2-test-secret")
+rendered = registry.render(
+    "support.reply",
+    {"customer": "Avery", "topic": "refund"},
+    version="^1.0.0",
+)
+diff = registry.diff("support.reply", "1.0.0", "1.1.0")
+```
+
+Semver selectors include `latest`, exact versions, `^1.0.0`, `~1.1.0`, and
+compound ranges such as `>=1.0.0 <2.0.0`. Prompt diffs hash message content
+instead of returning raw prompt text.
 
 ## Python
 
@@ -166,8 +189,10 @@ EvalSuite suite = new EvalSuite("support-smoke", List.of(new EvalCase(
 EvalReport report = suite.run(registry, (prompt, testCase) -> "Avery refund approved");
 ```
 
-Shared vectors live in `test-vectors/prompts/registry-evals.json`, with schemas
-in `spec/PromptTemplate.schema.json` and `spec/EvalReport.schema.json`.
+Shared vectors live in `test-vectors/prompts/registry-evals.json` and
+`test-vectors/prompts/registry-v2.json`, with schemas in
+`spec/PromptTemplate.schema.json`, `spec/PromptManifest.schema.json`, and
+`spec/EvalReport.schema.json`.
 
 ## Examples
 
@@ -176,3 +201,5 @@ in `spec/PromptTemplate.schema.json` and `spec/EvalReport.schema.json`.
 - `examples/python/21-eval-ci-gate` shows a release-style prompt candidate
   gate: YAML suite input, baseline comparison, fail-under threshold,
   regression check, and JSON/JUnit reports.
+- `examples/python/23-prompt-registry-v2` shows signed manifest loading,
+  semver selectors, approval metadata, and metadata-safe prompt diffs.

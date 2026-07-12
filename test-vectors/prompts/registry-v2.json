@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "gavio.prompt-registry.v2",
+  "registryId": "support-prompts",
+  "metadata": {
+    "owner": "support",
+    "environment": "test"
+  },
+  "signatureSecret": "registry-v2-test-secret",
+  "manifest": {
+    "schemaVersion": "gavio.prompt-registry.v2",
+    "registryId": "support-prompts",
+    "metadata": {
+      "owner": "support",
+      "environment": "test"
+    },
+    "templates": [
+      {
+        "id": "support.reply",
+        "version": "1.0.0",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a concise support assistant."
+          },
+          {
+            "role": "user",
+            "content": "Write a reply to {{ customerName }} about {{ topic }}."
+          }
+        ],
+        "requiredVariables": ["customerName", "topic"],
+        "metadata": {
+          "owner": "support",
+          "tone": "brief"
+        },
+        "approval": {
+          "status": "approved",
+          "approvedBy": "support-lead",
+          "approvedAt": "2026-07-12T10:00:00Z",
+          "reviewers": ["support", "legal"],
+          "reason": "Baseline support reply prompt."
+        }
+      },
+      {
+        "id": "support.reply",
+        "version": "1.1.0",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a concise support assistant. Mention policy context when available."
+          },
+          {
+            "role": "user",
+            "content": "Write a reply to {{ customerName }} about {{ topic }} for order {{ orderId }}."
+          }
+        ],
+        "requiredVariables": ["customerName", "topic", "orderId"],
+        "metadata": {
+          "owner": "support",
+          "tone": "contextual"
+        },
+        "approval": {
+          "status": "pending",
+          "reviewers": ["support", "legal"],
+          "reason": "Adds order-aware response context."
+        }
+      }
+    ],
+    "signature": {
+      "algorithm": "HMAC-SHA256",
+      "keyId": "registry-v2-test",
+      "value": "c2b07936f59c43989e6d977b85fd55a024ed3c16e421185572a802479131657f"
+    }
+  },
+  "expected": {
+    "latestVersion": "1.1.0",
+    "caretVersion": "1.1.0",
+    "tildeVersion": "1.1.0",
+    "rangeVersion": "1.1.0",
+    "renderedMessage": "Write a reply to Avery about refund status for order A-100.",
+    "diffPaths": [
+      "messages[0].content",
+      "messages[1].content",
+      "requiredVariables",
+      "metadata.tone",
+      "approval.approvedAt",
+      "approval.approvedBy",
+      "approval.reason",
+      "approval.status"
+    ],
+    "contentKeys": [
+      "You are a concise support assistant. Mention policy context when available.",
+      "Write a reply to {{ customerName }} about {{ topic }} for order {{ orderId }}.",
+      "Write a reply to Avery about refund status for order A-100."
+    ]
+  }
+}

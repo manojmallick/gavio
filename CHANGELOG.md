@@ -11,7 +11,11 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Prompt Registry v2 (all SDKs, `F-EVAL-04`)** — added file-backed prompt
+  manifests with semantic-version template selection, approval metadata,
+  metadata-safe prompt diffs, deterministic HMAC-SHA256 manifest signatures,
+  shared v2 vectors, schema coverage, docs, and an offline Python example.
 
 ---
 

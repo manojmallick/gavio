@@ -12,6 +12,7 @@ serialise to shapes valid against these schemas.
 | [`GavioRuntimeEvent.schema.json`](./GavioRuntimeEvent.schema.json) | The public runtime event/export envelope |
 | [`GavioOtelSpan.schema.json`](./GavioOtelSpan.schema.json) | OpenTelemetry-style span JSON produced from runtime events |
 | [`PromptTemplate.schema.json`](./PromptTemplate.schema.json) | Versioned prompt template registered in the Prompt Registry |
+| [`PromptManifest.schema.json`](./PromptManifest.schema.json) | Signed file-backed Prompt Registry manifest with semver template versions |
 | [`EvalReport.schema.json`](./EvalReport.schema.json) | Metadata-safe Prompt Registry eval report |
 | [`ToolDefinition.schema.json`](./ToolDefinition.schema.json) | Tool Runtime v2 registry entry with schemas, permissions, risk, and MCP metadata |
 | [`ToolPermission.schema.json`](./ToolPermission.schema.json) | Tool Runtime v2 permission scope |

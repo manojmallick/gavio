@@ -1,7 +1,17 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { EvalSuite, PromptRegistry, PromptTemplate } from '../../src/prompts/index.js'
+import {
+  EvalSuite,
+  PromptRegistry,
+  PromptTemplate,
+  diffPromptTemplates,
+  signPromptManifest,
+  verifyPromptManifestSignature,
+} from '../../src/prompts/index.js'
+import type { PromptManifest } from '../../src/prompts/index.js'
 
 interface Vector {
   contentKeys: string[]
@@ -40,8 +50,26 @@ interface Vector {
   }
 }
 
+interface RegistryV2Vector {
+  registryId: string
+  metadata: Record<string, unknown>
+  signatureSecret: string
+  manifest: PromptManifest
+  expected: {
+    latestVersion: string
+    caretVersion: string
+    tildeVersion: string
+    rangeVersion: string
+    renderedMessage: string
+    diffPaths: string[]
+    contentKeys: string[]
+  }
+}
+
 const url = new URL('../../../../test-vectors/prompts/registry-evals.json', import.meta.url)
 const vectors = JSON.parse(readFileSync(fileURLToPath(url), 'utf8')) as Vector
+const v2Url = new URL('../../../../test-vectors/prompts/registry-v2.json', import.meta.url)
+const v2 = JSON.parse(readFileSync(fileURLToPath(v2Url), 'utf8')) as RegistryV2Vector
 
 describe('Prompt Registry vectors', () => {
   it('renders templates and keeps lineage metadata-only', () => {
@@ -87,5 +115,66 @@ describe('EvalSuite vectors', () => {
     const serialized = JSON.stringify(report)
     for (const contentKey of vectors.contentKeys) expect(serialized).not.toContain(`"${contentKey}"`)
     for (const testCase of vectors.suite.cases) expect(serialized).not.toContain(testCase.mockOutput)
+  })
+})
+
+describe('Prompt Registry v2 vectors', () => {
+  it('loads signed manifest files and resolves semantic version selectors', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'gavio-prompts-'))
+    const manifestPath = join(dir, 'prompts.json')
+    writeFileSync(manifestPath, JSON.stringify(v2.manifest), 'utf8')
+
+    expect(verifyPromptManifestSignature(v2.manifest, v2.signatureSecret)).toBe(true)
+
+    const registry = PromptRegistry.fromFile(manifestPath, { verifySecret: v2.signatureSecret })
+
+    expect(registry.get('support.reply').version).toBe(v2.expected.latestVersion)
+    expect(registry.get('support.reply', '^1.0.0').version).toBe(v2.expected.caretVersion)
+    expect(registry.get('support.reply', '~1.1.0').version).toBe(v2.expected.tildeVersion)
+    expect(registry.get('support.reply', '>=1.0.0 <2.0.0').version).toBe(v2.expected.rangeVersion)
+    expect(registry.get('support.reply').approval?.status).toBe('pending')
+
+    const rendered = registry.render('support.reply', {
+      customerName: 'Avery',
+      topic: 'refund status',
+      orderId: 'A-100',
+    })
+    expect(rendered.messages.at(-1)?.content).toBe(v2.expected.renderedMessage)
+
+    const roundTrip = registry.toManifest({
+      registryId: v2.registryId,
+      metadata: v2.metadata,
+      signSecret: v2.signatureSecret,
+      keyId: v2.manifest.signature?.keyId,
+    })
+    expect(roundTrip.signature?.value).toBe(v2.manifest.signature?.value)
+  })
+
+  it('reports metadata-safe prompt diffs', () => {
+    const templates = v2.manifest.templates.map((template) => new PromptTemplate(template))
+
+    const diff = diffPromptTemplates(templates[0]!, templates[1]!)
+
+    expect(diff.changes.map((change) => change.path)).toEqual(v2.expected.diffPaths)
+    expect(diff.changes
+      .filter((change) => change.path.startsWith('messages['))
+      .every((change) => change.beforeHash !== undefined || change.afterHash !== undefined)).toBe(true)
+    const serialized = JSON.stringify(diff)
+    for (const content of v2.expected.contentKeys) expect(serialized).not.toContain(content)
+  })
+
+  it('rejects invalid semver manifests and signs deterministically', () => {
+    const badManifest: PromptManifest = {
+      ...v2.manifest,
+      templates: [{ ...v2.manifest.templates[0]!, version: '2026-07-12' }],
+    }
+
+    expect(() => PromptRegistry.fromManifest(badManifest, { validateSemver: true })).toThrow(/semantic version/)
+
+    const unsigned = { ...v2.manifest }
+    delete unsigned.signature
+    const signed = signPromptManifest(unsigned, v2.signatureSecret, v2.manifest.signature?.keyId)
+
+    expect(signed.signature).toEqual(v2.manifest.signature)
   })
 })
