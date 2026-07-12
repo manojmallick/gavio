@@ -1,6 +1,6 @@
 # Integrations
 
-Since: `1.1.0`
+Since: `1.9.0`
 
 Gavio should sit beside the tools teams already use. The recommended pattern is:
 
@@ -12,113 +12,61 @@ Application
 ```
 
 Gavio owns the in-process governance layer: PII, audit hashes, interceptor
-decisions, cost attribution, policy packs, tool result checks, and runtime
-events. External tools can continue to own provider routing, organization
-control planes, dashboards, prompt experiments, and red-team workflows.
+decisions, cost attribution, policy packs, tool result checks, prompt/eval
+signals, and runtime events. External tools can continue to own provider
+routing, organization control planes, dashboards, prompt experiments, and
+red-team workflows.
 
-## Integration Roles
+## Compatibility Matrix
 
-| Tool | Let that tool own | Let Gavio own |
-|---|---|---|
-| LiteLLM | Multi-provider proxy, virtual keys, provider routing, budget/rate tiers | App-level PII, audit hashes, policy packs, tool checks, per-feature cost labels |
-| Portkey | AI gateway, org governance, prompt management, provider routing, gateway logs | Embedded runtime policy, metadata-only audit, pre/post interceptor decisions |
-| Helicone | LLM gateway/observability dashboard, request analytics, prompt workflows | Local runtime controls before/after the gateway call |
-| Langfuse | Traces, prompt management, eval datasets, human review loops | Metadata-safe event source and policy/audit context |
-| OpenLIT | OpenTelemetry-native observability and fleet dashboards | Runtime event source and privacy-preserving labels |
-| promptfoo | Evals, red-team tests, CI checks | Runtime assertions, policy outcomes, cost/PII regression signals |
+| Tool | Category | Let that tool own | Let Gavio own | Gavio surfaces | Export |
+|---|---|---|---|---|---|
+| [LiteLLM](./integrations/litellm.md) | gateway | Proxy, virtual keys, provider routing, gateway budgets | App-level PII/policy, audit hashes, cost labels | metadata, runtime events, audit, cost, policy packs | JSONL, OTel |
+| [Portkey](./integrations/portkey.md) | gateway | Gateway config, org controls, provider routing, gateway logs | Embedded policy decisions, interceptor facts, metadata-only audit | metadata, runtime events, audit, policy packs, tool runtime | JSONL, OTel |
+| [Helicone](./integrations/helicone.md) | gateway observability | Gateway analytics, request dashboard, prompt workflows | Local runtime controls, privacy-safe labels, hash evidence | metadata, runtime events, audit, cost | JSONL |
+| [Langfuse](./integrations/langfuse.md) | observability | Traces, prompt management, eval datasets, review loops | Metadata-safe runtime facts, policy/cost/tool context | metadata, runtime events, audit, evals | JSONL |
+| [OpenLIT](./integrations/openlit.md) | observability | OTel-native observability, dashboards, APM correlation | Runtime event source, OTel span attributes, interceptor decisions | metadata, runtime events, OTel spans, cost | OTel |
+| [promptfoo](./integrations/promptfoo.md) | eval | Eval suites, red-team tests, CI gates | Runtime assertions, PII/policy/cost/tool signals, safe reports | metadata, runtime events, evals, policy packs, tool runtime | JSONL |
+| [LangChain](./integrations/langchain.md) | framework | Chains, agents, tools, memory abstractions | Governed model calls, callback-exportable metadata, tool validation | metadata, runtime events, tool runtime, audit | JSONL, OTel |
+| [LangGraph](./integrations/langgraph.md) | framework | Graph state, node execution, checkpointing, orchestration | Per-node labels, model/tool policy context, replay evidence | metadata, runtime events, tool runtime, audit | JSONL, OTel |
+| [Vercel AI SDK](./integrations/vercel-ai-sdk.md) | framework | Streaming UX, server actions, provider convenience APIs | Server-side governance, metadata export, route cost/policy labels | metadata, runtime events, OTel spans, policy packs | JSONL, OTel |
+| [OpenAI SDK](./integrations/openai-sdk.md) | provider SDK | Provider-specific APIs, streaming, files, assistants | OpenAI-compatible governed completions, policy checks, audit/export | metadata, runtime events, audit, policy packs | JSONL, OTel |
 
-## LiteLLM
+The matrix is also available in SDKs:
 
-Use LiteLLM as the proxy/provider router. Keep Gavio inside the app so the
-request is labeled, checked, and audited before it reaches the proxy.
+```python
+from gavio import compatibility_matrix, integration_metadata
 
-```text
-App -> Gavio(PiiGuard, CostControl, Audit, Runtime Export) -> LiteLLM proxy -> Provider
+metadata = integration_metadata(
+    "litellm",
+    tenant="acme",
+    feature="support-chat",
+    environment="prod",
+)
+rows = compatibility_matrix()
 ```
 
-Recommended Gavio metadata:
+```ts
+import { compatibilityMatrix, integrationMetadata } from "gavio/integrations"
 
-```json
-{
-  "tenant": "acme",
-  "feature": "support-chat",
-  "environment": "prod",
-  "gateway": "litellm"
-}
+const metadata = integrationMetadata("openlit", {
+  tenant: "acme",
+  feature: "support-chat",
+  environment: "prod",
+})
+const rows = compatibilityMatrix()
 ```
 
-## Portkey
+```java
+import io.gavio.integrations.IntegrationCatalog;
 
-Use Portkey for gateway configuration, org-level controls, and provider routing.
-Use Gavio for in-process policy decisions and metadata-only event export.
-
-```text
-App -> Gavio runtime -> Portkey gateway -> Provider
+var metadata = IntegrationCatalog.metadata(
+    "langchain",
+    Map.of("tenant", "acme", "feature", "support-chat", "environment", "prod"));
+var rows = IntegrationCatalog.compatibilityMatrix();
 ```
 
-Recommended pattern:
-
-- Gavio applies PII/policy/tool checks before the gateway call.
-- Portkey records gateway-level request analytics and routing decisions.
-- Gavio JSONL/runtime events preserve app-level decisions that a proxy cannot
-  infer.
-
-## Helicone
-
-Helicone can receive the final provider request and provide dashboard analytics.
-Gavio should run before and after that call to capture interceptor decisions and
-audit metadata.
-
-Recommended pattern:
-
-- add `feature`, `tenant`, and `workflow` metadata to Gavio;
-- export metadata-only runtime events to JSONL;
-- correlate by `traceId` or a request header if the app forwards one.
-
-## Langfuse
-
-Langfuse is a strong destination for traces, prompt management, evals, and
-review workflows. Gavio should be the local source of runtime facts:
-
-- which interceptor mutated the request;
-- whether PII was detected;
-- which policy pack fired;
-- what retry/fallback/cost decision happened;
-- which tool result was stale or low-confidence.
-
-For now, export JSONL and transform into the Langfuse ingestion shape in the
-application or a small worker. A native exporter can build on the same
-`GavioRuntimeEvent` contract later.
-
-## OpenLIT
-
-OpenLIT and other OpenTelemetry-native stacks should consume the same event
-stream once an OTel exporter lands. Until then, use JSONL runtime export as a
-metadata-safe bridge and follow the mapping in [OTel mapping](./otel-mapping.md).
-
-Recommended future mapping:
-
-- `trace.start` / `trace.end` -> root `gavio.request` span
-- `provider.call.*` -> provider attempt span
-- `interceptor.*` -> interceptor child spans
-- `governance.event` -> span event
-
-## promptfoo
-
-Use promptfoo for evals and red-team workflows. Use Gavio runtime events to
-assert production-like constraints:
-
-- no exported PII entity types above an allowed set;
-- no request blocked by policy;
-- max cost under threshold;
-- required tool provenance present;
-- output schema or guardrail outcome acceptable.
-
-In `1.1.0`, the bridge is JSONL. Later prompt/eval work can add direct
-promptfoo export/import, but this release establishes the event facts needed for
-that workflow.
-
-## Minimal Metadata Contract
+## Metadata Contract
 
 Use these request metadata fields consistently across integrations:
 
@@ -129,7 +77,21 @@ Use these request metadata fields consistently across integrations:
 | `user` | End-user or actor id, when safe to record |
 | `environment` | `dev`, `staging`, `prod` |
 | `workflow` | Longer-running workflow/session name |
+| `gateway` | Gateway/proxy name, when present |
+| `integration` | Integration id from the catalog |
+| `integration_kind` | `gateway`, `observability`, `eval`, `framework`, or `provider_sdk` |
 | `tool` | Tool name when a request represents tool summarization or validation |
 
-The Inspector copies scalar values into `costDimensions`, and the runtime event
-exporter writes them without raw prompt/response content.
+The Inspector copies scalar values into runtime events and cost dimensions. The
+runtime exporters write these labels without raw prompt or response content.
+
+## Offline Examples
+
+Every recipe has a runnable offline smoke example under
+[`examples/integrations/`](../examples/integrations/). The full-stack example
+covers gateway metadata, the Gavio runtime, OTel-style spans, eval assertions,
+and audit replay evidence:
+
+```bash
+PYTHONPATH=packages/gavio-py python examples/integrations/full-stack/integration_stack.py
+```

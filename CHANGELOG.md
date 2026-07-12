@@ -15,6 +15,42 @@ Nothing yet.
 
 ---
 
+## [1.9.0] — 2026-07-12
+
+### Summary
+**Ecosystem + Integrations.** v1.9.0 adds a dependency-light integration
+catalog across Python, JavaScript, and Java, a shared integration recipe
+schema/vector, compatibility docs for common AI stack tools, and offline
+recipes including a full-stack runtime/export/eval/audit smoke flow. Feature
+ID `F-INT-01`. Feature PR #81 (#80).
+
+Tests: Python 296 · JavaScript 300 · Java modules green · docs build green ·
+stable release gate green · JS smoke green · integration examples smoke green ·
+Inspector benchmarks green (Python 1.39%/3.39%, JavaScript 0.31%/0.64%, Java
+1.43%/1.06% metadata/full p50 overhead).
+
+### Added
+- **Integration catalog helpers (all SDKs, `F-INT-01`)** — Python exposes
+  `list_integrations`, `get_integration`, `integration_metadata`, and
+  `compatibility_matrix`; JavaScript exposes `listIntegrations`,
+  `getIntegration`, `integrationMetadata`, `compatibilityMatrix`, and the
+  `gavio/integrations` subpath; Java exposes `io.gavio.integrations`.
+- **Integration recipe contract and vector** — added
+  `spec/IntegrationRecipe.schema.json` and
+  `test-vectors/integrations/catalog.json` for cross-SDK catalog parity.
+- **Ecosystem docs and examples** — added the compatibility matrix, per-tool
+  guides for LiteLLM, Portkey, Helicone, Langfuse, OpenLIT, promptfoo,
+  LangChain, LangGraph, Vercel AI SDK, and OpenAI SDK, plus offline recipes
+  under `examples/integrations/`.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, and package/runtime versions to
+  the `1.9.0` release line while keeping historical feature "since" labels
+  intact.
+
+---
+
 ## [1.8.0] — 2026-07-12
 
 ### Summary
@@ -1123,7 +1159,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/manojmallick/gavio/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/manojmallick/gavio/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/manojmallick/gavio/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/manojmallick/gavio/compare/v1.5.0...v1.6.0

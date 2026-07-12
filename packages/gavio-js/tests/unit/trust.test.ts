@@ -42,8 +42,8 @@ describe('production trust bundles', () => {
     const bundle = buildProductionTrustBundle({
       bundleId: 'trust-prod-support-2026-07-12',
       generatedAt: '2026-07-12T12:00:00Z',
-      sdk: { name: 'gavio-js', version: '1.8.0' },
-      release: { version: '1.8.0', tag: 'v1.8.0', commit: 'b1ff1be' },
+      sdk: { name: 'gavio-js', version: '1.9.0' },
+      release: { version: '1.9.0', tag: 'v1.9.0', commit: 'b1ff1be' },
       runtime: {
         environment: 'production',
         policySource: 'project:prod-support',
@@ -86,8 +86,8 @@ describe('production trust bundles', () => {
     const bundle = buildProductionTrustBundle({
       bundleId: 'trust-prod-support-2026-07-12',
       generatedAt: '2026-07-12T12:00:00Z',
-      sdk: { name: 'gavio-js', version: '1.8.0' },
-      release: { version: '1.8.0' },
+      sdk: { name: 'gavio-js', version: '1.9.0' },
+      release: { version: '1.9.0' },
       runtime: {
         environment: 'production',
         policySource: 'project:prod-support',

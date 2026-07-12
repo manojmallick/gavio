@@ -1,0 +1,348 @@
+{
+  "schemaVersion": "1.0",
+  "since": "1.9.0",
+  "metadataFields": [
+    "tenant",
+    "feature",
+    "environment",
+    "workflow",
+    "gateway",
+    "integration",
+    "integration_kind",
+    "trace_id"
+  ],
+  "recipes": [
+    {
+      "id": "litellm",
+      "name": "LiteLLM",
+      "category": "gateway",
+      "externalOwns": [
+        "multi-provider proxy",
+        "virtual keys",
+        "provider routing",
+        "gateway rate and budget tiers"
+      ],
+      "gavioOwns": [
+        "app-level PII and policy checks before proxy calls",
+        "metadata-only audit and runtime events",
+        "tenant, feature, and workflow cost labels"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "audit_hashes",
+        "cost_governance",
+        "policy_packs"
+      ],
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "metadata": {
+        "gateway": "litellm",
+        "integration": "litellm",
+        "integration_kind": "gateway"
+      },
+      "docsPath": "docs/integrations/litellm.md",
+      "examplePath": "examples/integrations/litellm/recipe.py"
+    },
+    {
+      "id": "portkey",
+      "name": "Portkey",
+      "category": "gateway",
+      "externalOwns": [
+        "AI gateway configuration",
+        "organization-level controls",
+        "provider routing",
+        "gateway logs"
+      ],
+      "gavioOwns": [
+        "embedded runtime policy decisions",
+        "pre/post interceptor facts",
+        "metadata-only audit trail"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "audit_hashes",
+        "policy_packs",
+        "tool_runtime"
+      ],
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "metadata": {
+        "gateway": "portkey",
+        "integration": "portkey",
+        "integration_kind": "gateway"
+      },
+      "docsPath": "docs/integrations/portkey.md",
+      "examplePath": "examples/integrations/portkey/recipe.py"
+    },
+    {
+      "id": "helicone",
+      "name": "Helicone",
+      "category": "gateway_observability",
+      "externalOwns": [
+        "LLM gateway analytics",
+        "request dashboard",
+        "prompt workflow analytics"
+      ],
+      "gavioOwns": [
+        "local runtime controls before and after provider calls",
+        "privacy-preserving labels for correlation",
+        "hash-only audit evidence"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "audit_hashes",
+        "cost_governance"
+      ],
+      "recommendedExporters": [
+        "jsonl"
+      ],
+      "metadata": {
+        "gateway": "helicone",
+        "integration": "helicone",
+        "integration_kind": "gateway_observability"
+      },
+      "docsPath": "docs/integrations/helicone.md",
+      "examplePath": "examples/integrations/helicone/recipe.py"
+    },
+    {
+      "id": "langfuse",
+      "name": "Langfuse",
+      "category": "observability",
+      "externalOwns": [
+        "LLM traces",
+        "prompt management",
+        "eval datasets",
+        "human review workflows"
+      ],
+      "gavioOwns": [
+        "metadata-safe runtime facts",
+        "policy, PII, cost, and tool context",
+        "audit hashes without raw content"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "audit_hashes",
+        "prompt_evals"
+      ],
+      "recommendedExporters": [
+        "jsonl"
+      ],
+      "metadata": {
+        "integration": "langfuse",
+        "integration_kind": "observability"
+      },
+      "docsPath": "docs/integrations/langfuse.md",
+      "examplePath": "examples/integrations/langfuse/recipe.py"
+    },
+    {
+      "id": "openlit",
+      "name": "OpenLIT",
+      "category": "observability",
+      "externalOwns": [
+        "OpenTelemetry-native observability",
+        "fleet dashboards",
+        "APM correlation"
+      ],
+      "gavioOwns": [
+        "runtime event source",
+        "privacy-preserving OTel span attributes",
+        "interceptor decision events"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "otel_spans",
+        "cost_governance"
+      ],
+      "recommendedExporters": [
+        "otel"
+      ],
+      "metadata": {
+        "integration": "openlit",
+        "integration_kind": "observability"
+      },
+      "docsPath": "docs/integrations/openlit.md",
+      "examplePath": "examples/integrations/openlit/recipe.py"
+    },
+    {
+      "id": "promptfoo",
+      "name": "promptfoo",
+      "category": "eval",
+      "externalOwns": [
+        "eval suites",
+        "red-team tests",
+        "CI pass/fail gates"
+      ],
+      "gavioOwns": [
+        "production-like runtime assertions",
+        "PII, policy, cost, and tool outcome signals",
+        "metadata-safe eval reports"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "prompt_evals",
+        "policy_packs",
+        "tool_runtime"
+      ],
+      "recommendedExporters": [
+        "jsonl"
+      ],
+      "metadata": {
+        "integration": "promptfoo",
+        "integration_kind": "eval"
+      },
+      "docsPath": "docs/integrations/promptfoo.md",
+      "examplePath": "examples/integrations/promptfoo/recipe.py"
+    },
+    {
+      "id": "langchain",
+      "name": "LangChain",
+      "category": "framework",
+      "externalOwns": [
+        "chains",
+        "agents",
+        "tool orchestration",
+        "memory abstractions"
+      ],
+      "gavioOwns": [
+        "request runtime governance around model calls",
+        "callback-exportable runtime metadata",
+        "tool result validation before model re-entry"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "tool_runtime",
+        "audit_hashes"
+      ],
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "metadata": {
+        "framework": "langchain",
+        "integration": "langchain",
+        "integration_kind": "framework"
+      },
+      "docsPath": "docs/integrations/langchain.md",
+      "examplePath": "examples/integrations/langchain/recipe.py"
+    },
+    {
+      "id": "langgraph",
+      "name": "LangGraph",
+      "category": "framework",
+      "externalOwns": [
+        "graph state",
+        "node execution",
+        "checkpointing",
+        "agent orchestration"
+      ],
+      "gavioOwns": [
+        "per-node runtime labels",
+        "policy and audit context for model/tool nodes",
+        "metadata-safe replay evidence"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "tool_runtime",
+        "audit_hashes"
+      ],
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "metadata": {
+        "framework": "langgraph",
+        "integration": "langgraph",
+        "integration_kind": "framework"
+      },
+      "docsPath": "docs/integrations/langgraph.md",
+      "examplePath": "examples/integrations/langgraph/recipe.py"
+    },
+    {
+      "id": "vercel-ai-sdk",
+      "name": "Vercel AI SDK",
+      "category": "framework",
+      "externalOwns": [
+        "frontend streaming UX",
+        "server actions",
+        "provider convenience APIs"
+      ],
+      "gavioOwns": [
+        "server-side runtime governance before streaming starts",
+        "metadata-only runtime export",
+        "policy and cost labels for app routes"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "otel_spans",
+        "policy_packs"
+      ],
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "metadata": {
+        "framework": "vercel-ai-sdk",
+        "integration": "vercel-ai-sdk",
+        "integration_kind": "framework"
+      },
+      "docsPath": "docs/integrations/vercel-ai-sdk.md",
+      "examplePath": "examples/integrations/vercel-ai-sdk/recipe.py"
+    },
+    {
+      "id": "openai-sdk",
+      "name": "OpenAI SDK",
+      "category": "provider_sdk",
+      "externalOwns": [
+        "provider-specific API surface",
+        "streaming primitives",
+        "file and assistant endpoints"
+      ],
+      "gavioOwns": [
+        "OpenAI-compatible chat shim for governed completions",
+        "runtime policy checks around provider calls",
+        "metadata-safe audit and export"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "audit_hashes",
+        "policy_packs"
+      ],
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "metadata": {
+        "provider_sdk": "openai",
+        "integration": "openai-sdk",
+        "integration_kind": "provider_sdk"
+      },
+      "docsPath": "docs/integrations/openai-sdk.md",
+      "examplePath": "examples/integrations/openai-sdk/recipe.py"
+    }
+  ],
+  "fullStackExample": {
+    "id": "gateway-otel-eval-audit",
+    "path": "examples/integrations/full-stack/integration_stack.py",
+    "covers": [
+      "gateway metadata",
+      "Gavio runtime",
+      "OTel-style span export",
+      "eval assertion",
+      "audit replay evidence"
+    ]
+  }
+}

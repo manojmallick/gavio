@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.dev/spec/IntegrationRecipe.schema.json",
+  "title": "Gavio Integration Recipe",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "category",
+    "externalOwns",
+    "gavioOwns",
+    "gavioSurfaces",
+    "recommendedExporters",
+    "metadata",
+    "docsPath",
+    "examplePath"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "gateway",
+        "gateway_observability",
+        "observability",
+        "eval",
+        "framework",
+        "provider_sdk"
+      ]
+    },
+    "externalOwns": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "gavioOwns": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "gavioSurfaces": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "metadata",
+          "runtime_events",
+          "otel_spans",
+          "audit_hashes",
+          "cost_governance",
+          "policy_packs",
+          "tool_runtime",
+          "prompt_evals",
+          "trust_evidence"
+        ]
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "recommendedExporters": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["jsonl", "otel"]
+      },
+      "uniqueItems": true
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": { "type": "string" },
+      "minProperties": 2
+    },
+    "docsPath": {
+      "type": "string",
+      "pattern": "^docs/integrations/[a-z0-9-]+\\.md$"
+    },
+    "examplePath": {
+      "type": "string",
+      "pattern": "^examples/integrations/[a-z0-9-]+/recipe\\.py$"
+    }
+  }
+}

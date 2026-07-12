@@ -13,6 +13,7 @@ Source: [`packages/gavio-js`](https://github.com/manojmallick/gavio/tree/main/pa
 - [Sub-path imports](#sub-path-imports)
 - [Interceptors](#interceptors)
 - [Providers](#providers)
+- [Ecosystem Integrations](#ecosystem-integrations)
 - [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
 - [Testing](#testing)
@@ -250,6 +251,23 @@ const gw = await Gateway.fromConfig({
 Use `ControlPlaneClient` or `loadControlPlaneConfig` directly when you need to
 inspect or preload the fetched config before constructing a gateway.
 
+## Ecosystem Integrations
+
+Ecosystem integration helpers (v1.9.0, `F-INT-01`) provide dependency-light
+metadata labels and compatibility rows for common gateways, observability
+tools, eval tools, frameworks, and provider SDKs.
+
+```typescript
+import { compatibilityMatrix, integrationMetadata } from 'gavio/integrations'
+
+const metadata = integrationMetadata('openlit', {
+  tenant: 'acme',
+  feature: 'support-chat',
+  environment: 'prod',
+})
+const rows = compatibilityMatrix()
+```
+
 ## Production Trust Package
 
 Production Trust Package support (v1.8.0, `F-TRUST-01`) creates deterministic,
@@ -262,7 +280,7 @@ import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
 const bundle = buildProductionTrustBundle({
   bundleId: 'trust-prod-support-2026-07-12',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '1.8.0', tag: 'v1.8.0' },
+  release: { version: '1.9.0', tag: 'v1.9.0' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',

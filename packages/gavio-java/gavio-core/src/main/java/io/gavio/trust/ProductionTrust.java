@@ -159,7 +159,7 @@ public final class ProductionTrust {
     public static final class Builder {
         private final String bundleId;
         private String generatedAt;
-        private Map<String, Object> sdk = mapOf("name", "gavio-java", "version", "1.8.0");
+        private Map<String, Object> sdk = mapOf("name", "gavio-java", "version", "1.9.0");
         private Map<String, Object> release = new LinkedHashMap<>();
         private Map<String, Object> runtime = new LinkedHashMap<>();
         private Map<String, Object> privacy = mapOf(

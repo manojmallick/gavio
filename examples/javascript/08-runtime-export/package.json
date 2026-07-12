@@ -3,5 +3,5 @@
   "private": true,
   "type": "module",
   "scripts": { "start": "node runtime-export.mjs" },
-  "dependencies": { "gavio": "^1.8.0" }
+  "dependencies": { "gavio": "^1.9.0" }
 }

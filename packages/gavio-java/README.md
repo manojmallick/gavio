@@ -21,22 +21,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.8.0</version>
+  <version>1.9.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.8.0</version>
+  <version>1.9.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>1.8.0</version>
+  <version>1.9.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>1.8.0</version>
+  <version>1.9.0</version>
 </dependency>
 ```
 
@@ -183,6 +183,21 @@ self-hosted server, caches the last successful config, and can fail open or
 closed during outages. The same surface is available through
 `io.gavio.controlplane.ControlPlaneClient`.
 
+## Ecosystem integrations
+
+```java
+import io.gavio.integrations.IntegrationCatalog;
+
+var metadata = IntegrationCatalog.metadata(
+    "langchain",
+    Map.of("tenant", "acme", "feature", "support-chat", "environment", "prod"));
+var rows = IntegrationCatalog.compatibilityMatrix();
+```
+
+Ecosystem integration helpers (v1.9.0, `F-INT-01`) provide dependency-light
+metadata labels and compatibility rows for common gateways, observability
+tools, eval tools, frameworks, and provider SDKs.
+
 ## Production Trust Package
 
 ```java
@@ -191,7 +206,7 @@ import io.gavio.trust.ProductionTrustVerification;
 
 Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
     .generatedAt("2026-07-12T12:00:00Z")
-    .release("1.8.0", "v1.8.0", commit)
+    .release("1.9.0", "v1.9.0", commit)
     .runtime("production", "project:prod-support", true, "metadata_only")
     .auditChain(recordCount, chainOk, headHash, tailHash)
     .build();
@@ -289,7 +304,7 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `1.8.0`.
+All artifacts share the `io.github.manojmallick` group id and version `1.9.0`.
 
 | Artifact | Contains |
 |---|---|
