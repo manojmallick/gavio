@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/BudgetDecision.v1.json",
+  "title": "BudgetDecision",
+  "description": "Cost Governance v2 budget decision emitted by policy evaluators and interceptors.",
+  "type": "object",
+  "required": [
+    "policyId",
+    "scope",
+    "window",
+    "allowed",
+    "action",
+    "currentSpendUsd",
+    "projectedSpendUsd",
+    "remainingUsd",
+    "thresholdStatus",
+    "reason"
+  ],
+  "properties": {
+    "policyId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "window": {
+      "type": "string"
+    },
+    "allowed": {
+      "type": "boolean"
+    },
+    "action": {
+      "type": "string",
+      "enum": ["allow", "warn", "block", "fallback", "downgrade_model", "dry_run"]
+    },
+    "currentSpendUsd": {
+      "type": "number",
+      "minimum": 0
+    },
+    "projectedSpendUsd": {
+      "type": "number",
+      "minimum": 0
+    },
+    "remainingUsd": {
+      "type": "number",
+      "minimum": 0
+    },
+    "thresholdStatus": {
+      "type": "string",
+      "enum": ["ok", "soft_limit", "hard_limit"]
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    },
+    "targetModel": {
+      "type": ["string", "null"]
+    },
+    "alertThresholdsCrossed": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "default": []
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {}
+    }
+  },
+  "additionalProperties": false
+}

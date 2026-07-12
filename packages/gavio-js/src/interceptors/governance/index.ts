@@ -3,6 +3,26 @@
 
 export { costControl } from './budget.js'
 export type { CostControlOptions, Scope, Window } from './budget.js'
+export {
+  InMemoryBudgetStore,
+  budgetPolicyControl,
+  evaluateBudget,
+  resolvePolicyScope,
+  windowBucket,
+} from './budget-v2.js'
+export type {
+  BudgetAction,
+  BudgetDecision,
+  BudgetPolicy,
+  BudgetPolicyControlOptions,
+  BudgetScopeType,
+  BudgetStore,
+  BudgetWindow,
+  HardLimitAction,
+  ThresholdStatus,
+} from './budget-v2.js'
+export { buildCostGovernanceReport } from './cost-report.js'
+export type { BudgetRollup, CostGovernanceReportOptions } from './cost-report.js'
 export { rateLimiter } from './rate-limit.js'
 export type { RateLimiterOptions } from './rate-limit.js'
 export { modelPolicy } from './model-policy.js'

@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/CostReport.v1.json",
+  "title": "CostReport",
+  "description": "Cost Governance v2 report contract for spend, retry overhead, cache savings, and budget status.",
+  "type": "object",
+  "required": ["total", "topSpend"],
+  "properties": {
+    "total": {
+      "$ref": "#/$defs/aggregate"
+    },
+    "groups": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/aggregate"
+      }
+    },
+    "topSpend": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/$defs/topSpendEntry"
+        }
+      }
+    },
+    "budgets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/budgetRollup"
+      },
+      "default": []
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "aggregate": {
+      "type": "object",
+      "required": ["requests", "errors", "costUsd", "retryOverheadUsd", "cacheSavingsUsd"],
+      "properties": {
+        "requests": { "type": "integer", "minimum": 0 },
+        "errors": { "type": "integer", "minimum": 0 },
+        "errorRate": { "type": "number", "minimum": 0 },
+        "latencyMs": { "type": "object", "additionalProperties": true },
+        "tokens": { "type": "object", "additionalProperties": true },
+        "costUsd": { "type": "number", "minimum": 0 },
+        "averageCostUsd": { "type": "number", "minimum": 0 },
+        "cacheHits": { "type": "integer", "minimum": 0 },
+        "cacheHitRate": { "type": "number", "minimum": 0 },
+        "retryCount": { "type": "integer", "minimum": 0 },
+        "retryOverheadUsd": { "type": "number", "minimum": 0 },
+        "cacheSavingsUsd": { "type": "number", "minimum": 0 },
+        "budgetLimitUsd": { "type": "number", "minimum": 0 },
+        "budgetRemainingUsd": { "type": "number", "minimum": 0 },
+        "forecastWindowSpendUsd": { "type": "number", "minimum": 0 },
+        "piiDetections": { "type": "object", "additionalProperties": true },
+        "driftAlerts": { "type": "object", "additionalProperties": true }
+      },
+      "additionalProperties": true
+    },
+    "topSpendEntry": {
+      "type": "object",
+      "required": ["key", "requests", "costUsd"],
+      "properties": {
+        "key": { "type": "string" },
+        "requests": { "type": "integer", "minimum": 0 },
+        "costUsd": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "budgetRollup": {
+      "type": "object",
+      "required": [
+        "policyId",
+        "scope",
+        "window",
+        "limitUsd",
+        "currentSpendUsd",
+        "remainingUsd",
+        "forecastWindowSpendUsd",
+        "status"
+      ],
+      "properties": {
+        "policyId": { "type": "string" },
+        "scope": { "type": "string" },
+        "window": { "type": "string" },
+        "limitUsd": { "type": "number", "minimum": 0 },
+        "currentSpendUsd": { "type": "number", "minimum": 0 },
+        "remainingUsd": { "type": "number", "minimum": 0 },
+        "forecastWindowSpendUsd": { "type": "number", "minimum": 0 },
+        "status": { "type": "string", "enum": ["ok", "soft_limit", "hard_limit"] }
+      },
+      "additionalProperties": false
+    }
+  }
+}
