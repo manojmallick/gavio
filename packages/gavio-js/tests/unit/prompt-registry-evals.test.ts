@@ -7,7 +7,10 @@ import {
   EvalSuite,
   PromptRegistry,
   PromptTemplate,
+  buildPromptReleaseBundle,
   diffPromptTemplates,
+  evaluatePromptWorkflow,
+  promptEvalLinksFromManifest,
   signPromptManifest,
   verifyPromptManifestSignature,
 } from '../../src/prompts/index.js'
@@ -66,10 +69,44 @@ interface RegistryV2Vector {
   }
 }
 
+interface WorkflowVector {
+  contentKeys: string[]
+  manifest: PromptManifest
+  suite: Vector['suite']
+  expected: {
+    promptId: string
+    promptVersion: string
+    fromVersion: string
+    suiteId: string
+    score: number
+    baselineScore: number
+    scoreDelta: number
+    failedCases: string[]
+    triage: {
+      category: string
+      severity: string
+      owner: string
+      action: string
+    }
+  }
+}
+
 const url = new URL('../../../../test-vectors/prompts/registry-evals.json', import.meta.url)
 const vectors = JSON.parse(readFileSync(fileURLToPath(url), 'utf8')) as Vector
 const v2Url = new URL('../../../../test-vectors/prompts/registry-v2.json', import.meta.url)
 const v2 = JSON.parse(readFileSync(fileURLToPath(v2Url), 'utf8')) as RegistryV2Vector
+const workflowUrl = new URL('../../../../test-vectors/prompts/workflow.json', import.meta.url)
+const workflow = JSON.parse(readFileSync(fileURLToPath(workflowUrl), 'utf8')) as WorkflowVector
+
+function expectWorkflowContentSafe(serialized: string): void {
+  for (const content of workflow.contentKeys) {
+    if (content === 'output' || content === 'renderedPrompt') {
+      expect(serialized).not.toContain(`"${content}"`)
+    } else {
+      expect(serialized).not.toContain(content)
+    }
+  }
+}
 
 describe('Prompt Registry vectors', () => {
   it('renders templates and keeps lineage metadata-only', () => {
@@ -91,6 +128,64 @@ describe('Prompt Registry vectors', () => {
     )
 
     expect(() => registry.render(templateVector.id, variables)).toThrow(/topic/)
+  })
+})
+
+describe('Prompt eval workflow vectors', () => {
+  it('links prompt versions to eval gates and keeps triage metadata safe', async () => {
+    const registry = PromptRegistry.fromManifest(workflow.manifest)
+    const suite = new EvalSuite(workflow.suite)
+    const outputs = new Map(workflow.suite.cases.map((testCase) => [testCase.id, testCase.mockOutput]))
+
+    const report = await suite.run(registry, (_prompt, testCase) => outputs.get(testCase.id) ?? '')
+    const links = promptEvalLinksFromManifest(workflow.manifest)
+    const result = evaluatePromptWorkflow(report, links)
+
+    expect(result.passed).toBe(false)
+    expect(result.gates).toHaveLength(1)
+    expect(result.gates[0]!.promptId).toBe(workflow.expected.promptId)
+    expect(result.gates[0]!.promptVersion).toBe(workflow.expected.promptVersion)
+    expect(result.gates[0]!.score).toBe(workflow.expected.score)
+    expect(result.gates[0]!.baselineScore).toBe(workflow.expected.baselineScore)
+    expect(result.gates[0]!.scoreDelta).toBe(workflow.expected.scoreDelta)
+    expect(result.gates[0]!.failedCases).toEqual(workflow.expected.failedCases)
+    const failed = report.cases.find((testCase) => testCase.id === 'refund-leak')
+    expect(failed?.triage?.category).toBe(workflow.expected.triage.category)
+    expect(failed?.triage?.severity).toBe(workflow.expected.triage.severity)
+    expect(failed?.triage?.metadata).toHaveProperty('outputHash')
+    expect(failed?.triage?.metadata).not.toHaveProperty('output')
+    expect(report.cases.find((testCase) => testCase.id === 'refund-safe')).not.toHaveProperty('triage')
+
+    const serialized = JSON.stringify({ report, result })
+    expectWorkflowContentSafe(serialized)
+  })
+
+  it('builds metadata-safe prompt release bundles with linked eval evidence', async () => {
+    const registry = PromptRegistry.fromManifest(workflow.manifest)
+    const suite = new EvalSuite(workflow.suite)
+    const outputs = new Map(workflow.suite.cases.map((testCase) => [testCase.id, testCase.mockOutput]))
+    const report = await suite.run(registry, (_prompt, testCase) => outputs.get(testCase.id) ?? '')
+
+    const bundle = buildPromptReleaseBundle({
+      manifest: workflow.manifest,
+      promptId: workflow.expected.promptId,
+      promptVersion: workflow.expected.promptVersion,
+      fromVersion: workflow.expected.fromVersion,
+      reports: [report],
+      generatedAt: '2026-07-12T12:00:00Z',
+    })
+
+    expect(bundle.schemaVersion).toBe('gavio.prompt-release-bundle.v1')
+    expect(bundle.prompt).toEqual({
+      id: workflow.expected.promptId,
+      version: workflow.expected.promptVersion,
+    })
+    expect(String(bundle.manifest.digest)).toMatch(/^[a-f0-9]{64}$/)
+    expect(bundle.passed).toBe(false)
+    expect(bundle.gates[0]!.failedCases).toEqual(workflow.expected.failedCases)
+    expect(bundle.promptDiff?.hasChanges).toBe(true)
+    const serialized = JSON.stringify(bundle)
+    expectWorkflowContentSafe(serialized)
   })
 })
 

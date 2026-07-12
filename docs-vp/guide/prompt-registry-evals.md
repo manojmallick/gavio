@@ -1,7 +1,7 @@
 # Prompt Registry + Evals
 
 > Since v1.4.0: `F-EVAL-01` and `F-EVAL-02`. Since v2.1.0: `F-EVAL-03`.
-> Since v2.2.0: `F-EVAL-04`.
+> Since v2.2.0: `F-EVAL-04`. Since v2.4.0: `F-EVAL-05`.
 
 The Prompt Registry stores versioned chat templates and renders them into Gavio
 messages with `PromptLineage` attached. Eval suites run deterministic cases
@@ -137,6 +137,35 @@ jobs:
             --summary
 ```
 
+## Eval + Prompt Workflow
+
+v2.4.0 links prompt versions to eval suites. Links can be declared in prompt
+manifests, template metadata, or runner suite files. Each link can enforce
+`failUnder`, `baselineScore`, and `maxRegression` for one prompt version, and
+`gavio eval run` returns a failing exit code if a linked prompt gate fails.
+
+```python
+from gavio.prompts import (
+    build_prompt_release_bundle,
+    evaluate_prompt_workflow,
+    prompt_eval_links_from_manifest,
+)
+
+links = prompt_eval_links_from_manifest(manifest)
+workflow = evaluate_prompt_workflow(report, links)
+bundle = build_prompt_release_bundle(
+    manifest=manifest,
+    prompt_id="support.reply",
+    prompt_version="1.1.0",
+    reports=[report],
+    from_version="1.0.0",
+)
+```
+
+Failed eval cases may include triage metadata such as category, severity, owner,
+and action. Content-like keys including `output`, `prompt`, `messages`, and
+`renderedPrompt` are hashed before reports or release bundles are serialized.
+
 ## JavaScript
 
 ```typescript
@@ -189,8 +218,9 @@ EvalSuite suite = new EvalSuite("support-smoke", List.of(new EvalCase(
 EvalReport report = suite.run(registry, (prompt, testCase) -> "Avery refund approved");
 ```
 
-Shared vectors live in `test-vectors/prompts/registry-evals.json` and
-`test-vectors/prompts/registry-v2.json`, with schemas in
+Shared vectors live in `test-vectors/prompts/registry-evals.json`,
+`test-vectors/prompts/registry-v2.json`, and
+`test-vectors/prompts/workflow.json`, with schemas in
 `spec/PromptTemplate.schema.json`, `spec/PromptManifest.schema.json`, and
 `spec/EvalReport.schema.json`.
 
@@ -200,6 +230,7 @@ Shared vectors live in `test-vectors/prompts/registry-evals.json` and
   registry/render/eval flow.
 - `examples/python/21-eval-ci-gate` shows a release-style prompt candidate
   gate: YAML suite input, baseline comparison, fail-under threshold,
-  regression check, and JSON/JUnit reports.
+  regression check, prompt-to-eval links, triage metadata, prompt release bundle
+  evidence, and JSON/JUnit reports.
 - `examples/python/23-prompt-registry-v2` shows signed manifest loading,
   semver selectors, approval metadata, and metadata-safe prompt diffs.

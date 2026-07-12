@@ -178,6 +178,104 @@ class PromptRegistryEvalTest {
         assertEquals(manifest.get("signature"), signed.get("signature"));
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void promptEvalWorkflowGatesAndTriageMetadataAreSafe() throws Exception {
+        Map<String, Object> vector = loadWorkflowVector();
+        Map<String, Object> manifest = (Map<String, Object>) vector.get("manifest");
+        Map<String, Object> suiteVector = (Map<String, Object>) vector.get("suite");
+        Map<String, Object> expected = (Map<String, Object>) vector.get("expected");
+        PromptRegistry registry = PromptRegistry.fromManifest(manifest);
+        EvalSuite suite = EvalSuite.fromMap(suiteVector);
+        Map<String, String> outputs = new java.util.HashMap<>();
+        for (Map<String, Object> c : (List<Map<String, Object>>) suiteVector.get("cases")) {
+            outputs.put((String) c.get("id"), (String) c.get("mockOutput"));
+        }
+
+        EvalReport report = suite.run(registry, (_prompt, c) -> outputs.get(c.id()));
+        List<PromptEvalLink> links = PromptEvalWorkflow.linksFromManifest(manifest);
+        PromptWorkflowResult workflow = PromptEvalWorkflow.evaluate(report, links);
+        PromptVersionGate gate = workflow.gates().get(0);
+
+        assertFalse(workflow.passed());
+        assertEquals(expected.get("promptId"), gate.promptId());
+        assertEquals(expected.get("promptVersion"), gate.promptVersion());
+        assertEquals(((Number) expected.get("score")).doubleValue(), gate.score(), 1e-9);
+        assertEquals(((Number) expected.get("baselineScore")).doubleValue(), gate.baselineScore(), 1e-9);
+        assertEquals(((Number) expected.get("scoreDelta")).doubleValue(), gate.scoreDelta(), 1e-9);
+        assertEquals(expected.get("failedCases"), gate.failedCases());
+
+        EvalCaseResult failed = report.cases().stream()
+                .filter(c -> c.id().equals("refund-leak"))
+                .findFirst()
+                .orElseThrow();
+        Map<String, Object> expectedTriage = (Map<String, Object>) expected.get("triage");
+        assertEquals(expectedTriage.get("category"), failed.triage().category());
+        assertEquals(expectedTriage.get("severity"), failed.triage().severity());
+        assertTrue(failed.triage().metadata().containsKey("outputHash"));
+        assertFalse(failed.triage().metadata().containsKey("output"));
+        assertTrue(report.cases().stream()
+                .filter(c -> c.id().equals("refund-safe"))
+                .findFirst()
+                .orElseThrow()
+                .triage() == null);
+
+        String serialized = Json.write(Map.of("report", report.toMap(), "workflow", workflow.toMap()));
+        assertWorkflowContentSafe(serialized, vector);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void promptReleaseBundleContainsPromptDiffAndEvalEvidence() throws Exception {
+        Map<String, Object> vector = loadWorkflowVector();
+        Map<String, Object> manifest = (Map<String, Object>) vector.get("manifest");
+        Map<String, Object> suiteVector = (Map<String, Object>) vector.get("suite");
+        Map<String, Object> expected = (Map<String, Object>) vector.get("expected");
+        PromptRegistry registry = PromptRegistry.fromManifest(manifest);
+        EvalSuite suite = EvalSuite.fromMap(suiteVector);
+        Map<String, String> outputs = new java.util.HashMap<>();
+        for (Map<String, Object> c : (List<Map<String, Object>>) suiteVector.get("cases")) {
+            outputs.put((String) c.get("id"), (String) c.get("mockOutput"));
+        }
+        EvalReport report = suite.run(registry, (_prompt, c) -> outputs.get(c.id()));
+
+        PromptReleaseBundle bundle = PromptEvalWorkflow.buildReleaseBundle(
+                manifest,
+                (String) expected.get("promptId"),
+                (String) expected.get("promptVersion"),
+                List.of(report),
+                null,
+                (String) expected.get("fromVersion"),
+                "2026-07-12T12:00:00Z",
+                null,
+                Map.of());
+        Map<String, Object> data = bundle.toMap();
+
+        assertEquals("gavio.prompt-release-bundle.v1", data.get("schemaVersion"));
+        assertEquals(
+                Map.of("id", expected.get("promptId"), "version", expected.get("promptVersion")),
+                data.get("prompt"));
+        assertEquals(64, String.valueOf(((Map<String, Object>) data.get("manifest")).get("digest")).length());
+        assertFalse((Boolean) data.get("passed"));
+        assertEquals(
+                expected.get("failedCases"),
+                ((Map<String, Object>) ((List<Object>) data.get("gates")).get(0)).get("failedCases"));
+        assertTrue((Boolean) ((Map<String, Object>) data.get("promptDiff")).get("hasChanges"));
+        String serialized = Json.write(data);
+        assertWorkflowContentSafe(serialized, vector);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void assertWorkflowContentSafe(String serialized, Map<String, Object> vector) {
+        for (String content : (List<String>) vector.get("contentKeys")) {
+            if (content.equals("output") || content.equals("renderedPrompt")) {
+                assertFalse(serialized.contains("\"" + content + "\""));
+            } else {
+                assertFalse(serialized.contains(content));
+            }
+        }
+    }
+
     @SuppressWarnings("unchecked")
     private static List<Message> messages(Object raw) {
         List<Message> messages = new ArrayList<>();
@@ -193,6 +291,10 @@ class PromptRegistryEvalTest {
 
     private static Map<String, Object> loadV2Vector() throws Exception {
         return Json.parseObject(Files.readString(repoRoot().resolve("test-vectors/prompts/registry-v2.json")));
+    }
+
+    private static Map<String, Object> loadWorkflowVector() throws Exception {
+        return Json.parseObject(Files.readString(repoRoot().resolve("test-vectors/prompts/workflow.json")));
     }
 
     private static Path repoRoot() {

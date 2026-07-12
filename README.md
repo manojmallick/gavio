@@ -83,6 +83,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `2.1.0` | Eval Runner + CI Gates | `gavio eval run` for JSON/YAML suites, baseline comparison, fail-under gates, and JSON/JUnit reports |
 | `2.2.0` | Prompt Registry v2 | File-backed prompt manifests, semver selectors, approval metadata, metadata-safe diffs, and HMAC signatures |
 | `2.3.0` | Control Plane Persistence | SQLite migrations, Postgres adapter path, durable projects/envs/keys/policies/budgets/events/audit search |
+| `2.4.0` | Eval + Prompt Workflow | Prompt-to-eval links, per-version regression gates, failure triage metadata, and prompt release bundles |
 
 ---
 
@@ -137,7 +138,7 @@ pipeline in reverse order:
 - **AI Request Inspector** — opt-in live traces, per-interceptor waterfall, replay, agent DAGs, RED stats, and production audit-store views.
 - **Runtime Event Export** — metadata-safe JSONL and OpenTelemetry-style span streams for gateways, observability systems, and eval workflows.
 - **Ecosystem Integrations** — compatibility matrix, metadata helpers, and offline recipes for common gateways, observability tools, eval tools, frameworks, and provider SDKs.
-- **Prompt Registry + Evals** — file-backed semver prompt manifests, approval metadata, metadata-safe diffs, prompt lineage, deterministic eval reports, and `gavio eval run` CI gates.
+- **Prompt Registry + Evals** — file-backed semver prompt manifests, approval metadata, metadata-safe diffs, prompt lineage, deterministic eval reports, `gavio eval run` CI gates, prompt-to-eval links, triage metadata, and prompt release bundles.
 - **Cost Intelligence** — tenant/feature/user attribution, `/api/cost-report`, retry overhead, cache savings, and scoped budget fallback.
 - **Cost Governance v2** — budget policy/decision contracts, projected-spend controls, fallback/downgrade/dry-run actions, budget-aware reports, and `gavio cost report`.
 - **Domain-aware Policy Packs** — signed catalog manifests for core, finance, healthcare, legal, HR, support, code security, and regional identifiers, plus custom regex-rule packs with overrides and false-positive suppression.
@@ -262,7 +263,7 @@ compared side by side.
 | 14 | Production Trust Package — metadata-only release evidence bundle and verifier | [py](./examples/python/14-production-trust/) | [js](./examples/javascript/14-production-trust/) | [java](./examples/java/14-production-trust/) | no |
 | 15 | Ecosystem integrations — compatibility matrix, metadata labels, full-stack smoke | [py](./examples/integrations/) | — | — | no |
 | 20 | Platform Runtime Profile — metadata-only readiness profile and deterministic gaps | [py](./examples/python/20-platform-runtime/) | — | — | no |
-| 21 | Eval CI Gate — `gavio eval run`, YAML/JSON suites, baseline comparison, JSON/JUnit reports | [py](./examples/python/21-eval-ci-gate/) | — | — | no |
+| 21 | Eval CI Gate — `gavio eval run`, prompt/eval links, baseline comparison, JSON/JUnit reports | [py](./examples/python/21-eval-ci-gate/) | — | — | no |
 | 22 | Platform Feature Tour — all major v2.x surfaces in one offline project | [py](./examples/python/22-platform-feature-tour/) | — | — | no |
 | 23 | Prompt Registry v2 — signed manifests, semver selectors, approvals, metadata-safe diffs | [py](./examples/python/23-prompt-registry-v2/) | — | — | no |
 
@@ -388,6 +389,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Prompt Registry + Evals — versioned templates, pass/fail cases, output hashes | `F-EVAL-01/02` | 1.4.0 |
 | Eval Runner + CI Gates — `gavio eval run`, YAML/JSON suites, baseline comparison, JSON/JUnit reports | `F-EVAL-03` | 2.1.0 |
 | Prompt Registry v2 — signed manifests, semver selectors, approval metadata, metadata-safe diffs | `F-EVAL-04` | 2.2.0 |
+| Eval + Prompt Workflow — prompt/eval links, per-version gates, triage metadata, release bundles | `F-EVAL-05` | 2.4.0 |
 | Guardrails — JSON-schema + regex allow/deny | `F-QUA-01/02` | 0.2.0 |
 | Composite risk scoring (PII + guardrail + injection signals) | `F-QUA-06` | 0.3.0 |
 | JSONL audit sink (`jsonl://<path>`) — the store the production dashboard reads | `F-DX-08` | 0.7.0 |

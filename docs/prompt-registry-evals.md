@@ -1,6 +1,6 @@
 # Prompt Registry + Evals
 
-> Feature IDs: `F-EVAL-01` (Prompt Registry) · `F-EVAL-02` (Evals) · `F-EVAL-03` (Eval Runner + CI Gates) · `F-EVAL-04` (Prompt Registry v2) | Since: v1.4.0; runner since v2.1.0; registry v2 since v2.2.0
+> Feature IDs: `F-EVAL-01` (Prompt Registry) · `F-EVAL-02` (Evals) · `F-EVAL-03` (Eval Runner + CI Gates) · `F-EVAL-04` (Prompt Registry v2) · `F-EVAL-05` (Eval + Prompt Workflow) | Since: v1.4.0; runner since v2.1.0; registry v2 since v2.2.0; prompt workflow since v2.4.0
 
 The Prompt Registry stores versioned chat templates and renders them into
 provider-agnostic Gavio messages. Rendering attaches the existing
@@ -170,6 +170,76 @@ jobs:
             --summary
 ```
 
+## Eval + Prompt Workflow
+
+v2.4.0 links prompt versions to the eval suites that gate them. Links can live
+at the manifest level, in template metadata, or in a runner suite file. Each
+link can enforce a `failUnder` score, compare to a `baselineScore`, and allow a
+bounded `maxRegression` for that exact prompt version. `gavio eval run` fails
+when either the suite gate or any linked prompt gate fails.
+
+```json
+{
+  "id": "support-regression",
+  "templates": [{
+    "id": "support.reply",
+    "version": "1.1.0",
+    "messages": [
+      { "role": "system", "content": "You are concise." },
+      { "role": "user", "content": "Reply to {{ customer }}." }
+    ],
+    "requiredVariables": ["customer"],
+    "metadata": {
+      "promptEvalLinks": [{
+        "suiteId": "support-regression",
+        "baselineScore": 1.0,
+        "failUnder": 0.95,
+        "maxRegression": 0.05
+      }]
+    }
+  }],
+  "cases": [{
+    "id": "refund-leak",
+    "templateId": "support.reply",
+    "templateVersion": "1.1.0",
+    "variables": { "customer": "Avery" },
+    "output": "Avery, send your card number.",
+    "assertions": [{ "type": "not_contains", "value": "card number" }],
+    "triage": {
+      "category": "safety",
+      "severity": "high",
+      "owner": "support-quality",
+      "action": "revise_prompt"
+    }
+  }]
+}
+```
+
+The SDK helpers expose the same workflow for release tooling:
+
+```python
+from gavio.prompts import (
+    build_prompt_release_bundle,
+    evaluate_prompt_workflow,
+    prompt_eval_links_from_manifest,
+)
+
+links = prompt_eval_links_from_manifest(manifest)
+workflow = evaluate_prompt_workflow(report, links)
+bundle = build_prompt_release_bundle(
+    manifest=manifest,
+    prompt_id="support.reply",
+    prompt_version="1.1.0",
+    reports=[report],
+    from_version="1.0.0",
+)
+```
+
+Failure triage metadata is attached only to failed cases. Content-like metadata
+keys such as `output`, `prompt`, `messages`, and `renderedPrompt` are replaced
+with hashes, so JSON reports, JUnit reports, and prompt release bundles remain
+metadata-safe.
+
 ## JavaScript
 
 ```typescript
@@ -248,6 +318,9 @@ System.out.println(report.score());
 - `test-vectors/prompts/registry-v2.json` verifies signed manifest loading,
   semantic-version selection, approval metadata, metadata-safe prompt diffs,
   and deterministic signatures across Python, JavaScript, and Java.
+- `test-vectors/prompts/workflow.json` verifies prompt-to-eval links,
+  per-prompt regression gates, failure triage metadata, and prompt release
+  bundles across Python, JavaScript, and Java.
 
 ## Examples
 
@@ -255,7 +328,8 @@ System.out.println(report.score());
   shows the minimal registry/render/eval flow.
 - [`examples/python/21-eval-ci-gate`](../examples/python/21-eval-ci-gate/)
   shows a release-style prompt candidate gate: YAML suite input, baseline
-  comparison, fail-under threshold, regression check, and JSON/JUnit reports.
+  comparison, fail-under threshold, regression check, prompt-to-eval links,
+  triage metadata, prompt release bundle evidence, and JSON/JUnit reports.
 - [`examples/python/23-prompt-registry-v2`](../examples/python/23-prompt-registry-v2/)
   shows signed manifest loading, semver selectors, approval metadata, and
   metadata-safe prompt diffs.
