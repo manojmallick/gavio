@@ -26,7 +26,7 @@ features:
     linkText: Interceptors →
   - icon: 🔁
     title: Request runtime, not a black box
-    details: Retry with backoff, fallback, timeouts, circuit breaker, and load balancing wrap every call. The Inspector shows live request traces, agent graphs, replay, RED stats, and a read-only production dashboard. v0.11.0 adds Cost Intelligence reports; v0.12.0 adds Policy Pack manifests; v0.13.0 adds richer runtime context and OpenRouter; v0.14.0 adds Tool Runtime checks; v1.0.0 adds the stable release gate and LTS policy; v1.1.0 adds metadata-safe runtime event export and integration recipes; v1.2.0 adds Cost Governance v2 budget policies and reports; v1.3.0 adds OpenTelemetry-style span export; v1.4.0 adds Prompt Registry + Evals; v1.5.0 adds Tool Runtime v2 governance; v1.6.0 adds the signed Policy Pack Catalog; v1.7.0 adds the optional self-hosted Control Plane; v1.8.0 adds metadata-only Production Trust Packages; v1.9.0 adds the ecosystem integration catalog; v2.0.0 adds Platform Runtime Profiles for readiness scoring; v2.1.0 adds eval runner CI gates; v2.2.0 adds Prompt Registry v2 manifests; v2.3.0 adds durable Control Plane persistence; v2.4.0 adds prompt-linked eval gates and release bundles; v2.5.0 adds metadata-only ecosystem adapter payloads; v2.6.0 adds Enterprise Admin v2 controls.
+    details: Retry with backoff, fallback, timeouts, circuit breaker, and load balancing wrap every call. The Inspector shows live request traces, agent graphs, replay, RED stats, and a read-only production dashboard. v0.11.0 adds Cost Intelligence reports; v0.12.0 adds Policy Pack manifests; v0.13.0 adds richer runtime context and OpenRouter; v0.14.0 adds Tool Runtime checks; v1.0.0 adds the stable release gate and LTS policy; v1.1.0 adds metadata-safe runtime event export and integration recipes; v1.2.0 adds Cost Governance v2 budget policies and reports; v1.3.0 adds OpenTelemetry-style span export; v1.4.0 adds Prompt Registry + Evals; v1.5.0 adds Tool Runtime v2 governance; v1.6.0 adds the signed Policy Pack Catalog; v1.7.0 adds the optional self-hosted Control Plane; v1.8.0 adds metadata-only Production Trust Packages; v1.9.0 adds the ecosystem integration catalog; v2.0.0 adds Platform Runtime Profiles for readiness scoring; v2.1.0 adds eval runner CI gates; v2.2.0 adds Prompt Registry v2 manifests; v2.3.0 adds durable Control Plane persistence; v2.4.0 adds prompt-linked eval gates and release bundles; v2.5.0 adds metadata-only ecosystem adapter payloads; v2.6.0 adds Enterprise Admin v2 controls; v2.7.0 adds ecosystem trust conformance and sample production apps.
     link: /guide/interceptors
     linkText: Production core →
   - icon: 🌐
@@ -46,7 +46,7 @@ features:
 ```bash
 pip install gavio            # Python 3.10+
 npm install gavio            # Node 18+
-# Maven: io.github.manojmallick:gavio-core:2.6.0  (Java 17+)
+# Maven: io.github.manojmallick:gavio-core:2.7.0  (Java 17+)
 ```
 
 ## 30-second taste (Python, dev mode — no key)
