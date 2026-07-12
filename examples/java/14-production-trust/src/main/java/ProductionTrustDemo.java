@@ -28,7 +28,7 @@ public class ProductionTrustDemo {
     boolean chainOk = AuditChain.verifyChain(List.of(first, second));
     Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
         .generatedAt("2026-07-12T12:00:00Z")
-        .release("2.3.0", "v2.3.0", "d0c8971")
+        .release("2.4.0", "v2.4.0", "c7717b2")
         .runtime("production", "project:prod-support", true, "metadata_only")
         .auditChain(2, chainOk, first.contentHash(), second.contentHash())
         .runtimeEvents(3, true, List.of("trace.start", "provider.call.end", "trace.end"))

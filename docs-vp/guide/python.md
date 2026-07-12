@@ -334,7 +334,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "2.3.0", "tag": "v2.3.0"},
+    release={"version": "2.4.0", "tag": "v2.4.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",
@@ -397,6 +397,9 @@ gavio eval run examples/python/21-eval-ci-gate/suite.yaml \
 Use JSON suites by default, or install `gavio[yaml]` for full YAML support. The
 runner exits `1` when cases fail, the score falls below `--fail-under`, or the
 baseline regression exceeds `--max-regression`.
+
+Python v2.4.0 adds prompt-to-eval links, per-version regression gates, failure
+triage metadata, and prompt release bundles for release evidence.
 
 ## Embeddings
 
