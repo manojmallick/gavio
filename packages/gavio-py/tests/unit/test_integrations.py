@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -22,6 +25,15 @@ def _catalog() -> dict:
 
 def _adapters() -> dict:
     return json.loads((_VECTORS / "integrations" / "adapters.json").read_text())
+
+
+def _ecosystem_trust() -> dict:
+    return json.loads((_VECTORS / "integrations" / "ecosystem-trust.json").read_text())
+
+
+def _trust_matrix() -> dict:
+    matrix_path = _VECTORS.parent / "docs" / "integrations" / "compatibility-matrix.json"
+    return json.loads(matrix_path.read_text())
 
 
 def test_integration_catalog_matches_shared_vector() -> None:
@@ -96,6 +108,78 @@ def test_integration_adapter_payloads_match_shared_vector() -> None:
         serialized = json.dumps(payload, sort_keys=True)
         for forbidden in vector["forbiddenStrings"]:
             assert forbidden not in serialized
+
+
+def test_ecosystem_trust_matrix_matches_conformance_vector() -> None:
+    vector = _ecosystem_trust()
+    matrix = _trust_matrix()
+    adapters = _adapters()
+    adapter_ids = {item["id"] for item in adapters["adapters"]}
+    app_by_id = {item["id"]: item for item in vector["productionApps"]}
+    row_by_id = {item["id"]: item for item in matrix["rows"]}
+
+    assert matrix["schemaVersion"] == "gavio.ecosystem-trust-matrix.v1"
+    assert matrix["since"] == "2.7.0"
+    assert matrix["summary"]["integrations"] == len(vector["cases"])
+    assert matrix["summary"]["productionApps"] == len(vector["productionApps"])
+    assert set(row_by_id) == {item["id"] for item in vector["cases"]}
+
+    for case in vector["cases"]:
+        recipe = get_integration(case["id"])
+        row = row_by_id[case["id"]]
+        assert row["category"] == case["expectedCategory"] == recipe.category
+        assert row["privacyBoundary"] == "metadata_only"
+        assert row["evidence"]["catalog"] == "pass"
+        assert row["evidence"]["docs"] == "pass"
+        assert row["evidence"]["example"] == "pass"
+        assert row["evidence"]["metadataLabels"] == case["requiredMetadata"]
+        assert case["adapterPayload"] is (case["id"] in adapter_ids)
+        assert row["evidence"]["adapterPayload"] == (
+            "pass" if case["adapterPayload"] else "not_applicable"
+        )
+        assert set(case["requiredSurfaces"]).issubset(recipe.gavio_surfaces)
+        assert set(case["requiredExporters"]).issubset(recipe.recommended_exporters)
+        assert (_VECTORS.parent / recipe.docs_path).is_file()
+        assert (_VECTORS.parent / recipe.example_path).is_file()
+
+        app_ids = {item["id"] for item in row["evidence"]["productionApps"]}
+        assert app_ids == set(case["sampleApps"])
+        for app_id in case["sampleApps"]:
+            app = app_by_id[app_id]
+            assert case["id"] in app["covers"]
+            assert (_VECTORS.parent / app["path"]).is_file()
+            assert (_VECTORS.parent / app["readmePath"]).is_file()
+
+        if case["adapterPayload"]:
+            payload = integration_adapter_payload(
+                case["id"],
+                adapters["source"],
+                metadata=adapters["metadata"],
+            )
+            serialized = json.dumps(payload, sort_keys=True)
+            for forbidden in vector["privacyBoundary"]["forbiddenStrings"]:
+                assert forbidden not in serialized
+
+
+def test_ecosystem_trust_sample_apps_smoke_offline() -> None:
+    repo_root = _VECTORS.parent
+    env = {
+        **os.environ,
+        "PYTHONPATH": str(repo_root / "packages" / "gavio-py"),
+    }
+
+    for app in _ecosystem_trust()["productionApps"]:
+        result = subprocess.run(
+            [sys.executable, app["path"]],
+            cwd=repo_root,
+            env=env,
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        payload = json.loads(result.stdout)
+        for key, expected in app["expected"].items():
+            assert payload[key] == expected
 
 
 def _at(value: object, path: list[object]) -> object:

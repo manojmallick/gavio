@@ -43,7 +43,7 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Dev mode** — the whole stack runs in-process with a mock provider. No API key, no network.
 - **Audit by default** — every call logged as metadata + SHA-256 content hashes (never raw text).
 - **Runtime event export** — metadata-safe JSONL events for integrations with gateways, observability, and eval workflows.
-- **Ecosystem integrations** — compatibility matrix, dependency-light metadata helpers, and adapter payloads for LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, Vercel AI SDK, and related stack tools.
+- **Ecosystem integrations** — compatibility matrix, dependency-light metadata helpers, adapter payloads, generated conformance evidence, and sample production apps for LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, Vercel AI SDK, and related stack tools.
 - **Self-hosted Control Plane** — optional local/private server for runtime config, policy rollout, budget config, audit search, and cached SDK fallback.
 - **Production Trust Package** — metadata-only release evidence bundles that verify audit-chain, runtime-event, policy, benchmark, and document evidence.
 - **Platform Runtime Profile** — metadata-only readiness score and gap report for platform-grade production runtime posture.
@@ -86,6 +86,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `2.4.0` | Eval + Prompt Workflow | Prompt-to-eval links, per-version regression gates, failure triage metadata, and prompt release bundles |
 | `2.5.0` | Ecosystem Adapters | Metadata-only adapter payload helpers for LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and Vercel AI SDK |
 | `2.6.0` | Enterprise Admin v2 | OIDC/SAML-lite metadata, scoped admin keys, rollout approvals, audit export, and retention controls |
+| `2.7.0` | Ecosystem Trust Package | Integration conformance vectors, generated compatibility matrix, offline sample production apps, and cross-SDK trust checks |
 
 ---
 
@@ -139,7 +140,7 @@ pipeline in reverse order:
 
 - **AI Request Inspector** — opt-in live traces, per-interceptor waterfall, replay, agent DAGs, RED stats, and production audit-store views.
 - **Runtime Event Export** — metadata-safe JSONL and OpenTelemetry-style span streams for gateways, observability systems, and eval workflows.
-- **Ecosystem Integrations** — compatibility matrix, metadata helpers, adapter payload helpers, and offline recipes for common gateways, observability tools, eval tools, frameworks, and provider SDKs.
+- **Ecosystem Integrations** — compatibility matrix, metadata helpers, adapter payload helpers, conformance-generated trust evidence, and offline recipes for common gateways, observability tools, eval tools, frameworks, and provider SDKs.
 - **Prompt Registry + Evals** — file-backed semver prompt manifests, approval metadata, metadata-safe diffs, prompt lineage, deterministic eval reports, `gavio eval run` CI gates, prompt-to-eval links, triage metadata, and prompt release bundles.
 - **Cost Intelligence** — tenant/feature/user attribution, `/api/cost-report`, retry overhead, cache savings, and scoped budget fallback.
 - **Cost Governance v2** — budget policy/decision contracts, projected-spend controls, fallback/downgrade/dry-run actions, budget-aware reports, and `gavio cost report`.
@@ -263,7 +264,7 @@ compared side by side.
 | 12 | Domain Policy Pack Catalog — signed packs, overrides, suppression | [py](./examples/python/12-domain-policy-packs/) | [js](./examples/javascript/12-domain-policy-packs/) | [java](./examples/java/12-domain-policy-packs/) | no |
 | 13 | Self-hosted Control Plane — runtime config, policy source, cached fallback | [py](./examples/python/13-control-plane/) | [js](./examples/javascript/13-control-plane/) | [java](./examples/java/13-control-plane/) | no |
 | 14 | Production Trust Package — metadata-only release evidence bundle and verifier | [py](./examples/python/14-production-trust/) | [js](./examples/javascript/14-production-trust/) | [java](./examples/java/14-production-trust/) | no |
-| 15 | Ecosystem integrations — compatibility matrix, metadata labels, adapter payloads, full-stack smoke | [py](./examples/integrations/) | — | — | no |
+| 15 | Ecosystem integrations — compatibility matrix, metadata labels, adapter payloads, generated trust matrix, sample production apps | [py](./examples/integrations/) | — | — | no |
 | 20 | Platform Runtime Profile — metadata-only readiness profile and deterministic gaps | [py](./examples/python/20-platform-runtime/) | — | — | no |
 | 21 | Eval CI Gate — `gavio eval run`, prompt/eval links, baseline comparison, JSON/JUnit reports | [py](./examples/python/21-eval-ci-gate/) | — | — | no |
 | 22 | Platform Feature Tour — all major v2.x surfaces in one offline project | [py](./examples/python/22-platform-feature-tour/) | — | — | no |
@@ -425,6 +426,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Production Trust Package — metadata-only release evidence bundle and verifier | `F-TRUST-01` | 1.8.0 |
 | Ecosystem integration catalog — compatibility matrix, metadata helpers, JS subpath, and offline recipes | `F-INT-01` | 1.9.0 |
 | Ecosystem adapter payloads — dependency-light payload fragments for LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and Vercel AI SDK | `F-INT-02` | 2.5.0 |
+| Ecosystem Trust Package — integration conformance tests, generated compatibility matrix, and sample production apps | `F-INT-03` | 2.7.0 |
 | Platform Runtime Profile — metadata-only readiness score, platform surfaces, evidence, and gap checks | `F-PLAT-01` | 2.0.0 |
 | Stable release gate — lockstep version checks, release hygiene, API stability and LTS policy | — | 1.0.0 |
 | Runtime event/export contract — metadata-safe JSONL exporters and integration recipes | `F-EXP-01` | 1.1.0 |

@@ -17,7 +17,7 @@ implemented per SDK, so you can compare the APIs side by side.
 | 12 | **Domain Policy Pack Catalog** — signed domain packs, overrides, suppression | [py](./python/12-domain-policy-packs/) | [js](./javascript/12-domain-policy-packs/) | [java](./java/12-domain-policy-packs/) | no |
 | 13 | **Self-hosted Control Plane** — runtime config, policy source, cached fallback | [py](./python/13-control-plane/) | [js](./javascript/13-control-plane/) | [java](./java/13-control-plane/) | no |
 | 14 | **Production Trust Package** — metadata-only release evidence bundle and verifier | [py](./python/14-production-trust/) | [js](./javascript/14-production-trust/) | [java](./java/14-production-trust/) | no |
-| 15 | **Ecosystem integrations** — compatibility matrix, metadata labels, adapter payloads, full-stack runtime/export/eval/audit smoke | [py](./integrations/) | — | — | no |
+| 15 | **Ecosystem integrations** — compatibility matrix, metadata labels, adapter payloads, generated trust matrix, sample production apps | [py](./integrations/) | — | — | no |
 | 20 | **Platform Runtime Profile** — metadata-only production readiness profile and deterministic gaps | [py](./python/20-platform-runtime/) | — | — | no |
 | 21 | **Eval CI Gate** — `gavio eval run`, prompt/eval links, baseline comparison, JSON/JUnit reports | [py](./python/21-eval-ci-gate/) | — | — | no |
 | 22 | **Platform Feature Tour** — all major v2.x surfaces in one offline project | [py](./python/22-platform-feature-tour/) | — | — | no |
@@ -43,7 +43,7 @@ smallest runnable project for one feature family.
 | Prompt registry, eval reports, CI-style gates, release bundles | `09`, `21`, `23` | `22` |
 | Tool runtime, permissions, approvals, MCP metadata | `07` | `22` |
 | Control plane, enterprise admin, trust bundle, platform profile | `13`, `14`, `20`, `24` | `22` |
-| Ecosystem integration metadata, adapter payloads, and recipes | `15` | `22` |
+| Ecosystem integration metadata, adapter payloads, generated trust evidence, and sample production apps | `15` | `22` |
 
 ## Run them
 
@@ -70,5 +70,5 @@ mvn -q compile exec:java
 ```
 
 Most language-specific package examples target the `2.6.0` package line. The
-integration catalog and Enterprise Admin v2 examples run from this repository
-branch and the current package line once released.
+integration trust examples run from this repository branch and the current
+package line once released.

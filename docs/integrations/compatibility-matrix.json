@@ -1,0 +1,532 @@
+{
+  "generatedFrom": [
+    "test-vectors/integrations/catalog.json",
+    "test-vectors/integrations/adapters.json",
+    "test-vectors/integrations/ecosystem-trust.json"
+  ],
+  "productionApps": {
+    "agent-framework-handoff": {
+      "covers": [
+        "portkey",
+        "helicone",
+        "langchain",
+        "langgraph",
+        "vercel-ai-sdk",
+        "openai-sdk"
+      ],
+      "expected": {
+        "metadataOnlyPayloads": true,
+        "rawContentExported": false,
+        "routes": 3
+      },
+      "name": "Agent framework and gateway handoff trust app",
+      "path": "examples/integrations/production-agent-framework/app.py"
+    },
+    "gateway-observability-eval": {
+      "covers": [
+        "litellm",
+        "promptfoo",
+        "langfuse",
+        "openlit"
+      ],
+      "expected": {
+        "evalPassed": true,
+        "rawContentExported": false,
+        "trustBundleValid": true
+      },
+      "name": "Gateway observability and eval trust app",
+      "path": "examples/integrations/production-gateway-observability-eval/app.py"
+    }
+  },
+  "rows": [
+    {
+      "category": "gateway",
+      "docsPath": "docs/integrations/litellm.md",
+      "evidence": {
+        "adapterPayload": "pass",
+        "catalog": "pass",
+        "docs": "pass",
+        "example": "pass",
+        "metadataLabels": [
+          "gateway",
+          "integration",
+          "integration_kind"
+        ],
+        "productionApps": [
+          {
+            "id": "gateway-observability-eval",
+            "name": "Gateway observability and eval trust app",
+            "path": "examples/integrations/production-gateway-observability-eval/app.py",
+            "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-gateway-observability-eval/app.py"
+          }
+        ]
+      },
+      "examplePath": "examples/integrations/litellm/recipe.py",
+      "externalOwns": [
+        "multi-provider proxy",
+        "virtual keys",
+        "provider routing",
+        "gateway rate and budget tiers"
+      ],
+      "gavioOwns": [
+        "app-level PII and policy checks before proxy calls",
+        "metadata-only audit and runtime events",
+        "tenant, feature, and workflow cost labels"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "audit_hashes",
+        "cost_governance",
+        "policy_packs"
+      ],
+      "id": "litellm",
+      "name": "LiteLLM",
+      "privacyBoundary": "metadata_only",
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "trustLevel": "conformance-tested"
+    },
+    {
+      "category": "gateway",
+      "docsPath": "docs/integrations/portkey.md",
+      "evidence": {
+        "adapterPayload": "not_applicable",
+        "catalog": "pass",
+        "docs": "pass",
+        "example": "pass",
+        "metadataLabels": [
+          "gateway",
+          "integration",
+          "integration_kind"
+        ],
+        "productionApps": [
+          {
+            "id": "agent-framework-handoff",
+            "name": "Agent framework and gateway handoff trust app",
+            "path": "examples/integrations/production-agent-framework/app.py",
+            "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-agent-framework/app.py"
+          }
+        ]
+      },
+      "examplePath": "examples/integrations/portkey/recipe.py",
+      "externalOwns": [
+        "AI gateway configuration",
+        "organization-level controls",
+        "provider routing",
+        "gateway logs"
+      ],
+      "gavioOwns": [
+        "embedded runtime policy decisions",
+        "pre/post interceptor facts",
+        "metadata-only audit trail"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "audit_hashes",
+        "policy_packs",
+        "tool_runtime"
+      ],
+      "id": "portkey",
+      "name": "Portkey",
+      "privacyBoundary": "metadata_only",
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "trustLevel": "conformance-tested"
+    },
+    {
+      "category": "gateway_observability",
+      "docsPath": "docs/integrations/helicone.md",
+      "evidence": {
+        "adapterPayload": "not_applicable",
+        "catalog": "pass",
+        "docs": "pass",
+        "example": "pass",
+        "metadataLabels": [
+          "gateway",
+          "integration",
+          "integration_kind"
+        ],
+        "productionApps": [
+          {
+            "id": "agent-framework-handoff",
+            "name": "Agent framework and gateway handoff trust app",
+            "path": "examples/integrations/production-agent-framework/app.py",
+            "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-agent-framework/app.py"
+          }
+        ]
+      },
+      "examplePath": "examples/integrations/helicone/recipe.py",
+      "externalOwns": [
+        "LLM gateway analytics",
+        "request dashboard",
+        "prompt workflow analytics"
+      ],
+      "gavioOwns": [
+        "local runtime controls before and after provider calls",
+        "privacy-preserving labels for correlation",
+        "hash-only audit evidence"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "audit_hashes",
+        "cost_governance"
+      ],
+      "id": "helicone",
+      "name": "Helicone",
+      "privacyBoundary": "metadata_only",
+      "recommendedExporters": [
+        "jsonl"
+      ],
+      "trustLevel": "conformance-tested"
+    },
+    {
+      "category": "observability",
+      "docsPath": "docs/integrations/langfuse.md",
+      "evidence": {
+        "adapterPayload": "pass",
+        "catalog": "pass",
+        "docs": "pass",
+        "example": "pass",
+        "metadataLabels": [
+          "integration",
+          "integration_kind"
+        ],
+        "productionApps": [
+          {
+            "id": "gateway-observability-eval",
+            "name": "Gateway observability and eval trust app",
+            "path": "examples/integrations/production-gateway-observability-eval/app.py",
+            "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-gateway-observability-eval/app.py"
+          }
+        ]
+      },
+      "examplePath": "examples/integrations/langfuse/recipe.py",
+      "externalOwns": [
+        "LLM traces",
+        "prompt management",
+        "eval datasets",
+        "human review workflows"
+      ],
+      "gavioOwns": [
+        "metadata-safe runtime facts",
+        "policy, PII, cost, and tool context",
+        "audit hashes without raw content"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "audit_hashes",
+        "prompt_evals"
+      ],
+      "id": "langfuse",
+      "name": "Langfuse",
+      "privacyBoundary": "metadata_only",
+      "recommendedExporters": [
+        "jsonl"
+      ],
+      "trustLevel": "conformance-tested"
+    },
+    {
+      "category": "observability",
+      "docsPath": "docs/integrations/openlit.md",
+      "evidence": {
+        "adapterPayload": "pass",
+        "catalog": "pass",
+        "docs": "pass",
+        "example": "pass",
+        "metadataLabels": [
+          "integration",
+          "integration_kind"
+        ],
+        "productionApps": [
+          {
+            "id": "gateway-observability-eval",
+            "name": "Gateway observability and eval trust app",
+            "path": "examples/integrations/production-gateway-observability-eval/app.py",
+            "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-gateway-observability-eval/app.py"
+          }
+        ]
+      },
+      "examplePath": "examples/integrations/openlit/recipe.py",
+      "externalOwns": [
+        "OpenTelemetry-native observability",
+        "fleet dashboards",
+        "APM correlation"
+      ],
+      "gavioOwns": [
+        "runtime event source",
+        "privacy-preserving OTel span attributes",
+        "interceptor decision events"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "otel_spans",
+        "cost_governance"
+      ],
+      "id": "openlit",
+      "name": "OpenLIT",
+      "privacyBoundary": "metadata_only",
+      "recommendedExporters": [
+        "otel"
+      ],
+      "trustLevel": "conformance-tested"
+    },
+    {
+      "category": "eval",
+      "docsPath": "docs/integrations/promptfoo.md",
+      "evidence": {
+        "adapterPayload": "pass",
+        "catalog": "pass",
+        "docs": "pass",
+        "example": "pass",
+        "metadataLabels": [
+          "integration",
+          "integration_kind"
+        ],
+        "productionApps": [
+          {
+            "id": "gateway-observability-eval",
+            "name": "Gateway observability and eval trust app",
+            "path": "examples/integrations/production-gateway-observability-eval/app.py",
+            "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-gateway-observability-eval/app.py"
+          }
+        ]
+      },
+      "examplePath": "examples/integrations/promptfoo/recipe.py",
+      "externalOwns": [
+        "eval suites",
+        "red-team tests",
+        "CI pass/fail gates"
+      ],
+      "gavioOwns": [
+        "production-like runtime assertions",
+        "PII, policy, cost, and tool outcome signals",
+        "metadata-safe eval reports"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "prompt_evals",
+        "policy_packs",
+        "tool_runtime"
+      ],
+      "id": "promptfoo",
+      "name": "promptfoo",
+      "privacyBoundary": "metadata_only",
+      "recommendedExporters": [
+        "jsonl"
+      ],
+      "trustLevel": "conformance-tested"
+    },
+    {
+      "category": "framework",
+      "docsPath": "docs/integrations/langchain.md",
+      "evidence": {
+        "adapterPayload": "pass",
+        "catalog": "pass",
+        "docs": "pass",
+        "example": "pass",
+        "metadataLabels": [
+          "framework",
+          "integration",
+          "integration_kind"
+        ],
+        "productionApps": [
+          {
+            "id": "agent-framework-handoff",
+            "name": "Agent framework and gateway handoff trust app",
+            "path": "examples/integrations/production-agent-framework/app.py",
+            "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-agent-framework/app.py"
+          }
+        ]
+      },
+      "examplePath": "examples/integrations/langchain/recipe.py",
+      "externalOwns": [
+        "chains",
+        "agents",
+        "tool orchestration",
+        "memory abstractions"
+      ],
+      "gavioOwns": [
+        "request runtime governance around model calls",
+        "callback-exportable runtime metadata",
+        "tool result validation before model re-entry"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "tool_runtime",
+        "audit_hashes"
+      ],
+      "id": "langchain",
+      "name": "LangChain",
+      "privacyBoundary": "metadata_only",
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "trustLevel": "conformance-tested"
+    },
+    {
+      "category": "framework",
+      "docsPath": "docs/integrations/langgraph.md",
+      "evidence": {
+        "adapterPayload": "pass",
+        "catalog": "pass",
+        "docs": "pass",
+        "example": "pass",
+        "metadataLabels": [
+          "framework",
+          "integration",
+          "integration_kind"
+        ],
+        "productionApps": [
+          {
+            "id": "agent-framework-handoff",
+            "name": "Agent framework and gateway handoff trust app",
+            "path": "examples/integrations/production-agent-framework/app.py",
+            "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-agent-framework/app.py"
+          }
+        ]
+      },
+      "examplePath": "examples/integrations/langgraph/recipe.py",
+      "externalOwns": [
+        "graph state",
+        "node execution",
+        "checkpointing",
+        "agent orchestration"
+      ],
+      "gavioOwns": [
+        "per-node runtime labels",
+        "policy and audit context for model/tool nodes",
+        "metadata-safe replay evidence"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "tool_runtime",
+        "audit_hashes"
+      ],
+      "id": "langgraph",
+      "name": "LangGraph",
+      "privacyBoundary": "metadata_only",
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "trustLevel": "conformance-tested"
+    },
+    {
+      "category": "framework",
+      "docsPath": "docs/integrations/vercel-ai-sdk.md",
+      "evidence": {
+        "adapterPayload": "pass",
+        "catalog": "pass",
+        "docs": "pass",
+        "example": "pass",
+        "metadataLabels": [
+          "framework",
+          "integration",
+          "integration_kind"
+        ],
+        "productionApps": [
+          {
+            "id": "agent-framework-handoff",
+            "name": "Agent framework and gateway handoff trust app",
+            "path": "examples/integrations/production-agent-framework/app.py",
+            "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-agent-framework/app.py"
+          }
+        ]
+      },
+      "examplePath": "examples/integrations/vercel-ai-sdk/recipe.py",
+      "externalOwns": [
+        "frontend streaming UX",
+        "server actions",
+        "provider convenience APIs"
+      ],
+      "gavioOwns": [
+        "server-side runtime governance before streaming starts",
+        "metadata-only runtime export",
+        "policy and cost labels for app routes"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "otel_spans",
+        "policy_packs"
+      ],
+      "id": "vercel-ai-sdk",
+      "name": "Vercel AI SDK",
+      "privacyBoundary": "metadata_only",
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "trustLevel": "conformance-tested"
+    },
+    {
+      "category": "provider_sdk",
+      "docsPath": "docs/integrations/openai-sdk.md",
+      "evidence": {
+        "adapterPayload": "not_applicable",
+        "catalog": "pass",
+        "docs": "pass",
+        "example": "pass",
+        "metadataLabels": [
+          "provider_sdk",
+          "integration",
+          "integration_kind"
+        ],
+        "productionApps": [
+          {
+            "id": "agent-framework-handoff",
+            "name": "Agent framework and gateway handoff trust app",
+            "path": "examples/integrations/production-agent-framework/app.py",
+            "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-agent-framework/app.py"
+          }
+        ]
+      },
+      "examplePath": "examples/integrations/openai-sdk/recipe.py",
+      "externalOwns": [
+        "provider-specific API surface",
+        "streaming primitives",
+        "file and assistant endpoints"
+      ],
+      "gavioOwns": [
+        "OpenAI-compatible chat shim for governed completions",
+        "runtime policy checks around provider calls",
+        "metadata-safe audit and export"
+      ],
+      "gavioSurfaces": [
+        "metadata",
+        "runtime_events",
+        "audit_hashes",
+        "policy_packs"
+      ],
+      "id": "openai-sdk",
+      "name": "OpenAI SDK",
+      "privacyBoundary": "metadata_only",
+      "recommendedExporters": [
+        "jsonl",
+        "otel"
+      ],
+      "trustLevel": "conformance-tested"
+    }
+  ],
+  "schemaVersion": "gavio.ecosystem-trust-matrix.v1",
+  "since": "2.7.0",
+  "summary": {
+    "adapterPayloads": 7,
+    "integrations": 10,
+    "privacyBoundary": "metadata_only",
+    "productionApps": 2
+  }
+}
