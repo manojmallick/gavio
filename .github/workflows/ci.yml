@@ -11,6 +11,17 @@ on:
     branches: [main]
 
 jobs:
+  stable-release-gate:
+    name: Stable release gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate release readiness
+        run: python3 scripts/stable_release_gate.py
+
   python:
     name: Python SDK
     runs-on: ubuntu-latest

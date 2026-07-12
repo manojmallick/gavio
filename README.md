@@ -47,7 +47,8 @@ interceptors, with **identical behaviour across three languages** — enforced b
 
 > **Status:** v0.14.0 ships Tool Runtime schema, freshness, conflict, and provenance checks (`F-TOOL-01/02/03/04`).
 > Semver stability holds since v0.2.0; pre-1.0, some APIs may still change.
-> See the [CHANGELOG](./CHANGELOG.md).
+> The v1.0.0 Stable release gate formalizes the API stability guarantee and LTS
+> policy. See [STABILITY.md](./STABILITY.md) and the [CHANGELOG](./CHANGELOG.md).
 
 ---
 
@@ -305,6 +306,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Runtime context fields — `tenant`, `feature`, `cost`, `retry`, `tools`, `policy` | `F-RT-01` | 0.13.0 |
 | AI Request Runtime / Inspector positioning | `F-DOC-V4` | 0.13.0 |
 | Tool Runtime — schema validation, freshness, conflict detection, provenance | `F-TOOL-01/02/03/04` | 0.14.0 |
+| Stable release gate — lockstep version checks, release hygiene, API stability and LTS policy | — | 1.0.0 gate |
 | **Providers** — OpenAI · Anthropic · Gemini · Azure OpenAI · Ollama · Mock (all stdlib HTTP, no vendor SDKs) | — | 0.1–0.2 |
 | **OpenRouter provider adapter** — direct OpenAI-compatible integration with attribution headers | `F-ADP-02` | 0.13.0 |
 
@@ -341,6 +343,7 @@ the [interceptors guide](./docs/interceptors.md) for every built-in interceptor.
 | [examples/](./examples/) | Runnable example projects in all three languages |
 | [spec/](./spec/) | Canonical JSON Schema data model |
 | [test-vectors/](./test-vectors/) | Shared cross-SDK conformance cases |
+| [STABILITY.md](./STABILITY.md) | API stability, LTS policy, and stable release gate |
 | [RELEASING.md](./RELEASING.md) | How releases are cut (PyPI + Maven Central + npm) |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution guide + PR requirements |
 

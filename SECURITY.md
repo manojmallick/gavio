@@ -8,10 +8,12 @@ seriously.
 
 | Version | Supported |
 |---|---|
-| 0.9.x | ✅ (current) |
-| < 0.5 | ❌ |
+| 1.x | Supported for 24 months after the 1.0.0 release |
+| latest minor before 1.0 | Security fixes only until 1.0.0 ships |
+| older pre-1.0 minors | Not supported |
 
-Pre-1.0, security fixes land on the latest minor only.
+Pre-1.0, security fixes land on the latest minor only. After 1.0.0, the 1.x
+line receives the LTS coverage described in [STABILITY.md](./STABILITY.md).
 
 ## Reporting a vulnerability
 

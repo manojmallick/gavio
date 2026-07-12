@@ -8,6 +8,7 @@ Start here, then dive into the language you use.
 - [Architecture](./architecture.md) — request lifecycle, interceptor chain, data model
 - [Interceptors](./interceptors.md) — every built-in + writing your own
 - [Inspector](./inspector.md) — dev-time visualizer: live traces, waterfalls, PII diffs; v0.7.0 adds agent DAGs, replay, and the read-only dashboard
+- [Stability](./stability.md) — API stability, LTS policy, and stable release gate
 
 ## Per-package guides
 

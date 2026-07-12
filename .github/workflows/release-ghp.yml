@@ -26,6 +26,17 @@ jobs:
           node-version: '22'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@manojmallick'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Validate release tag readiness
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            python3 scripts/stable_release_gate.py --tag "$GITHUB_REF_NAME"
+          else
+            python3 scripts/stable_release_gate.py
+          fi
 
       - name: Build + publish scoped package to GitHub Packages
         working-directory: packages/gavio-js

@@ -11,7 +11,19 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Stable release gate (`v1.0.0`)** — added `scripts/stable_release_gate.py`
+  to validate lockstep SDK/runtime versions, changelog links, release docs,
+  security/stability docs, benchmark evidence, workflow wiring, package
+  hygiene, and zero mandatory Python core dependencies before a stable tag can
+  publish. CI and tag release workflows now run the gate before package
+  publishing.
+
+### Changed
+- **Stability/LTS docs** — added `STABILITY.md` and docs-site stability guidance
+  for the v1.0.0 API stability guarantee and 24-month 1.x LTS policy.
+- **Release metadata** — synced Python `gavio.__version__` with the released
+  package version.
 
 ---
 
