@@ -321,7 +321,7 @@ import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
 const bundle = buildProductionTrustBundle({
   bundleId: 'trust-prod-support-2026-07-12',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '2.1.0', tag: 'v2.1.0' },
+  release: { version: '2.2.0', tag: 'v2.2.0' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',

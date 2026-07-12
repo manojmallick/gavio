@@ -51,7 +51,7 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
 
-> **Status:** v2.1.0 is the current stable package line. Gavio has an API
+> **Status:** v2.2.0 is the current stable package line. Gavio has an API
 > stability guarantee, a 24-month 1.x LTS policy, and release automation that
 > checks lockstep SDK versions before publishing. See
 > [STABILITY.md](./STABILITY.md) and the [CHANGELOG](./CHANGELOG.md).
@@ -233,9 +233,9 @@ The Java snippet uses `gavio-core`, `gavio-interceptor-pii`, and
 
 | Language | Command | Docs |
 |---|---|---|
-| **Python** 3.10+ | `pip install gavio==2.1.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
-| **JavaScript** (Node 18+) | `npm install gavio@2.1.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:2.1.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Python** 3.10+ | `pip install gavio==2.2.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
+| **JavaScript** (Node 18+) | `npm install gavio@2.2.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:2.2.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -284,7 +284,7 @@ optional extras include `gavio[redis]`, `gavio[presidio]`, `gavio[otel]`,
 `gavio[elasticsearch]`, `gavio[pgvector]`, and `gavio[ocr]`.
 
 ```bash
-pip install gavio==2.1.0
+pip install gavio==2.2.0
 ```
 
 → **[Full Python guide](./docs/packages/python.md)** · [package README](./packages/gavio-py/README.md)
@@ -296,7 +296,7 @@ with per-subpath `exports` for tree-shaking. Native `fetch`, `node:crypto`.
 Node 18+, Deno, Bun.
 
 ```bash
-npm install gavio@2.1.0
+npm install gavio@2.2.0
 ```
 
 → **[Full JavaScript guide](./docs/packages/javascript.md)** · [package README](./packages/gavio-js/README.md)
@@ -316,17 +316,17 @@ Quickstart stack:
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>2.1.0</version>
+  <version>2.2.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>2.1.0</version>
+  <version>2.2.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>2.1.0</version>
+  <version>2.2.0</version>
 </dependency>
 ```
 
@@ -386,6 +386,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | OpenTelemetry-style span exporter and JSONL conversion | `F-OBS-07` | 1.3.0 |
 | Prompt Registry + Evals — versioned templates, pass/fail cases, output hashes | `F-EVAL-01/02` | 1.4.0 |
 | Eval Runner + CI Gates — `gavio eval run`, YAML/JSON suites, baseline comparison, JSON/JUnit reports | `F-EVAL-03` | 2.1.0 |
+| Prompt Registry v2 — signed manifests, semver selectors, approval metadata, metadata-safe diffs | `F-EVAL-04` | 2.2.0 |
 | Guardrails — JSON-schema + regex allow/deny | `F-QUA-01/02` | 0.2.0 |
 | Composite risk scoring (PII + guardrail + injection signals) | `F-QUA-06` | 0.3.0 |
 | JSONL audit sink (`jsonl://<path>`) — the store the production dashboard reads | `F-DX-08` | 0.7.0 |
