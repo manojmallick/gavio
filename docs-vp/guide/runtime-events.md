@@ -3,9 +3,9 @@
 Since: `1.1.0` · Feature ID: `F-EXP-01`
 
 Gavio runtime events are the public export surface for request execution. They
-reuse the Inspector event envelope, so the Inspector, JSONL exporters, future
-OpenTelemetry exporters, tests, and integration recipes all share one event
-stream.
+reuse the Inspector event envelope, so the Inspector, JSONL exporters,
+OpenTelemetry span exporters, tests, and integration recipes all share one
+event stream.
 
 The default export mode is metadata-only. Runtime exporters remove
 content-bearing fields before writing events:
@@ -50,6 +50,46 @@ Gateway gateway = Gateway.builder()
 Adding an exporter enables metadata-mode events and does not start the
 Inspector HTTP server unless inspection is configured separately.
 
+## OpenTelemetry
+
+Observability + OTel (v1.3.0, `F-OBS-07`) maps runtime events into
+OpenTelemetry-style span JSON without adding mandatory OTel dependencies.
+
+::: code-group
+
+```python [Python]
+from gavio import Gateway, OtelSpanExporter
+
+gw = Gateway.builder().exporter(
+    OtelSpanExporter("otel-spans.jsonl", service_name="checkout-api")
+).build()
+```
+
+```ts [TypeScript]
+import { Gateway, otelSpanExporter } from 'gavio'
+
+const gw = new Gateway({
+  exporters: [otelSpanExporter({
+    path: 'otel-spans.jsonl',
+    serviceName: 'checkout-api',
+  })],
+})
+```
+
+```java [Java]
+Gateway gateway = Gateway.builder()
+    .exporter(new OtelSpanExporter(Path.of("otel-spans.jsonl"), "checkout-api"))
+    .build();
+```
+
+:::
+
+Python can also convert existing runtime-event JSONL:
+
+```bash
+gavio events convert --from runtime-events.jsonl --to otel-json --service-name checkout-api
+```
+
 ## Event Types
 
 | Type | Purpose |
@@ -62,5 +102,5 @@ Inspector HTTP server unless inspection is configured separately.
 | `trace.error` | Request failed |
 | `trace.end` | Request completed |
 
-The OpenTelemetry mapping is documented in
-[Inspector](./inspector.md#opentelemetry-mapping).
+The emitted shape is covered by `spec/GavioOtelSpan.schema.json` and the
+shared `test-vectors/otel/spans.json` vectors.

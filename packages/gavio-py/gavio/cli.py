@@ -52,11 +52,34 @@ def main(argv: list[str] | None = None) -> int:
     report.add_argument("--usage-elapsed-ratio", type=float, default=1.0)
     report.add_argument("--pretty", action="store_true")
 
+    events = subcommands.add_parser("events", help="Runtime event conversion tools.")
+    events_subcommands = events.add_subparsers(dest="events_command", required=True)
+    convert = events_subcommands.add_parser(
+        "convert", help="Convert runtime event JSONL into integration-friendly formats."
+    )
+    convert.add_argument(
+        "--from",
+        dest="from_path",
+        required=True,
+        metavar="PATH",
+        help="Runtime event JSONL file written by a Gavio runtime exporter.",
+    )
+    convert.add_argument(
+        "--to",
+        dest="to_format",
+        choices=["otel-json"],
+        required=True,
+        help="Output format.",
+    )
+    convert.add_argument("--service-name", default="gavio")
+
     args = parser.parse_args(argv)
     if args.command == "inspect":
         return _inspect(args)
     if args.command == "cost" and args.cost_command == "report":
         return _cost_report(args)
+    if args.command == "events" and args.events_command == "convert":
+        return _events_convert(args)
     return 2
 
 
@@ -106,6 +129,21 @@ def _cost_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def _events_convert(args: argparse.Namespace) -> int:
+    from .exporters import otel_spans_from_events
+
+    try:
+        events = _load_jsonl(args.from_path)
+        if args.to_format == "otel-json":
+            for span in otel_spans_from_events(events, service_name=args.service_name):
+                print(json.dumps(span, separators=(",", ":"), sort_keys=True))
+            return 0
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        print(f"gavio events convert: {error}", file=sys.stderr)
+        return 1
+    return 2
+
+
 def _summary_from_jsonl_record(
     record: dict[str, Any], summary_from_record: Any
 ) -> dict[str, Any]:
@@ -144,6 +182,20 @@ def _load_budget_policies(paths: list[str], budget_policy_cls: Any) -> list[Any]
         else:
             raise ValueError(f"{path}: expected a policy object, policies array, or list")
     return policies
+
+
+def _load_jsonl(path: str) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    lines = Path(path).expanduser().read_text(encoding="utf-8").splitlines()
+    for line_no, line in enumerate(lines, 1):
+        text = line.strip()
+        if not text:
+            continue
+        record = json.loads(text)
+        if not isinstance(record, dict):
+            raise ValueError(f"{path}:{line_no}: expected JSON object")
+        records.append(record)
+    return records
 
 
 if __name__ == "__main__":

@@ -1,12 +1,44 @@
 # Inspector events → OpenTelemetry mapping
 
-> Feature IDs: `F-OBS-07` (OTel export) · `F-DX-09` (Inspector core) | Since: v0.7.0
+> Feature IDs: `F-OBS-07` (OTel export) · `F-DX-09` (Inspector core) | Since: v1.3.0
 
 The Inspector's event catalogue (`spec/InspectorEvent.schema.json`) maps 1:1
-onto OpenTelemetry spans. An OTel exporter is a second subscriber on the same
-`InspectorBus` the ring buffer reads — no separate instrumentation path. This
-document is the canonical mapping for that exporter and for teams correlating
-Gavio traces with their existing OTel pipelines.
+onto OpenTelemetry-style spans. The OTel span exporter is a second subscriber on
+the same `InspectorBus` the ring buffer reads — no separate instrumentation
+path. This document is the canonical mapping for that exporter and for teams
+correlating Gavio traces with their existing OTel pipelines.
+
+The core SDKs emit dependency-light span JSON so OpenTelemetry packages remain
+optional. The span shape is defined in
+[`spec/GavioOtelSpan.schema.json`](../spec/GavioOtelSpan.schema.json), and
+cross-SDK parity is enforced by
+[`test-vectors/otel/spans.json`](../test-vectors/otel/spans.json).
+
+## Exporters
+
+```python
+from gavio import Gateway, OtelSpanExporter
+
+gw = Gateway.builder().exporter(OtelSpanExporter("otel-spans.jsonl")).build()
+```
+
+```typescript
+import { Gateway, otelSpanExporter } from 'gavio'
+
+const gw = new Gateway({
+  exporters: [otelSpanExporter({ path: 'otel-spans.jsonl', serviceName: 'api' })],
+})
+```
+
+```java
+Gateway gateway = Gateway.builder()
+    .exporter(new OtelSpanExporter(Path.of("otel-spans.jsonl"), "api"))
+    .build();
+```
+
+```bash
+gavio events convert --from runtime-events.jsonl --to otel-json --service-name api
+```
 
 ## Span structure
 

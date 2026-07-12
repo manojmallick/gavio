@@ -27,19 +27,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>1.2.0</version>
+  <version>1.3.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>1.2.0</version>
+  <version>1.3.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:1.2.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:1.2.0")
+implementation("io.github.manojmallick:gavio-core:1.3.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:1.3.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -103,7 +103,8 @@ r.audit();              // AuditRecord
 ```
 
 **Builder options:** `.provider()`, `.model()`, `.adapter(custom)`, `.use(...)`,
-`.devMode(true)`, `.dryRun(true)`.
+`.devMode(true)`, `.dryRun(true)`, `.exporter(new JsonlRuntimeExporter(...))`,
+`.exporter(new OtelSpanExporter(...))`.
 
 ---
 

@@ -63,7 +63,8 @@ resp.audit              # AuditRecord
 ```
 
 **Builder options:** `.provider()`, `.model()`, `.adapter(custom)`, `.use(...)`,
-`.dev_mode(True)`, `.dry_run(True)`, `.pricing(PricingProvider)`.
+`.dev_mode(True)`, `.dry_run(True)`, `.pricing(PricingProvider)`,
+`.exporter(JsonlRuntimeExporter(...))`, `.exporter(OtelSpanExporter(...))`.
 
 - **dev mode** → `MockProvider` + stdout audit auto-wired; no network/key.
 - **dry-run** → interceptors log but never modify or block.

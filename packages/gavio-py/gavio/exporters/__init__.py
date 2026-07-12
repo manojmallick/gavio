@@ -8,9 +8,12 @@ itself is running in a content-capturing mode.
 
 from .base import GavioRuntimeExporter, metadata_only_event
 from .jsonl import JsonlRuntimeExporter
+from .otel import OtelSpanExporter, otel_spans_from_events
 
 __all__ = [
     "GavioRuntimeExporter",
     "JsonlRuntimeExporter",
+    "OtelSpanExporter",
     "metadata_only_event",
+    "otel_spans_from_events",
 ]

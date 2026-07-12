@@ -99,7 +99,7 @@ import { retryInterceptor }  from 'gavio/interceptors/reliability'
 import { semanticCache }     from 'gavio/interceptors/cache'
 import { costControl, budgetPolicyControl } from 'gavio/interceptors/governance'
 import { guardrails }        from 'gavio/interceptors/guardrails'
-import { jsonlRuntimeExporter } from 'gavio/exporters'
+import { jsonlRuntimeExporter, otelSpanExporter } from 'gavio/exporters'
 import { anthropicAdapter }  from 'gavio/providers/anthropic'
 import { openrouterAdapter } from 'gavio/providers/openrouter'
 import { GavioOpenAI }       from 'gavio/shim/openai'
@@ -126,17 +126,21 @@ embedded server.
 ## Runtime export
 
 ```typescript
-import { Gateway, jsonlRuntimeExporter } from 'gavio'
+import { Gateway, jsonlRuntimeExporter, otelSpanExporter } from 'gavio'
 
 const gw = new Gateway({
   devMode: true,
-  exporters: [jsonlRuntimeExporter({ path: 'runtime-events.jsonl' })],
+  exporters: [
+    jsonlRuntimeExporter({ path: 'runtime-events.jsonl' }),
+    otelSpanExporter({ path: 'otel-spans.jsonl', serviceName: 'checkout-api' }),
+  ],
 })
 ```
 
 Runtime export (v1.1.0) writes metadata-safe JSONL events for integrations. The
 exporter strips `messages`, `content`, and `diff` by default, even when the
-local Inspector is in full capture mode.
+local Inspector is in full capture mode. Observability + OTel (v1.3.0) maps
+the same stream into OpenTelemetry-style span JSON (`F-OBS-07`).
 
 ## What's inside
 
@@ -161,8 +165,9 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   raw text (`F-OBS-01`), tamper-evident hash chain (`F-OBS-02`), multi-agent
   DAG tracing via `agentId`/`parentTraceId` (`F-OBS-03`), prompt lineage
   (`F-OBS-04`), Prometheus metrics (`F-OBS-08`), stdout sink.
-- **Runtime export** — metadata-safe JSONL runtime events for gateway,
-  observability, and eval integrations (`F-EXP-01`).
+- **Runtime export** — metadata-safe JSONL runtime events (`F-EXP-01`) and
+  OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
+  eval integrations.
 - **Quality** — `guardrails()` with JSON-schema and regex validators
   (`F-QUA-01/02`), composite `riskScorer()` (`F-QUA-06`).
 - **Inspector** — dev-time visualizer (`F-DX-09/10`), agent call graphs and

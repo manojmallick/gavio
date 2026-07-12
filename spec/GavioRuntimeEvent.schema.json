@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://gavio.io/schema/GavioRuntimeEvent.v1.json",
   "title": "GavioRuntimeEvent",
-  "description": "The public runtime event/export envelope introduced in v1.1.0. It intentionally reuses the InspectorEvent v1 wire format so Inspector, JSONL export, and future OTel export share one event contract. Runtime exporters default to metadata-only output and remove content-bearing data fields.",
+  "description": "The public runtime event/export envelope introduced in v1.1.0. It intentionally reuses the InspectorEvent v1 wire format so Inspector, JSONL export, and OTel span export share one event contract. Runtime exporters default to metadata-only output and remove content-bearing data fields.",
   "allOf": [
     { "$ref": "./InspectorEvent.schema.json" }
   ]

@@ -5,7 +5,7 @@ Since: `1.1.0`
 
 Gavio runtime events are the public export surface for request execution. They
 reuse the existing `InspectorEvent` envelope so the Inspector, JSONL exporters,
-future OpenTelemetry exporters, tests, and integration recipes all share one
+OpenTelemetry span exporters, tests, and integration recipes all share one
 event stream.
 
 The default export mode is metadata-only. Runtime exporters remove
@@ -115,9 +115,38 @@ Use content capture only for local debugging or explicitly controlled internal
 tooling. Runtime events are designed so production integrations do not need raw
 prompt or response text.
 
-## Relationship To OpenTelemetry
+## OpenTelemetry Span Export
 
-The event stream is the foundation for OpenTelemetry export. The current
-mapping is documented in [OTel mapping](./otel-mapping.md). `1.1.0` ships the
-runtime exporter contract and JSONL exporter; a later OTel exporter can subscribe
-to the same stream without changing the Gateway pipeline.
+`1.3.0` adds the dependency-light OTel bridge (`F-OBS-07`). It consumes the same
+runtime event stream and emits OpenTelemetry-style span JSON without making
+OpenTelemetry SDKs mandatory core dependencies.
+
+```python
+from gavio import Gateway, OtelSpanExporter
+
+gw = Gateway.builder().exporter(OtelSpanExporter("otel-spans.jsonl")).build()
+```
+
+```typescript
+import { Gateway, otelSpanExporter } from 'gavio'
+
+const gw = new Gateway({
+  exporters: [otelSpanExporter({ path: 'otel-spans.jsonl', serviceName: 'api' })],
+})
+```
+
+```java
+Gateway gateway = Gateway.builder()
+    .exporter(new OtelSpanExporter(Path.of("otel-spans.jsonl"), "api"))
+    .build();
+```
+
+Python also includes a conversion command for existing runtime-event JSONL:
+
+```bash
+gavio events convert --from runtime-events.jsonl --to otel-json --service-name api
+```
+
+The mapping is documented in [OTel mapping](./otel-mapping.md), and the emitted
+span shape is covered by [`spec/GavioOtelSpan.schema.json`](../spec/GavioOtelSpan.schema.json)
+plus shared [`test-vectors/otel/spans.json`](../test-vectors/otel/spans.json).

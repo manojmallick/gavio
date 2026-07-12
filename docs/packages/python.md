@@ -61,7 +61,7 @@ resp.audit              # AuditRecord
 
 **Builder options:** `.provider()`, `.model()`, `.adapter(custom)`, `.use(...)`,
 `.dev_mode(True)`, `.dry_run(True)`, `.pricing(PricingProvider)`,
-`.exporter(JsonlRuntimeExporter(...))`.
+`.exporter(JsonlRuntimeExporter(...))`, `.exporter(OtelSpanExporter(...))`.
 
 - **dev mode** → `MockProvider` + stdout audit auto-wired; no network/key.
 - **dry-run** → interceptors log but never modify or block.
@@ -273,6 +273,25 @@ gw = (
 The JSONL exporter strips `messages`, `content`, and `diff` by default, even if
 the local Inspector runs in `full` mode. See [runtime events](../runtime-events.md)
 and [integrations](../integrations.md).
+
+Observability + OTel (v1.3.0, `F-OBS-07`) maps the same runtime events into
+OpenTelemetry-style span JSON without adding mandatory OTel dependencies:
+
+```python
+from gavio import Gateway, OtelSpanExporter
+
+gw = (
+    Gateway.builder()
+    .exporter(OtelSpanExporter("otel-spans.jsonl", service_name="checkout-api"))
+    .build()
+)
+```
+
+Existing runtime-event JSONL can be converted through the CLI:
+
+```bash
+gavio events convert --from runtime-events.jsonl --to otel-json --service-name checkout-api
+```
 
 ## Embeddings
 

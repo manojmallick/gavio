@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/GavioOtelSpan.v1.json",
+  "title": "GavioOtelSpan",
+  "description": "Dependency-light OpenTelemetry-style span JSON produced from Gavio runtime events.",
+  "type": "object",
+  "required": [
+    "traceId",
+    "spanId",
+    "parentSpanId",
+    "name",
+    "kind",
+    "startTimeUnixNano",
+    "endTimeUnixNano",
+    "status",
+    "attributes",
+    "events"
+  ],
+  "properties": {
+    "traceId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{32}$"
+    },
+    "spanId": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{16}$"
+    },
+    "parentSpanId": {
+      "type": ["string", "null"],
+      "pattern": "^[a-f0-9]{16}$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "const": "INTERNAL"
+    },
+    "startTimeUnixNano": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "endTimeUnixNano": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "status": {
+      "type": "object",
+      "required": ["code"],
+      "properties": {
+        "code": {
+          "enum": ["OK", "ERROR", "UNSET"]
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "attributes": {
+      "type": "object"
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "timeUnixNano", "attributes"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "timeUnixNano": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "attributes": {
+            "type": "object"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

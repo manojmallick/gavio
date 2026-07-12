@@ -1,0 +1,287 @@
+{
+  "version": "1.0",
+  "description": "OpenTelemetry-style span mapping from metadata-safe Gavio runtime events.",
+  "contentKeys": ["messages", "content", "diff"],
+  "cases": [
+    {
+      "name": "successful-request",
+      "serviceName": "checkout-api",
+      "events": [
+        {
+          "schemaVersion": "1.0",
+          "eventId": "evt-success-0",
+          "traceId": "trace-success-1",
+          "type": "trace.start",
+          "tNs": 0,
+          "seq": 0,
+          "data": {
+            "parentTraceId": null,
+            "agentId": "support-agent",
+            "sessionId": "session-42",
+            "provider": "openai",
+            "model": "gpt-4.1-mini",
+            "wallTimeUtc": "1970-01-01T00:00:00Z",
+            "mode": "full",
+            "costDimensions": {
+              "tenant": "acme",
+              "feature": "checkout"
+            },
+            "messages": [
+              {
+                "role": "user",
+                "content": "email jan@example.com"
+              }
+            ]
+          }
+        },
+        {
+          "schemaVersion": "1.0",
+          "eventId": "evt-success-1",
+          "traceId": "trace-success-1",
+          "type": "interceptor.before.start",
+          "tNs": 200000,
+          "seq": 1,
+          "data": {
+            "name": "pii_guard"
+          }
+        },
+        {
+          "schemaVersion": "1.0",
+          "eventId": "evt-success-2",
+          "traceId": "trace-success-1",
+          "type": "interceptor.before.end",
+          "tNs": 800000,
+          "seq": 2,
+          "data": {
+            "name": "pii_guard",
+            "durationUs": 600,
+            "mutated": true,
+            "decision": {
+              "mode": "redact",
+              "entityTypes": ["EMAIL"]
+            },
+            "diff": {
+              "messages": [
+                {
+                  "index": 0,
+                  "from": "email jan@example.com",
+                  "to": "email [EMAIL]"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "schemaVersion": "1.0",
+          "eventId": "evt-success-3",
+          "traceId": "trace-success-1",
+          "type": "provider.call.start",
+          "tNs": 1000000,
+          "seq": 3,
+          "data": {
+            "provider": "openai",
+            "model": "gpt-4.1-mini",
+            "attempt": 1
+          }
+        },
+        {
+          "schemaVersion": "1.0",
+          "eventId": "evt-success-4",
+          "traceId": "trace-success-1",
+          "type": "provider.call.end",
+          "tNs": 11000000,
+          "seq": 4,
+          "data": {
+            "durationUs": 10000,
+            "status": "ok",
+            "attempt": 1,
+            "modelVersion": "gpt-4.1-mini-2026-07-01",
+            "usage": {
+              "promptTokens": 12,
+              "completionTokens": 18,
+              "totalTokens": 30
+            },
+            "costUsd": 0.00042
+          }
+        },
+        {
+          "schemaVersion": "1.0",
+          "eventId": "evt-success-5",
+          "traceId": "trace-success-1",
+          "type": "trace.end",
+          "tNs": 15000000,
+          "seq": 5,
+          "data": {
+            "status": "ok",
+            "latencyMs": 15,
+            "costUsd": 0.00042,
+            "cacheHit": false,
+            "interceptorsFired": ["pii_guard"],
+            "piiEntityTypes": ["EMAIL"],
+            "content": "done"
+          }
+        }
+      ],
+      "expected": {
+        "spanNames": [
+          "gavio.interceptor.before pii_guard",
+          "chat gpt-4.1-mini",
+          "gavio.request"
+        ],
+        "root": {
+          "name": "gavio.request",
+          "status": "OK",
+          "durationNs": 15000000,
+          "attributes": {
+            "service.name": "checkout-api",
+            "gavio.trace_id": "trace-success-1",
+            "gavio.agent_id": "support-agent",
+            "session.id": "session-42",
+            "gen_ai.system": "openai",
+            "gen_ai.request.model": "gpt-4.1-mini",
+            "gen_ai.usage.cost": 0.00042,
+            "gavio.cost.dimension.tenant": "acme",
+            "gavio.cost.dimension.feature": "checkout"
+          }
+        },
+        "interceptor": {
+          "name": "gavio.interceptor.before pii_guard",
+          "status": "OK",
+          "startOffsetNs": 200000,
+          "endOffsetNs": 800000,
+          "attributes": {
+            "gavio.interceptor.name": "pii_guard",
+            "gavio.interceptor.phase": "before",
+            "gavio.interceptor.mutated": true,
+            "gavio.decision.mode": "redact",
+            "gavio.decision.entityTypes": ["EMAIL"]
+          }
+        },
+        "provider": {
+          "name": "chat gpt-4.1-mini",
+          "status": "OK",
+          "startOffsetNs": 1000000,
+          "endOffsetNs": 11000000,
+          "attributes": {
+            "gen_ai.system": "openai",
+            "gen_ai.request.model": "gpt-4.1-mini",
+            "gen_ai.response.model": "gpt-4.1-mini-2026-07-01",
+            "gavio.retry.attempt": 1,
+            "gen_ai.usage.input_tokens": 12,
+            "gen_ai.usage.output_tokens": 18,
+            "gen_ai.usage.total_tokens": 30,
+            "gen_ai.usage.cost": 0.00042
+          }
+        }
+      }
+    },
+    {
+      "name": "provider-error",
+      "serviceName": "checkout-api",
+      "events": [
+        {
+          "schemaVersion": "1.0",
+          "eventId": "evt-error-0",
+          "traceId": "trace-error-1",
+          "type": "trace.start",
+          "tNs": 0,
+          "seq": 0,
+          "data": {
+            "parentTraceId": null,
+            "agentId": null,
+            "sessionId": "session-error",
+            "provider": "anthropic",
+            "model": "claude-3-5-haiku",
+            "wallTimeUtc": "1970-01-01T00:01:00Z",
+            "mode": "metadata"
+          }
+        },
+        {
+          "schemaVersion": "1.0",
+          "eventId": "evt-error-1",
+          "traceId": "trace-error-1",
+          "type": "provider.call.start",
+          "tNs": 1000000,
+          "seq": 1,
+          "data": {
+            "provider": "anthropic",
+            "model": "claude-3-5-haiku",
+            "attempt": 1
+          }
+        },
+        {
+          "schemaVersion": "1.0",
+          "eventId": "evt-error-2",
+          "traceId": "trace-error-1",
+          "type": "provider.call.end",
+          "tNs": 3000000,
+          "seq": 2,
+          "data": {
+            "durationUs": 2000,
+            "status": "error",
+            "attempt": 1,
+            "errorType": "RateLimitError"
+          }
+        },
+        {
+          "schemaVersion": "1.0",
+          "eventId": "evt-error-3",
+          "traceId": "trace-error-1",
+          "type": "trace.error",
+          "tNs": 3500000,
+          "seq": 3,
+          "data": {
+            "origin": "provider",
+            "errorType": "RateLimitError",
+            "message": "rate limit",
+            "handled": false
+          }
+        },
+        {
+          "schemaVersion": "1.0",
+          "eventId": "evt-error-4",
+          "traceId": "trace-error-1",
+          "type": "trace.end",
+          "tNs": 4000000,
+          "seq": 4,
+          "data": {
+            "status": "error",
+            "latencyMs": 4,
+            "interceptorsFired": []
+          }
+        }
+      ],
+      "expected": {
+        "spanNames": [
+          "chat claude-3-5-haiku",
+          "gavio.request"
+        ],
+        "root": {
+          "name": "gavio.request",
+          "status": "ERROR",
+          "durationNs": 4000000,
+          "eventNames": ["exception"],
+          "attributes": {
+            "service.name": "checkout-api",
+            "gavio.trace_id": "trace-error-1",
+            "session.id": "session-error",
+            "gen_ai.system": "anthropic",
+            "gen_ai.request.model": "claude-3-5-haiku"
+          }
+        },
+        "provider": {
+          "name": "chat claude-3-5-haiku",
+          "status": "ERROR",
+          "startOffsetNs": 1000000,
+          "endOffsetNs": 3000000,
+          "attributes": {
+            "gen_ai.system": "anthropic",
+            "gen_ai.request.model": "claude-3-5-haiku",
+            "gavio.retry.attempt": 1,
+            "error.type": "RateLimitError"
+          }
+        }
+      }
+    }
+  ]
+}
