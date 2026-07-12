@@ -15,6 +15,40 @@ Nothing yet.
 
 ---
 
+## [1.3.0] — 2026-07-12
+
+### Summary
+**Observability + OTel.** v1.3.0 adds an OpenTelemetry-style bridge for the
+runtime event contract introduced in v1.1.0. Runtime JSONL can now be converted
+into deterministic span JSON across Python, JavaScript, and Java, with
+metadata-only privacy defaults and shared schema/vector coverage. Feature ID
+`F-OBS-07`. Feature PR #69 (#68).
+
+Tests: Python 268 · JavaScript 274 · Java modules green · docs build green ·
+stable release gate green · JS package hygiene green.
+
+### Added
+- **OpenTelemetry-style span exporters (all SDKs, `F-OBS-07`)** — Python
+  exposes `OtelSpanExporter` and `otel_spans_from_events`; JavaScript exposes
+  `otelSpanExporter` and `otelSpansFromEvents`; Java exposes
+  `OtelSpanExporter`. The exporters map trace, provider, interceptor,
+  governance, and error runtime events into deterministic span JSON with root,
+  provider, and interceptor parentage.
+- **OTel span contract and vectors** — added `spec/GavioOtelSpan.schema.json`
+  and `test-vectors/otel/spans.json` to keep span shape, privacy stripping,
+  error status, and exception-event behavior aligned across SDKs.
+- **Runtime event conversion CLI (Python)** — added
+  `gavio events convert --from <runtime.jsonl> --to otel-json` with optional
+  `--service-name` for JSONL-friendly observability pipelines.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, and package/runtime versions to
+  the `1.3.0` release line while keeping historical feature "since" labels
+  intact.
+
+---
+
 ## [1.2.0] — 2026-07-12
 
 ### Summary
@@ -867,7 +901,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/manojmallick/gavio/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/manojmallick/gavio/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/manojmallick/gavio/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/manojmallick/gavio/compare/v0.14.0...v1.0.0
