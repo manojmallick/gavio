@@ -15,6 +15,41 @@ Nothing yet.
 
 ---
 
+## [2.7.0] — 2026-07-12
+
+### Summary
+**Ecosystem Trust Package.** v2.7.0 adds release-grade ecosystem integration
+trust evidence: generated conformance vectors, a compatibility matrix built
+from those vectors, offline sample production apps, and cross-SDK checks that
+prove the matrix shape stays aligned across Python, JavaScript, and Java.
+Feature ID `F-INT-03`. Feature PR #98 (#97).
+
+Tests: stable release gate green · Python targeted release/docs/integration
+suite green · JavaScript typecheck/build/tests green · Java core suite green ·
+docs build green · ecosystem trust matrix generator green · sample production
+apps green. Inspector benchmarks were not rerun
+locally because this release changes ecosystem conformance/docs/examples, not
+Inspector runtime overhead.
+
+### Added
+- **Ecosystem Trust Package (`F-INT-03`)** — added generated conformance
+  vectors that cover catalog rows, adapter payload metadata, trust evidence,
+  sample app references, and compatibility matrix shape.
+- **Generated compatibility matrix** — added
+  `docs/integrations/compatibility-matrix.json` as a generated release
+  evidence artifact for the ecosystem integration docs.
+- **Sample production apps** — added offline production-style integration apps
+  that combine gateway/runtime export, OTel/eval metadata, policy packs,
+  prompt registry metadata, trust bundles, and platform runtime profiles.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, package/runtime versions, and
+  ecosystem integration docs to the `2.7.0` release line while keeping
+  historical feature "since" labels intact.
+
+---
+
 ## [2.6.0] — 2026-07-12
 
 ### Summary
@@ -1384,7 +1419,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.6.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/manojmallick/gavio/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/manojmallick/gavio/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/manojmallick/gavio/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/manojmallick/gavio/compare/v2.3.0...v2.4.0

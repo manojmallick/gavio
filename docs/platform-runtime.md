@@ -35,7 +35,7 @@ from gavio import build_platform_runtime_profile, verify_platform_runtime_profil
 profile = build_platform_runtime_profile(
     profile_id="platform-prod-support",
     generated_at="2026-07-12T12:00:00Z",
-    sdk={"name": "gavio", "version": "2.6.0"},
+    sdk={"name": "gavio", "version": "2.7.0"},
     runtime={
         "environment": "production",
         "provider": "openai",
@@ -70,7 +70,7 @@ import { buildPlatformRuntimeProfile, verifyPlatformRuntimeProfile } from 'gavio
 const profile = buildPlatformRuntimeProfile({
   profileId: 'platform-prod-support',
   generatedAt: '2026-07-12T12:00:00Z',
-  sdk: { name: 'gavio', version: '2.6.0' },
+  sdk: { name: 'gavio', version: '2.7.0' },
   runtime: {
     environment: 'production',
     eventExportMode: 'metadata_only',
@@ -101,7 +101,7 @@ import io.gavio.platform.PlatformRuntimeVerification;
 
 Map<String, Object> profile = PlatformRuntime.builder("platform-prod-support")
     .generatedAt("2026-07-12T12:00:00Z")
-    .sdk("gavio", "2.6.0")
+    .sdk("gavio", "2.7.0")
     .runtime(Map.of(
         "environment", "production",
         "eventExportMode", "metadata_only",

@@ -59,6 +59,25 @@ var metadata = IntegrationCatalog.metadata(
 These scalar labels flow into runtime events and cost dimensions without
 exporting raw prompt or response text.
 
+## Ecosystem trust package
+
+Since: `2.7.0`
+
+The Ecosystem Trust Package adds a shared conformance vector and generated
+compatibility matrix for the integration catalog. The matrix is generated from
+the catalog vector, adapter payload vector, and ecosystem trust vector, then
+checked by the SDK tests:
+
+```bash
+node scripts/gen-ecosystem-trust-matrix.mjs --check
+```
+
+The generated artifact is
+`docs/integrations/compatibility-matrix.json`. It records the
+`conformance-tested` trust level, metadata-only privacy boundary,
+adapter-payload coverage, and the offline sample production app that exercises
+each integration.
+
 ## Adapter payloads
 
 Since: `2.5.0`

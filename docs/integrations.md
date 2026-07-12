@@ -66,6 +66,31 @@ var metadata = IntegrationCatalog.metadata(
 var rows = IntegrationCatalog.compatibilityMatrix();
 ```
 
+## Ecosystem Trust Package
+
+Since: `2.7.0`
+
+The Ecosystem Trust Package turns the integration catalog into executable
+evidence. The shared conformance vector checks catalog coverage, docs and
+example paths, metadata labels, adapter payload privacy, and sample production
+apps. The generated matrix artifact lives at
+[`docs/integrations/compatibility-matrix.json`](./integrations/compatibility-matrix.json)
+and is checked by Python, JavaScript, and Java tests.
+
+```bash
+node scripts/gen-ecosystem-trust-matrix.mjs --check
+```
+
+The generator reads:
+
+- [`test-vectors/integrations/catalog.json`](../test-vectors/integrations/catalog.json)
+- [`test-vectors/integrations/adapters.json`](../test-vectors/integrations/adapters.json)
+- [`test-vectors/integrations/ecosystem-trust.json`](../test-vectors/integrations/ecosystem-trust.json)
+
+The checked-in matrix records a `conformance-tested` trust level for every
+integration row, the metadata-only privacy boundary, adapter-payload coverage,
+and the offline production app that exercises each integration.
+
 ## Adapter Payloads
 
 Since: `2.5.0`
@@ -176,4 +201,11 @@ and audit replay evidence:
 
 ```bash
 PYTHONPATH=packages/gavio-py python examples/integrations/full-stack/integration_stack.py
+```
+
+The v2.7.0 production-style trust apps cover the ecosystem matrix end to end:
+
+```bash
+PYTHONPATH=packages/gavio-py python examples/integrations/production-gateway-observability-eval/app.py
+PYTHONPATH=packages/gavio-py python examples/integrations/production-agent-framework/app.py
 ```

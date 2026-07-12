@@ -8,8 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import io.gavio.json.Json;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 
 class IntegrationCatalogTest {
@@ -100,12 +103,74 @@ class IntegrationCatalogTest {
         }
     }
 
+    @Test
+    @SuppressWarnings("unchecked")
+    void ecosystemTrustMatrixMatchesSharedVector() throws Exception {
+        Map<String, Object> vector = loadEcosystemTrust();
+        Map<String, Object> matrix = loadTrustMatrix();
+        Map<String, Object> adapters = loadAdapters();
+        Set<String> adapterIds = ((List<Map<String, Object>>) adapters.get("adapters"))
+                .stream()
+                .map(item -> String.valueOf(item.get("id")))
+                .collect(Collectors.toSet());
+        Map<String, Map<String, Object>> appById = new HashMap<>();
+        for (Map<String, Object> app : (List<Map<String, Object>>) vector.get("productionApps")) {
+            appById.put(String.valueOf(app.get("id")), app);
+        }
+        Map<String, Map<String, Object>> rowById = new HashMap<>();
+        for (Map<String, Object> row : (List<Map<String, Object>>) matrix.get("rows")) {
+            rowById.put(String.valueOf(row.get("id")), row);
+        }
+
+        assertEquals("gavio.ecosystem-trust-matrix.v1", matrix.get("schemaVersion"));
+        assertEquals("2.7.0", matrix.get("since"));
+
+        for (Map<String, Object> item : (List<Map<String, Object>>) vector.get("cases")) {
+            String id = String.valueOf(item.get("id"));
+            IntegrationRecipe recipe = IntegrationCatalog.get(id);
+            Map<String, Object> row = rowById.get(id);
+            Map<String, Object> evidence = (Map<String, Object>) row.get("evidence");
+
+            assertEquals(item.get("expectedCategory"), recipe.category());
+            assertEquals(item.get("expectedCategory"), row.get("category"));
+            assertEquals("metadata_only", row.get("privacyBoundary"));
+            assertEquals("pass", evidence.get("catalog"));
+            assertEquals("pass", evidence.get("docs"));
+            assertEquals("pass", evidence.get("example"));
+            assertEquals(item.get("requiredMetadata"), evidence.get("metadataLabels"));
+            assertEquals(item.get("adapterPayload"), adapterIds.contains(id));
+            assertEquals(Boolean.TRUE.equals(item.get("adapterPayload")) ? "pass" : "not_applicable",
+                    evidence.get("adapterPayload"));
+            assertTrue(recipe.gavioSurfaces().containsAll((List<String>) item.get("requiredSurfaces")));
+            assertTrue(recipe.recommendedExporters().containsAll((List<String>) item.get("requiredExporters")));
+            assertTrue(Files.isRegularFile(repoRoot().resolve(recipe.docsPath())));
+            assertTrue(Files.isRegularFile(repoRoot().resolve(recipe.examplePath())));
+
+            for (String appId : (List<String>) item.get("sampleApps")) {
+                Map<String, Object> app = appById.get(appId);
+                assertTrue(((List<String>) app.get("covers")).contains(id));
+                assertTrue(Files.isRegularFile(repoRoot().resolve(String.valueOf(app.get("path")))));
+                assertTrue(Files.isRegularFile(repoRoot().resolve(String.valueOf(app.get("readmePath")))));
+            }
+        }
+    }
+
     private static Map<String, Object> loadCatalog() throws Exception {
         return Json.parseObject(Files.readString(repoRoot().resolve("test-vectors/integrations/catalog.json")));
     }
 
     private static Map<String, Object> loadAdapters() throws Exception {
         return Json.parseObject(Files.readString(repoRoot().resolve("test-vectors/integrations/adapters.json")));
+    }
+
+    private static Map<String, Object> loadEcosystemTrust() throws Exception {
+        return Json.parseObject(
+                Files.readString(repoRoot().resolve("test-vectors/integrations/ecosystem-trust.json")));
+    }
+
+    private static Map<String, Object> loadTrustMatrix() throws Exception {
+        return Json.parseObject(
+                Files.readString(repoRoot().resolve("docs/integrations/compatibility-matrix.json")));
     }
 
     private static Object at(Object value, List<Object> path) {

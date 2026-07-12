@@ -21,6 +21,7 @@ offending SDK's test-vector run goes red.
 | [`trust/production-trust-bundle.json`](./trust/production-trust-bundle.json) | Production Trust Package case — verify deterministic bundle hashing, metadata-only privacy posture, audit-chain evidence, runtime event evidence, and release-review controls. |
 | [`integrations/catalog.json`](./integrations/catalog.json) | Ecosystem integration recipes — verify compatibility metadata, role boundaries, docs paths, and offline example paths across SDKs. |
 | [`integrations/adapters.json`](./integrations/adapters.json) | Ecosystem adapter payload cases — verify LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and Vercel AI SDK payload shapes, trace propagation, metadata hashes, and raw-content omission across SDKs. |
+| [`integrations/ecosystem-trust.json`](./integrations/ecosystem-trust.json) | Ecosystem Trust Package cases — verify generated compatibility matrix rows, adapter coverage, metadata-only privacy boundaries, and sample production app coverage across SDKs. |
 | [`platform-runtime/profile.json`](./platform-runtime/profile.json) | Platform Runtime Profile cases — verify deterministic profile hashing, metadata-only posture, required runtime surfaces, readiness score, and gap codes. |
 | [`control-plane/enterprise-admin-v2.json`](./control-plane/enterprise-admin-v2.json) | Enterprise Admin v2 cases — verify OIDC/SAML-lite metadata redaction, scoped admin-key behavior, rollout approval gates, audit export privacy, and retention apply semantics. |
 | [`runtime-events/export-redaction.json`](./runtime-events/export-redaction.json) | Runtime exporter privacy contract (F-EXP-01) — verify metadata-only export strips content-bearing event fields while preserving trace and decision metadata. |
@@ -141,6 +142,22 @@ offending SDK's test-vector run goes red.
   "forbiddenStrings": ["synthetic prompt text"],
   "adapters": [{ "id": "litellm", "expects": [{ "path": ["payload", "completionKwargs"] }] }]
 }
+```
+
+`integrations/ecosystem-trust.json`:
+```json
+{
+  "since": "2.7.0",
+  "productionApps": [{ "id": "gateway-observability-eval", "covers": ["litellm"] }],
+  "cases": [{ "id": "litellm", "adapterPayload": true, "sampleApps": ["gateway-observability-eval"] }]
+}
+```
+
+The generated compatibility matrix is checked in at
+`docs/integrations/compatibility-matrix.json` and must stay in sync:
+
+```bash
+node scripts/gen-ecosystem-trust-matrix.mjs --check
 ```
 
 `inspector/cost-report.json`:

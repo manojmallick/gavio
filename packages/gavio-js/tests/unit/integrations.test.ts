@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   compatibilityMatrix,
@@ -8,6 +10,8 @@ import {
   integrationMetadata,
   listIntegrations,
 } from '../../src/integrations.js'
+
+const repoRoot = fileURLToPath(new URL('../../../..', import.meta.url))
 
 const catalog = JSON.parse(
   readFileSync(
@@ -29,6 +33,57 @@ const adapters = JSON.parse(
     id: string
     kind: string
     expects: Array<{ path: Array<string | number>; value?: unknown; absent?: boolean }>
+  }>
+}
+
+const ecosystemTrust = JSON.parse(
+  readFileSync(
+    fileURLToPath(
+      new URL('../../../../test-vectors/integrations/ecosystem-trust.json', import.meta.url),
+    ),
+    'utf8',
+  ),
+) as {
+  since: string
+  privacyBoundary: { forbiddenStrings: string[] }
+  productionApps: Array<{
+    id: string
+    path: string
+    readmePath: string
+    covers: string[]
+  }>
+  cases: Array<{
+    id: string
+    expectedCategory: string
+    adapterPayload: boolean
+    requiredMetadata: string[]
+    requiredSurfaces: string[]
+    requiredExporters: string[]
+    sampleApps: string[]
+  }>
+}
+
+const trustMatrix = JSON.parse(
+  readFileSync(
+    fileURLToPath(new URL('../../../../docs/integrations/compatibility-matrix.json', import.meta.url)),
+    'utf8',
+  ),
+) as {
+  schemaVersion: string
+  since: string
+  summary: { integrations: number; productionApps: number }
+  rows: Array<{
+    id: string
+    category: string
+    privacyBoundary: string
+    evidence: {
+      catalog: string
+      docs: string
+      example: string
+      metadataLabels: string[]
+      adapterPayload: string
+      productionApps: Array<{ id: string; path: string }>
+    }
   }>
 }
 
@@ -90,6 +145,66 @@ describe('integration catalog', () => {
       const serialized = JSON.stringify(payload)
       for (const forbidden of adapters.forbiddenStrings) {
         expect(serialized).not.toContain(forbidden)
+      }
+    }
+  })
+
+  it('keeps the generated ecosystem trust matrix in sync', () => {
+    execFileSync('node', ['scripts/gen-ecosystem-trust-matrix.mjs', '--check'], {
+      cwd: repoRoot,
+      stdio: 'pipe',
+    })
+
+    const adapterIds = new Set(adapters.adapters.map((adapter) => adapter.id))
+    const apps = new Map(ecosystemTrust.productionApps.map((app) => [app.id, app]))
+    const rows = new Map(trustMatrix.rows.map((row) => [row.id, row]))
+
+    expect(trustMatrix.schemaVersion).toBe('gavio.ecosystem-trust-matrix.v1')
+    expect(trustMatrix.since).toBe('2.7.0')
+    expect(trustMatrix.summary.integrations).toBe(ecosystemTrust.cases.length)
+    expect(trustMatrix.summary.productionApps).toBe(ecosystemTrust.productionApps.length)
+
+    for (const item of ecosystemTrust.cases) {
+      const recipe = getIntegration(item.id)
+      const row = rows.get(item.id)
+      expect(row).toBeDefined()
+      expect(recipe.category).toBe(item.expectedCategory)
+      expect(row!.category).toBe(item.expectedCategory)
+      expect(row!.privacyBoundary).toBe('metadata_only')
+      expect(row!.evidence.catalog).toBe('pass')
+      expect(row!.evidence.docs).toBe('pass')
+      expect(row!.evidence.example).toBe('pass')
+      expect(row!.evidence.metadataLabels).toEqual(item.requiredMetadata)
+      expect(adapterIds.has(item.id)).toBe(item.adapterPayload)
+      expect(row!.evidence.adapterPayload).toBe(item.adapterPayload ? 'pass' : 'not_applicable')
+
+      for (const surface of item.requiredSurfaces) expect(recipe.gavioSurfaces).toContain(surface)
+      for (const exporter of item.requiredExporters) {
+        expect(recipe.recommendedExporters).toContain(exporter as 'jsonl' | 'otel')
+      }
+
+      expect(existsSync(resolve(repoRoot, recipe.docsPath))).toBe(true)
+      expect(existsSync(resolve(repoRoot, recipe.examplePath))).toBe(true)
+      expect(row!.evidence.productionApps.map((app) => app.id).sort()).toEqual(
+        [...item.sampleApps].sort(),
+      )
+
+      for (const appId of item.sampleApps) {
+        const app = apps.get(appId)
+        expect(app).toBeDefined()
+        expect(app!.covers).toContain(item.id)
+        expect(existsSync(resolve(repoRoot, app!.path))).toBe(true)
+        expect(existsSync(resolve(repoRoot, app!.readmePath))).toBe(true)
+      }
+
+      if (item.adapterPayload) {
+        const payload = integrationAdapterPayload(item.id, adapters.source, {
+          metadata: adapters.metadata,
+        })
+        const serialized = JSON.stringify(payload)
+        for (const forbidden of ecosystemTrust.privacyBoundary.forbiddenStrings) {
+          expect(serialized).not.toContain(forbidden)
+        }
       }
     }
   })

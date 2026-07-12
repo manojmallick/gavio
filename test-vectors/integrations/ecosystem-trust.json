@@ -1,0 +1,150 @@
+{
+  "schemaVersion": "1.0",
+  "since": "2.7.0",
+  "description": "Ecosystem Trust Package conformance evidence for integration docs, adapter payloads, generated compatibility matrix rows, and offline production-style sample apps.",
+  "requiredEvidence": [
+    "catalog",
+    "docs",
+    "example",
+    "metadataLabels",
+    "privacyBoundary",
+    "productionApp"
+  ],
+  "privacyBoundary": {
+    "contentMode": "metadata_only",
+    "containsRawContent": false,
+    "forbiddenStrings": [
+      "customer raw prompt",
+      "raw model text",
+      "example prompt text that should be hashed",
+      "example response text that should not be emitted"
+    ]
+  },
+  "productionApps": [
+    {
+      "id": "gateway-observability-eval",
+      "name": "Gateway observability and eval trust app",
+      "path": "examples/integrations/production-gateway-observability-eval/app.py",
+      "readmePath": "examples/integrations/production-gateway-observability-eval/README.md",
+      "covers": ["litellm", "promptfoo", "langfuse", "openlit"],
+      "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-gateway-observability-eval/app.py",
+      "expected": {
+        "rawContentExported": false,
+        "evalPassed": true,
+        "trustBundleValid": true
+      }
+    },
+    {
+      "id": "agent-framework-handoff",
+      "name": "Agent framework and gateway handoff trust app",
+      "path": "examples/integrations/production-agent-framework/app.py",
+      "readmePath": "examples/integrations/production-agent-framework/README.md",
+      "covers": [
+        "portkey",
+        "helicone",
+        "langchain",
+        "langgraph",
+        "vercel-ai-sdk",
+        "openai-sdk"
+      ],
+      "smokeCommand": "PYTHONPATH=packages/gavio-py python examples/integrations/production-agent-framework/app.py",
+      "expected": {
+        "rawContentExported": false,
+        "metadataOnlyPayloads": true,
+        "routes": 3
+      }
+    }
+  ],
+  "cases": [
+    {
+      "id": "litellm",
+      "expectedCategory": "gateway",
+      "adapterPayload": true,
+      "requiredMetadata": ["gateway", "integration", "integration_kind"],
+      "requiredSurfaces": ["runtime_events", "audit_hashes", "cost_governance"],
+      "requiredExporters": ["jsonl", "otel"],
+      "sampleApps": ["gateway-observability-eval"]
+    },
+    {
+      "id": "portkey",
+      "expectedCategory": "gateway",
+      "adapterPayload": false,
+      "requiredMetadata": ["gateway", "integration", "integration_kind"],
+      "requiredSurfaces": ["runtime_events", "audit_hashes", "policy_packs"],
+      "requiredExporters": ["jsonl", "otel"],
+      "sampleApps": ["agent-framework-handoff"]
+    },
+    {
+      "id": "helicone",
+      "expectedCategory": "gateway_observability",
+      "adapterPayload": false,
+      "requiredMetadata": ["gateway", "integration", "integration_kind"],
+      "requiredSurfaces": ["runtime_events", "audit_hashes", "cost_governance"],
+      "requiredExporters": ["jsonl"],
+      "sampleApps": ["agent-framework-handoff"]
+    },
+    {
+      "id": "langfuse",
+      "expectedCategory": "observability",
+      "adapterPayload": true,
+      "requiredMetadata": ["integration", "integration_kind"],
+      "requiredSurfaces": ["runtime_events", "audit_hashes", "prompt_evals"],
+      "requiredExporters": ["jsonl"],
+      "sampleApps": ["gateway-observability-eval"]
+    },
+    {
+      "id": "openlit",
+      "expectedCategory": "observability",
+      "adapterPayload": true,
+      "requiredMetadata": ["integration", "integration_kind"],
+      "requiredSurfaces": ["runtime_events", "otel_spans", "cost_governance"],
+      "requiredExporters": ["otel"],
+      "sampleApps": ["gateway-observability-eval"]
+    },
+    {
+      "id": "promptfoo",
+      "expectedCategory": "eval",
+      "adapterPayload": true,
+      "requiredMetadata": ["integration", "integration_kind"],
+      "requiredSurfaces": ["runtime_events", "prompt_evals", "policy_packs"],
+      "requiredExporters": ["jsonl"],
+      "sampleApps": ["gateway-observability-eval"]
+    },
+    {
+      "id": "langchain",
+      "expectedCategory": "framework",
+      "adapterPayload": true,
+      "requiredMetadata": ["framework", "integration", "integration_kind"],
+      "requiredSurfaces": ["runtime_events", "tool_runtime", "audit_hashes"],
+      "requiredExporters": ["jsonl", "otel"],
+      "sampleApps": ["agent-framework-handoff"]
+    },
+    {
+      "id": "langgraph",
+      "expectedCategory": "framework",
+      "adapterPayload": true,
+      "requiredMetadata": ["framework", "integration", "integration_kind"],
+      "requiredSurfaces": ["runtime_events", "tool_runtime", "audit_hashes"],
+      "requiredExporters": ["jsonl", "otel"],
+      "sampleApps": ["agent-framework-handoff"]
+    },
+    {
+      "id": "vercel-ai-sdk",
+      "expectedCategory": "framework",
+      "adapterPayload": true,
+      "requiredMetadata": ["framework", "integration", "integration_kind"],
+      "requiredSurfaces": ["runtime_events", "otel_spans", "policy_packs"],
+      "requiredExporters": ["jsonl", "otel"],
+      "sampleApps": ["agent-framework-handoff"]
+    },
+    {
+      "id": "openai-sdk",
+      "expectedCategory": "provider_sdk",
+      "adapterPayload": false,
+      "requiredMetadata": ["provider_sdk", "integration", "integration_kind"],
+      "requiredSurfaces": ["runtime_events", "audit_hashes", "policy_packs"],
+      "requiredExporters": ["jsonl", "otel"],
+      "sampleApps": ["agent-framework-handoff"]
+    }
+  ]
+}
