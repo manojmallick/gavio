@@ -51,7 +51,7 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
 
-> **Status:** v2.0.0 is the current stable package line. Gavio has an API
+> **Status:** v2.1.0 is the current stable package line. Gavio has an API
 > stability guarantee, a 24-month 1.x LTS policy, and release automation that
 > checks lockstep SDK versions before publishing. See
 > [STABILITY.md](./STABILITY.md) and the [CHANGELOG](./CHANGELOG.md).
@@ -80,6 +80,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `1.8.0` | Production Trust Package | Metadata-only release evidence bundles, deterministic verification, threat model, benchmark and reference-architecture docs |
 | `1.9.0` | Ecosystem + Integrations | Integration catalog helpers, shared compatibility vector/schema, common AI stack recipes, and full-stack integration smoke example |
 | `2.0.0` | Platform-Grade Runtime | Metadata-only platform runtime profile, readiness score, deterministic gap checks, and cross-SDK posture helpers |
+| `2.1.0` | Eval Runner + CI Gates | `gavio eval run` for JSON/YAML suites, baseline comparison, fail-under gates, and JSON/JUnit reports |
 
 ---
 
@@ -134,7 +135,7 @@ pipeline in reverse order:
 - **AI Request Inspector** — opt-in live traces, per-interceptor waterfall, replay, agent DAGs, RED stats, and production audit-store views.
 - **Runtime Event Export** — metadata-safe JSONL and OpenTelemetry-style span streams for gateways, observability systems, and eval workflows.
 - **Ecosystem Integrations** — compatibility matrix, metadata helpers, and offline recipes for common gateways, observability tools, eval tools, frameworks, and provider SDKs.
-- **Prompt Registry + Evals** — versioned chat templates, prompt lineage, deterministic pass/fail eval reports, and output hashes instead of raw model output.
+- **Prompt Registry + Evals** — versioned chat templates, prompt lineage, deterministic pass/fail eval reports, output hashes instead of raw model output, and `gavio eval run` CI gates.
 - **Cost Intelligence** — tenant/feature/user attribution, `/api/cost-report`, retry overhead, cache savings, and scoped budget fallback.
 - **Cost Governance v2** — budget policy/decision contracts, projected-spend controls, fallback/downgrade/dry-run actions, budget-aware reports, and `gavio cost report`.
 - **Domain-aware Policy Packs** — signed catalog manifests for core, finance, healthcare, legal, HR, support, code security, and regional identifiers, plus custom regex-rule packs with overrides and false-positive suppression.
@@ -231,9 +232,9 @@ The Java snippet uses `gavio-core`, `gavio-interceptor-pii`, and
 
 | Language | Command | Docs |
 |---|---|---|
-| **Python** 3.10+ | `pip install gavio==2.0.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
-| **JavaScript** (Node 18+) | `npm install gavio@2.0.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:2.0.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Python** 3.10+ | `pip install gavio==2.1.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
+| **JavaScript** (Node 18+) | `npm install gavio@2.1.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:2.1.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -259,6 +260,8 @@ compared side by side.
 | 14 | Production Trust Package — metadata-only release evidence bundle and verifier | [py](./examples/python/14-production-trust/) | [js](./examples/javascript/14-production-trust/) | [java](./examples/java/14-production-trust/) | no |
 | 15 | Ecosystem integrations — compatibility matrix, metadata labels, full-stack smoke | [py](./examples/integrations/) | — | — | no |
 | 20 | Platform Runtime Profile — metadata-only readiness profile and deterministic gaps | [py](./examples/python/20-platform-runtime/) | — | — | no |
+| 21 | Eval CI Gate — `gavio eval run`, YAML/JSON suites, baseline comparison, JSON/JUnit reports | [py](./examples/python/21-eval-ci-gate/) | — | — | no |
+| 22 | Platform Feature Tour — all major v2.x surfaces in one offline project | [py](./examples/python/22-platform-feature-tour/) | — | — | no |
 
 Example 02 uses a real provider if `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is
 set; otherwise it falls back to the mock provider. All other examples run with
@@ -279,7 +282,7 @@ optional extras include `gavio[redis]`, `gavio[presidio]`, `gavio[otel]`,
 `gavio[elasticsearch]`, `gavio[pgvector]`, and `gavio[ocr]`.
 
 ```bash
-pip install gavio==2.0.0
+pip install gavio==2.1.0
 ```
 
 → **[Full Python guide](./docs/packages/python.md)** · [package README](./packages/gavio-py/README.md)
@@ -291,7 +294,7 @@ with per-subpath `exports` for tree-shaking. Native `fetch`, `node:crypto`.
 Node 18+, Deno, Bun.
 
 ```bash
-npm install gavio@2.0.0
+npm install gavio@2.1.0
 ```
 
 → **[Full JavaScript guide](./docs/packages/javascript.md)** · [package README](./packages/gavio-js/README.md)
@@ -311,17 +314,17 @@ Quickstart stack:
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>2.0.0</version>
+  <version>2.1.0</version>
 </dependency>
 ```
 
@@ -380,6 +383,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Prometheus metrics (zero-dep text exposition) | `F-OBS-08` | 0.3.0 |
 | OpenTelemetry-style span exporter and JSONL conversion | `F-OBS-07` | 1.3.0 |
 | Prompt Registry + Evals — versioned templates, pass/fail cases, output hashes | `F-EVAL-01/02` | 1.4.0 |
+| Eval Runner + CI Gates — `gavio eval run`, YAML/JSON suites, baseline comparison, JSON/JUnit reports | `F-EVAL-03` | 2.1.0 |
 | Guardrails — JSON-schema + regex allow/deny | `F-QUA-01/02` | 0.2.0 |
 | Composite risk scoring (PII + guardrail + injection signals) | `F-QUA-06` | 0.3.0 |
 | JSONL audit sink (`jsonl://<path>`) — the store the production dashboard reads | `F-DX-08` | 0.7.0 |

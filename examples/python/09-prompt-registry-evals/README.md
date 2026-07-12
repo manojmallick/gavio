@@ -10,3 +10,5 @@ python prompt_registry_evals.py
 ```
 
 See also: [Prompt Registry + Evals](../../../docs/prompt-registry-evals.md).
+For a CI-style prompt release gate built on the same APIs, see
+[21 - Eval CI Gate + Prompt Release Candidate](../21-eval-ci-gate/).

@@ -85,6 +85,31 @@ def main(argv: list[str] | None = None) -> int:
     )
     sign.add_argument("path_or_name", metavar="PATH_OR_NAME")
 
+    eval_cmd = subcommands.add_parser("eval", help="Prompt eval runner and CI gates.")
+    eval_subcommands = eval_cmd.add_subparsers(dest="eval_command", required=True)
+    run = eval_subcommands.add_parser(
+        "run", help="Run a deterministic prompt eval suite from JSON/YAML."
+    )
+    run.add_argument("suite", metavar="SUITE")
+    run.add_argument(
+        "--templates",
+        action="append",
+        default=[],
+        metavar="PATH",
+        help="Prompt template JSON/YAML file. May be repeated.",
+    )
+    run.add_argument("--fail-under", type=float, default=None)
+    run.add_argument("--baseline", default=None, metavar="PATH")
+    run.add_argument("--max-regression", type=float, default=0.0)
+    run.add_argument("--report", default=None, metavar="PATH", help="Write JSON report.")
+    run.add_argument("--junit", default=None, metavar="PATH", help="Write JUnit XML report.")
+    run.add_argument("--pretty", action="store_true")
+    run.add_argument(
+        "--summary",
+        action="store_true",
+        help="Print a compact summary instead of the full JSON report.",
+    )
+
     args = parser.parse_args(argv)
     if args.command == "inspect":
         return _inspect(args)
@@ -94,6 +119,8 @@ def main(argv: list[str] | None = None) -> int:
         return _events_convert(args)
     if args.command == "policy":
         return _policy(args)
+    if args.command == "eval" and args.eval_command == "run":
+        return _eval_run(args)
     return 2
 
 
@@ -106,6 +133,7 @@ def _inspect(args: argparse.Namespace) -> int:
         print(f"gavio inspect: {error}", file=sys.stderr)
         return 1
     inspector.start_server()
+    assert inspector.server is not None
     print(
         f"Gavio Inspector (metadata mode) — {inspector.buffer.count()} traces from {args.store}\n"
         f"  http://{args.bind}:{inspector.server.port}/",
@@ -182,6 +210,28 @@ def _policy(args: argparse.Namespace) -> int:
     return 2
 
 
+def _eval_run(args: argparse.Namespace) -> int:
+    from .prompts import cli_summary, run_eval_file, write_json_report, write_junit_report
+    from .prompts.runner import error_exit, exit_code, print_json
+
+    try:
+        result = run_eval_file(
+            args.suite,
+            template_paths=args.templates,
+            fail_under=args.fail_under,
+            baseline_path=args.baseline,
+            max_regression=args.max_regression,
+        )
+        if args.report:
+            write_json_report(result, args.report, pretty=args.pretty)
+        if args.junit:
+            write_junit_report(result, args.junit)
+    except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
+        return error_exit("gavio eval run", error)
+    print_json(cli_summary(result) if args.summary else result.to_dict(), pretty=args.pretty)
+    return exit_code(result)
+
+
 def _load_policy_pack_arg(path_or_name: str, policy_pack_cls: Any, load_by_name: Any) -> Any:
     path = Path(path_or_name).expanduser()
     if path.exists():
@@ -215,7 +265,7 @@ def _summary_from_jsonl_record(
 
 
 def _load_budget_policies(paths: list[str], budget_policy_cls: Any) -> list[Any]:
-    policies = []
+    policies: list[Any] = []
     for path in paths:
         data = json.loads(Path(path).expanduser().read_text(encoding="utf-8"))
         if isinstance(data, list):

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gavio"
-version = "2.0.0"
+version = "2.1.0"
 description = "AI request runtime and inspector for production systems — PII protection, audit trails, runtime events, reliability, cost intelligence, policy packs, tool runtime checks, evals, production trust packages, and platform runtime profiles."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -30,15 +30,16 @@ dependencies = []
 [project.optional-dependencies]
 presidio = ["presidio-analyzer", "spacy"]
 redis = ["redis"]
+yaml = ["PyYAML>=6.0"]
 otel = ["opentelemetry-sdk", "opentelemetry-exporter-otlp"]
 elasticsearch = ["elasticsearch"]
 pgvector = ["psycopg2", "pgvector"]
 ocr = ["pytesseract", "pillow"]
-dev = ["pytest>=7.0", "pytest-asyncio>=0.21", "ruff>=0.4", "mypy>=1.8"]
+dev = ["pytest>=7.0", "pytest-asyncio>=0.21", "ruff>=0.4", "mypy>=1.8", "PyYAML>=6.0"]
 all = [
     "presidio-analyzer", "spacy", "redis",
     "opentelemetry-sdk", "opentelemetry-exporter-otlp",
-    "elasticsearch", "psycopg2", "pgvector", "pytesseract", "pillow",
+    "elasticsearch", "psycopg2", "pgvector", "pytesseract", "pillow", "PyYAML>=6.0",
 ]
 
 [project.scripts]

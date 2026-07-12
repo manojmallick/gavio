@@ -17,8 +17,8 @@ class ProductionTrustTest {
     void buildsAndVerifiesMetadataOnlyTrustBundle() {
         Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
                 .generatedAt("2026-07-12T12:00:00Z")
-                .sdk("gavio-java", "2.0.0")
-                .release("2.0.0", "v2.0.0", "b1ff1be")
+                .sdk("gavio-java", "2.1.0")
+                .release("2.1.0", "v2.1.0", "b1ff1be")
                 .runtime("production", "project:prod-support", true, "metadata_only")
                 .auditChain(2, true, "abc", "def")
                 .runtimeEvents(2, true, List.of("trace.start", "provider.call.end"))
@@ -49,8 +49,8 @@ class ProductionTrustTest {
     void rejectsTamperedOrContentBearingBundle() {
         Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
                 .generatedAt("2026-07-12T12:00:00Z")
-                .sdk("gavio-java", "2.0.0")
-                .release("2.0.0", "v2.0.0", "b1ff1be")
+                .sdk("gavio-java", "2.1.0")
+                .release("2.1.0", "v2.1.0", "b1ff1be")
                 .runtime("production", "project:prod-support", true, "metadata_only")
                 .auditChain(2, true, "abc", "def")
                 .runtimeEvents(2, true, List.of("trace.start", "provider.call.end"))

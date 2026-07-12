@@ -4,5 +4,5 @@
   "private": true,
   "type": "module",
   "scripts": { "start": "node tool-runtime.mjs" },
-  "dependencies": { "gavio": "^2.0.0" }
+  "dependencies": { "gavio": "^2.1.0" }
 }

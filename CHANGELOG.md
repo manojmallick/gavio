@@ -15,6 +15,44 @@ Nothing yet.
 
 ---
 
+## [2.1.0] — 2026-07-12
+
+### Summary
+**Eval Runner + CI Gates.** v2.1.0 adds a Python `gavio eval run` CLI for
+deterministic prompt eval release checks. The runner loads JSON or YAML suites,
+supports inline or external prompt templates, compares candidate scores against
+baseline reports, enforces fail-under and max-regression gates, and writes
+metadata-safe JSON plus JUnit XML reports for CI. Feature ID `F-EVAL-03`.
+Feature PR #85 (#84).
+
+Tests: Python 303 · JavaScript typecheck/build/303 tests green · Java modules
+green · docs build green · stable release gate green · eval CLI example green ·
+platform feature tour smoke green. Inspector benchmarks were not rerun because
+this release changes eval runner CLI/docs and example coverage, not Inspector
+runtime overhead.
+
+### Added
+- **Eval runner CLI (Python, `F-EVAL-03`)** — added `gavio eval run` with
+  JSON/YAML suite loading, `--templates`, `--fail-under`, `--baseline`,
+  `--max-regression`, `--report`, `--junit`, `--pretty`, and `--summary`.
+- **File-backed eval runner API** — added `gavio.prompts.runner` helpers for
+  `EvalGate`, `EvalRunResult`, deterministic suite loading, gate evaluation,
+  metadata-safe JSON report writing, and JUnit XML output.
+- **YAML suite support** — added optional `gavio[yaml]`/`PyYAML>=6.0` while
+  keeping JSON dependency-free and providing a small fallback parser for simple
+  eval-suite YAML files.
+- **Eval CI examples and docs** — added `examples/python/21-eval-ci-gate` with
+  a YAML suite and baseline report, expanded Prompt Registry + Evals docs with
+  GitHub Actions guidance, and added a broader offline platform feature tour.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, package/runtime versions, and
+  example manifests to the `2.1.0` release line while keeping historical
+  feature "since" labels intact.
+
+---
+
 ## [2.0.0] — 2026-07-12
 
 ### Summary
@@ -1188,7 +1226,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/manojmallick/gavio/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/manojmallick/gavio/compare/v1.9.0...v2.0.0
 [1.9.0]: https://github.com/manojmallick/gavio/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/manojmallick/gavio/compare/v1.7.0...v1.8.0
