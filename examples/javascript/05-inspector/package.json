@@ -4,5 +4,5 @@
   "private": true,
   "type": "module",
   "scripts": { "start": "node inspector.mjs" },
-  "dependencies": { "gavio": "^0.9.0" }
+  "dependencies": { "gavio": "^1.0.0" }
 }
