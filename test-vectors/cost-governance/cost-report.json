@@ -1,0 +1,120 @@
+{
+  "cases": [
+    {
+      "id": "cost-governance-report-by-tenant",
+      "groupBy": "tenant",
+      "usageElapsedRatio": 0.5,
+      "policies": [
+        {
+          "id": "tenant-acme-monthly",
+          "scopeType": "tenant",
+          "scopeValue": "acme",
+          "window": "monthly",
+          "limitUsd": 0.05,
+          "softLimitRatio": 0.8,
+          "hardLimitAction": "block"
+        },
+        {
+          "id": "tenant-beta-monthly",
+          "scopeType": "tenant",
+          "scopeValue": "beta",
+          "window": "monthly",
+          "limitUsd": 0.01,
+          "softLimitRatio": 0.8,
+          "hardLimitAction": "dry_run"
+        }
+      ],
+      "summaries": [
+        {
+          "traceId": "t-claims-1",
+          "provider": "openai",
+          "model": "gpt-4o",
+          "status": "ok",
+          "latencyMs": 120,
+          "costUsd": 0.012,
+          "cacheHit": false,
+          "wallTimeUtc": "2026-07-12T10:00:00Z",
+          "usage": { "promptTokens": 100, "completionTokens": 50, "totalTokens": 150 },
+          "tenant": "acme",
+          "feature": "claims",
+          "retryCount": 1,
+          "retryOverheadUsd": 0.004,
+          "cacheSavingsUsd": 0
+        },
+        {
+          "traceId": "t-claims-2",
+          "provider": "openai",
+          "model": "gpt-4o-mini",
+          "status": "ok",
+          "latencyMs": 30,
+          "costUsd": 0,
+          "cacheHit": true,
+          "wallTimeUtc": "2026-07-12T10:02:00Z",
+          "usage": { "promptTokens": 50, "completionTokens": 20, "totalTokens": 70 },
+          "tenant": "acme",
+          "feature": "claims",
+          "retryCount": 0,
+          "retryOverheadUsd": 0,
+          "cacheSavingsUsd": 0.003
+        },
+        {
+          "traceId": "t-support-1",
+          "provider": "anthropic",
+          "model": "claude-sonnet",
+          "status": "error",
+          "latencyMs": 220,
+          "costUsd": 0.006,
+          "cacheHit": false,
+          "wallTimeUtc": "2026-07-12T11:00:00Z",
+          "usage": { "promptTokens": 30, "completionTokens": 20, "totalTokens": 50 },
+          "tenant": "beta",
+          "feature": "support",
+          "retryCount": 0,
+          "retryOverheadUsd": 0,
+          "cacheSavingsUsd": 0
+        }
+      ],
+      "expected": {
+        "total": {
+          "requests": 3,
+          "errors": 1,
+          "costUsd": 0.018,
+          "retryOverheadUsd": 0.004,
+          "cacheSavingsUsd": 0.003
+        },
+        "groups": {
+          "acme": {
+            "costUsd": 0.012,
+            "budgetLimitUsd": 0.05,
+            "budgetRemainingUsd": 0.038,
+            "forecastWindowSpendUsd": 0.024
+          },
+          "beta": {
+            "costUsd": 0.006,
+            "budgetLimitUsd": 0.01,
+            "budgetRemainingUsd": 0.004,
+            "forecastWindowSpendUsd": 0.012
+          }
+        },
+        "budgets": [
+          {
+            "policyId": "tenant-acme-monthly",
+            "scope": "tenant:acme",
+            "currentSpendUsd": 0.012,
+            "remainingUsd": 0.038,
+            "forecastWindowSpendUsd": 0.024,
+            "status": "ok"
+          },
+          {
+            "policyId": "tenant-beta-monthly",
+            "scope": "tenant:beta",
+            "currentSpendUsd": 0.006,
+            "remainingUsd": 0.004,
+            "forecastWindowSpendUsd": 0.012,
+            "status": "soft_limit"
+          }
+        ]
+      }
+    }
+  ]
+}

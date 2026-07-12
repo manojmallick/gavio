@@ -418,6 +418,29 @@ CostControl(
 Soft warnings and hard-cap fallback/block decisions surface as Inspector
 `governance.event` records with `kind="budget"`.
 
+Cost Governance v2 (v1.2.0) adds a canonical `BudgetPolicy` / `BudgetDecision`
+contract for production budget workflows. `BudgetPolicyControl` evaluates
+projected spend against a scoped policy and can allow, warn, block, fall back,
+downgrade, or run in dry-run mode while recording the decision as Inspector
+metadata.
+
+```python
+from gavio.interceptors.governance import BudgetPolicy, BudgetPolicyControl
+
+BudgetPolicyControl(
+    BudgetPolicy(
+        id="tenant-monthly",
+        scope_type="tenant",
+        scope_value="acme",
+        window="monthly",
+        limit_usd=500,
+        hard_limit_action="fallback",
+        fallback_model="gpt-4o-mini",
+    ),
+    estimated_request_cost_usd=0.02,
+)
+```
+
 #### Cost-optimiser routing (`F-GOV-06`)
 
 `CostRouter` reroutes a request to a cheaper `simple_model` when a pluggable

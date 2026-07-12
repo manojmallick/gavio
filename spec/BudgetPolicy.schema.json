@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/BudgetPolicy.v1.json",
+  "title": "BudgetPolicy",
+  "description": "Cost Governance v2 policy contract for scoped budget enforcement and reporting.",
+  "type": "object",
+  "required": ["id", "scopeType", "window", "limitUsd", "hardLimitAction"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scopeType": {
+      "type": "string",
+      "enum": ["global", "tenant", "team", "user", "feature", "agent", "session", "model", "request"]
+    },
+    "scopeValue": {
+      "type": ["string", "null"],
+      "description": "Optional concrete scope value. Null means the policy applies to the request's resolved scope value."
+    },
+    "window": {
+      "type": "string",
+      "enum": ["daily", "weekly", "monthly", "rolling", "total"]
+    },
+    "limitUsd": {
+      "type": "number",
+      "minimum": 0
+    },
+    "softLimitRatio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.8
+    },
+    "hardLimitAction": {
+      "type": "string",
+      "enum": ["block", "fallback", "downgrade_model", "dry_run"]
+    },
+    "alertThresholds": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "default": []
+    },
+    "fallbackModel": {
+      "type": ["string", "null"]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {}
+    }
+  },
+  "additionalProperties": false
+}

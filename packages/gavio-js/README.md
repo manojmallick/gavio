@@ -97,7 +97,7 @@ import { piiGuard }          from 'gavio/interceptors/pii'
 import { auditInterceptor }  from 'gavio/interceptors/audit'
 import { retryInterceptor }  from 'gavio/interceptors/reliability'
 import { semanticCache }     from 'gavio/interceptors/cache'
-import { costControl }       from 'gavio/interceptors/governance'
+import { costControl, budgetPolicyControl } from 'gavio/interceptors/governance'
 import { guardrails }        from 'gavio/interceptors/guardrails'
 import { jsonlRuntimeExporter } from 'gavio/exporters'
 import { anthropicAdapter }  from 'gavio/providers/anthropic'
@@ -155,7 +155,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   in-memory and Redis backends (`F-CACHE-01/02/03/04`).
 - **Cost & governance** — per-request cost tracking (`F-GOV-01`),
   `costControl()` budget caps (`F-GOV-02`), `rateLimiter()` (`F-GOV-03`),
-  `modelPolicy()` (`F-GOV-04`), `costRouter()` (`F-GOV-06`).
+  `modelPolicy()` (`F-GOV-04`), `costRouter()` (`F-GOV-06`), Cost Governance
+  v2 budget policies, decisions, and reports (v1.2.0).
 - **Observability** — `auditInterceptor()` with SHA-256 content hashes, never
   raw text (`F-OBS-01`), tamper-evident hash chain (`F-OBS-02`), multi-agent
   DAG tracing via `agentId`/`parentTraceId` (`F-OBS-03`), prompt lineage

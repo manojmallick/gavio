@@ -19,6 +19,8 @@ offending SDK's test-vector run goes red.
 | [`runtime-events/export-redaction.json`](./runtime-events/export-redaction.json) | Runtime exporter privacy contract (F-EXP-01) — verify metadata-only export strips content-bearing event fields while preserving trace and decision metadata. |
 | [`license/detection.json`](./license/detection.json) | License detection cases (F-QUA-10) — run the default license detector over `text`, collect the sorted SPDX ids, compare to `expectedLicenses`. Snippets are synthetic license text; the shipped corpus contains only shingle hashes. |
 | [`inspector/cost-report.json`](./inspector/cost-report.json) | Cost Intelligence cases (F-COST-02) — run the Inspector cost-report builder over trace summaries with attribution dimensions, compare total spend, grouped spend, retry overhead, cache savings, and top-spend dimensions. |
+| [`cost-governance/budget-decisions.json`](./cost-governance/budget-decisions.json) | Cost Governance v2 cases — evaluate shared `BudgetPolicy` decisions for allow, warn, block, fallback, downgrade, and dry-run actions. |
+| [`cost-governance/cost-report.json`](./cost-governance/cost-report.json) | Cost Governance v2 report cases — attach budget remaining and forecast fields to Cost Intelligence reports. |
 
 ## Case formats
 
@@ -64,6 +66,17 @@ offending SDK's test-vector run goes red.
 }
 ```
 
+`cost-governance/budget-decisions.json`:
+```json
+{
+  "id": "block-on-hard-limit",
+  "policy": { "id": "tenant-daily", "scopeType": "tenant", "limitUsd": 1.0 },
+  "currentSpendUsd": 0.95,
+  "requestCostUsd": 0.1,
+  "expected": { "allowed": false, "action": "block" }
+}
+```
+
 `runtime-events/export-redaction.json`:
 ```json
 {
@@ -77,9 +90,9 @@ offending SDK's test-vector run goes red.
 
 | SDK | Test that consumes these vectors |
 |---|---|
-| Python | `packages/gavio-py/tests/unit/test_vectors.py` · `packages/gavio-py/tests/unit/test_policy_packs.py` · `packages/gavio-py/tests/unit/test_inspector_agentic.py` · `packages/gavio-py/tests/unit/test_runtime_exporters.py` |
-| JavaScript | `packages/gavio-js/tests/unit/test-vectors.test.ts` · `packages/gavio-js/tests/unit/policy-packs.test.ts` · `packages/gavio-js/tests/unit/inspector-api-vectors.test.ts` · `packages/gavio-js/tests/unit/runtime-exporters.test.ts` |
-| Java | `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/TestVectorsTest.java` (PII) · `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/interceptors/pii/policy/PolicyPackTest.java` (policy packs) · `packages/gavio-java/gavio-interceptor-guardrails/src/test/java/io/gavio/vectors/LicenseVectorsTest.java` (license) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/inspector/InspectorApiVectorsTest.java` (Inspector) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/RuntimeExporterTest.java` |
+| Python | `packages/gavio-py/tests/unit/test_vectors.py` · `packages/gavio-py/tests/unit/test_policy_packs.py` · `packages/gavio-py/tests/unit/test_inspector_agentic.py` · `packages/gavio-py/tests/unit/test_runtime_exporters.py` · `packages/gavio-py/tests/unit/test_cost_governance_v2.py` |
+| JavaScript | `packages/gavio-js/tests/unit/test-vectors.test.ts` · `packages/gavio-js/tests/unit/policy-packs.test.ts` · `packages/gavio-js/tests/unit/inspector-api-vectors.test.ts` · `packages/gavio-js/tests/unit/runtime-exporters.test.ts` · `packages/gavio-js/tests/unit/cost-governance-v2.test.ts` |
+| Java | `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/TestVectorsTest.java` (PII) · `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/interceptors/pii/policy/PolicyPackTest.java` (policy packs) · `packages/gavio-java/gavio-interceptor-guardrails/src/test/java/io/gavio/vectors/LicenseVectorsTest.java` (license) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/inspector/InspectorApiVectorsTest.java` (Inspector) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/RuntimeExporterTest.java` · `packages/gavio-java/gavio-interceptor-governance/src/test/java/io/gavio/interceptors/governance/CostGovernanceV2Test.java` |
 
 ## Ground truth
 

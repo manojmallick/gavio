@@ -1,0 +1,159 @@
+{
+  "cases": [
+    {
+      "id": "allow-under-limit",
+      "policy": {
+        "id": "tenant-daily",
+        "scopeType": "tenant",
+        "scopeValue": "acme",
+        "window": "daily",
+        "limitUsd": 1.0,
+        "softLimitRatio": 0.8,
+        "hardLimitAction": "block",
+        "alertThresholds": [0.5, 0.8]
+      },
+      "scope": "tenant:acme|2026-07-12",
+      "currentSpendUsd": 0.2,
+      "requestCostUsd": 0.1,
+      "expected": {
+        "allowed": true,
+        "action": "allow",
+        "currentSpendUsd": 0.2,
+        "projectedSpendUsd": 0.3,
+        "remainingUsd": 0.7,
+        "thresholdStatus": "ok",
+        "reason": "under_budget",
+        "alertThresholdsCrossed": []
+      }
+    },
+    {
+      "id": "warn-on-soft-limit",
+      "policy": {
+        "id": "tenant-daily",
+        "scopeType": "tenant",
+        "scopeValue": "acme",
+        "window": "daily",
+        "limitUsd": 1.0,
+        "softLimitRatio": 0.8,
+        "hardLimitAction": "block",
+        "alertThresholds": [0.5, 0.8]
+      },
+      "scope": "tenant:acme|2026-07-12",
+      "currentSpendUsd": 0.75,
+      "requestCostUsd": 0.1,
+      "expected": {
+        "allowed": true,
+        "action": "warn",
+        "currentSpendUsd": 0.75,
+        "projectedSpendUsd": 0.85,
+        "remainingUsd": 0.15,
+        "thresholdStatus": "soft_limit",
+        "reason": "soft_limit_exceeded",
+        "alertThresholdsCrossed": [0.8]
+      }
+    },
+    {
+      "id": "block-on-hard-limit",
+      "policy": {
+        "id": "tenant-daily",
+        "scopeType": "tenant",
+        "scopeValue": "acme",
+        "window": "daily",
+        "limitUsd": 1.0,
+        "softLimitRatio": 0.8,
+        "hardLimitAction": "block"
+      },
+      "scope": "tenant:acme|2026-07-12",
+      "currentSpendUsd": 0.95,
+      "requestCostUsd": 0.1,
+      "expected": {
+        "allowed": false,
+        "action": "block",
+        "currentSpendUsd": 0.95,
+        "projectedSpendUsd": 1.05,
+        "remainingUsd": 0.0,
+        "thresholdStatus": "hard_limit",
+        "reason": "hard_limit_exceeded",
+        "alertThresholdsCrossed": []
+      }
+    },
+    {
+      "id": "fallback-on-hard-limit",
+      "policy": {
+        "id": "feature-monthly",
+        "scopeType": "feature",
+        "scopeValue": "claims",
+        "window": "monthly",
+        "limitUsd": 2.0,
+        "softLimitRatio": 0.75,
+        "hardLimitAction": "fallback",
+        "fallbackModel": "gpt-4o-mini"
+      },
+      "scope": "feature:claims|2026-07",
+      "currentSpendUsd": 1.99,
+      "requestCostUsd": 0.05,
+      "expected": {
+        "allowed": true,
+        "action": "fallback",
+        "currentSpendUsd": 1.99,
+        "projectedSpendUsd": 2.04,
+        "remainingUsd": 0.0,
+        "thresholdStatus": "hard_limit",
+        "reason": "fallback_after_hard_limit",
+        "targetModel": "gpt-4o-mini",
+        "alertThresholdsCrossed": []
+      }
+    },
+    {
+      "id": "downgrade-on-hard-limit",
+      "policy": {
+        "id": "team-weekly",
+        "scopeType": "team",
+        "scopeValue": "support",
+        "window": "weekly",
+        "limitUsd": 5.0,
+        "softLimitRatio": 0.8,
+        "hardLimitAction": "downgrade_model",
+        "fallbackModel": "claude-haiku"
+      },
+      "scope": "team:support|2026-W28",
+      "currentSpendUsd": 4.95,
+      "requestCostUsd": 0.1,
+      "expected": {
+        "allowed": true,
+        "action": "downgrade_model",
+        "currentSpendUsd": 4.95,
+        "projectedSpendUsd": 5.05,
+        "remainingUsd": 0.0,
+        "thresholdStatus": "hard_limit",
+        "reason": "downgrade_after_hard_limit",
+        "targetModel": "claude-haiku",
+        "alertThresholdsCrossed": []
+      }
+    },
+    {
+      "id": "dry-run-on-hard-limit",
+      "policy": {
+        "id": "global-dry-run",
+        "scopeType": "global",
+        "window": "total",
+        "limitUsd": 0.1,
+        "softLimitRatio": 0.8,
+        "hardLimitAction": "dry_run"
+      },
+      "scope": "global|total",
+      "currentSpendUsd": 0.09,
+      "requestCostUsd": 0.03,
+      "expected": {
+        "allowed": true,
+        "action": "dry_run",
+        "currentSpendUsd": 0.09,
+        "projectedSpendUsd": 0.12,
+        "remainingUsd": 0.0,
+        "thresholdStatus": "hard_limit",
+        "reason": "hard_limit_dry_run",
+        "alertThresholdsCrossed": []
+      }
+    }
+  ]
+}
