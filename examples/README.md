@@ -44,5 +44,4 @@ cd examples/java/01-quickstart
 mvn -q compile exec:java
 ```
 
-Examples 01-09 target the current stable package line. Example 12 targets the
-`1.6.0` package line because it uses the Policy Pack Catalog APIs.
+All examples target the `1.6.0` package line.

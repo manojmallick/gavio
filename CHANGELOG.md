@@ -15,6 +15,53 @@ Nothing yet.
 
 ---
 
+## [1.6.0] — 2026-07-12
+
+### Summary
+**Policy Pack Catalog.** v1.6.0 turns the Policy Pack architecture into a
+signed, reusable domain catalog. Python, JavaScript, and Java can load domain
+packs by name or path, verify deterministic SHA-256 manifest signatures, apply
+local detector overrides, suppress auditable false positives, and construct
+PII guards directly from catalog packs. Feature IDs `F-PACK-01/02/05`. Feature
+PR #75 (#74).
+
+Tests: Python 49 policy/vector/stable-gate tests · JavaScript 46 policy/vector
+tests · Java modules green · docs build green · JS typecheck/build green ·
+stable release gate green · catalog signature sanity green. Inspector
+benchmarks were not rerun because this release changes PII policy-pack catalog
+behavior, not Inspector runtime overhead.
+
+### Added
+- **Signed Policy Pack Catalog (all SDKs, `F-PACK-01/02/05`)** — added domain
+  manifests for `core`, `finance`, `healthcare`, `legal`, `hr`, `support`,
+  `code-security`, `regional/eu`, `regional/us`, and `regional/india` under
+  `policy-packs/`.
+- **Catalog load and guard APIs (all SDKs)** — Python exposes
+  `PolicyPack.load`, `PolicyPack.load_path`, `list_policy_packs`, and
+  `PiiGuard.from_policy_pack`; JavaScript exposes `loadPolicyPack`,
+  `loadPolicyPackPath`, `listPolicyPacks`, and `piiGuardFromPolicyPack`; Java
+  exposes `PolicyPacks.load`, `PolicyPacks.loadPath`,
+  `PolicyPacks.listCatalog`, and `PiiGuard.fromPolicyPack`.
+- **Signature, override, and suppression support (all SDKs)** — packs can verify
+  SHA-256 manifest signatures, apply local detector overrides for action,
+  severity, and redaction strategy, and skip detector-specific
+  `suppressionPatterns` for auditable false-positive suppression.
+- **Policy catalog contracts and vectors** — added
+  `spec/PolicyPackManifest.schema.json`, `spec/PolicyRule.schema.json`,
+  `spec/PolicyPackSignature.schema.json`, and
+  `test-vectors/policy-packs/catalog.json`.
+- **Policy catalog CLI and examples** — added `gavio policy list`,
+  `gavio policy validate`, `gavio policy sign`, and
+  `12-domain-policy-packs` runnable examples for Python, JavaScript, and Java.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, package docs,
+  docs-site version labels, examples index, stable gate fixtures, and
+  package/runtime versions to the `1.6.0` release line while keeping historical
+  feature "since" labels intact.
+
+---
+
 ## [1.5.0] — 2026-07-12
 
 ### Summary
@@ -987,7 +1034,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/manojmallick/gavio/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/manojmallick/gavio/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/manojmallick/gavio/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/manojmallick/gavio/compare/v1.2.0...v1.3.0
