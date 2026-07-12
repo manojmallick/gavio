@@ -245,10 +245,12 @@ gavio cost report --audit audit.jsonl --group-by tenant --budget-policy budgets.
 
 Ecosystem integration helpers (v1.9.0, `F-INT-01`) provide dependency-light
 metadata labels and compatibility rows for common gateways, observability
-tools, eval tools, frameworks, and provider SDKs.
+tools, eval tools, frameworks, and provider SDKs. Ecosystem adapter helpers
+(v2.5.0, `F-INT-02`) add metadata-only payload fragments for LiteLLM,
+promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and the Vercel AI SDK.
 
 ```python
-from gavio import compatibility_matrix, integration_metadata
+from gavio import compatibility_matrix, integration_adapter_payload, integration_metadata
 
 metadata = integration_metadata(
     "litellm",
@@ -257,6 +259,11 @@ metadata = integration_metadata(
     environment="prod",
 )
 rows = compatibility_matrix()
+adapter = integration_adapter_payload(
+    "litellm",
+    {"traceId": "trace_123", "data": {"status": "ok", "provider": "openai"}},
+    metadata={**metadata, "prompt": "raw prompt text"},
+)
 ```
 
 ## Platform Runtime Profile
@@ -334,7 +341,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "2.4.0", "tag": "v2.4.0"},
+    release={"version": "2.5.0", "tag": "v2.5.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",

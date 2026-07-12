@@ -11,15 +11,40 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-### Added
+Nothing yet.
 
+---
+
+## [2.5.0] — 2026-07-12
+
+### Summary
+**Ecosystem Adapters.** v2.5.0 adds dependency-light adapter payload helpers
+for LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and the
+Vercel AI SDK across Python, JavaScript, and Java. Payloads propagate
+trace/cost/model labels, replace content-bearing metadata with SHA-256 hashes,
+and share a cross-SDK adapter vector plus schema coverage. Feature ID
+`F-INT-02`. Feature PR #94 (#93).
+
+Tests: Python 311 · JavaScript typecheck/build/309 tests green · Java modules
+green · docs build green · stable release gate green · adapter examples green.
+Inspector benchmarks were not rerun locally because this release changes
+ecosystem adapter payload helpers/docs/examples, not Inspector runtime overhead.
+
+### Added
 - **Ecosystem Adapters (all SDKs, `F-INT-02`)** — added dependency-light
   adapter payload helpers for LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain,
-  LangGraph, and the Vercel AI SDK. Payloads propagate trace/cost/model labels,
-  replace content-bearing metadata with SHA-256 hashes, and share a
-  cross-SDK adapter vector plus schema coverage.
+  LangGraph, and the Vercel AI SDK.
+- **Adapter contract coverage** — added `IntegrationAdapterPayload` schema
+  coverage plus a shared adapter vector that checks payload shape, trace
+  propagation, metadata hashing, and raw-content omission.
 - **Adapter examples and docs** — refreshed integration docs, package docs, and
   offline examples with metadata-only adapter payload usage.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, package/runtime versions, and
+  integration docs to the `2.5.0` release line while keeping historical feature
+  "since" labels intact.
 
 ---
 
@@ -1327,7 +1352,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/manojmallick/gavio/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/manojmallick/gavio/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/manojmallick/gavio/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/manojmallick/gavio/compare/v2.1.0...v2.2.0
