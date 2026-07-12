@@ -18,6 +18,8 @@ import java.util.function.Consumer;
 public final class RingBuffer implements Consumer<InspectorEvent> {
 
     static final int MAX_EVENTS_PER_TRACE = 500;
+    private static final List<String> COST_DIMENSION_KEYS =
+            List.of("feature", "tenant", "user", "endpoint", "environment", "workflow", "tool");
 
     private final int maxTraces;
     /** Insertion-ordered: iteration order == chronological (trace.start) order. */
@@ -39,6 +41,7 @@ public final class RingBuffer implements Consumer<InspectorEvent> {
             entry = new Entry();
             entry.summary.put("traceId", event.traceId());
             entry.summary.put("status", "pending");
+            applyCostDefaults(entry.summary);
             traces.put(event.traceId(), entry);
             while (traces.size() > maxTraces) {
                 Iterator<String> oldest = traces.keySet().iterator();
@@ -62,6 +65,11 @@ public final class RingBuffer implements Consumer<InspectorEvent> {
                 summary.put("provider", data.get("provider"));
                 summary.put("model", data.get("model"));
                 summary.put("wallTimeUtc", data.get("wallTimeUtc"));
+                Map<String, Object> dimensions = costDimensions(data.get("costDimensions"));
+                summary.put("costDimensions", dimensions);
+                for (String key : COST_DIMENSION_KEYS) {
+                    summary.put(key, dimensions.get(key));
+                }
             }
             case "trace.end" -> {
                 summary.put("status", data.getOrDefault("status", "ok"));
@@ -71,11 +79,32 @@ public final class RingBuffer implements Consumer<InspectorEvent> {
                 summary.put("cacheType", data.get("cacheType"));
                 summary.put("piiEntityTypes", data.getOrDefault("piiEntityTypes", List.of()));
                 summary.put("interceptorsFired", data.getOrDefault("interceptorsFired", List.of()));
+                if (summary.get("interceptorsFired") instanceof List<?> fired && !fired.isEmpty()) {
+                    summary.put("middlewareChain", String.join(">", fired.stream().map(String::valueOf).toList()));
+                } else {
+                    summary.put("middlewareChain", null);
+                }
+                if (data.containsKey("cacheSavingsUsd")) {
+                    summary.put("cacheSavingsUsd", data.get("cacheSavingsUsd"));
+                }
+            }
+            case "provider.call.start" -> {
+                long attempt = asLong(data.get("attempt"));
+                if (attempt <= 0) {
+                    attempt = asLong(summary.get("providerCallCount")) + 1;
+                }
+                summary.put("providerCallCount", Math.max(asLong(summary.get("providerCallCount")), attempt));
+                summary.put("retryCount", Math.max(0L, asLong(summary.get("providerCallCount")) - 1L));
             }
             case "provider.call.end" -> {
                 // Token usage feeds /api/stats and /api/simulate-cost.
                 if (data.containsKey("usage")) {
                     summary.put("usage", data.get("usage"));
+                }
+                long attempt = asLong(data.get("attempt"));
+                double costUsd = asDouble(data.get("costUsd"));
+                if (attempt > 1 && costUsd > 0.0) {
+                    summary.put("retryOverheadUsd", round8(asDouble(summary.get("retryOverheadUsd")) + costUsd));
                 }
             }
             case "governance.event" -> {
@@ -109,7 +138,7 @@ public final class RingBuffer implements Consumer<InspectorEvent> {
     public synchronized List<Map<String, Object>> summaries(int limit) {
         List<Map<String, Object>> all = new ArrayList<>(traces.size());
         for (Entry entry : traces.values()) {
-            all.add(new LinkedHashMap<>(entry.summary));
+            all.add(applyCostDefaults(new LinkedHashMap<>(entry.summary)));
         }
         if (limit > 0 && all.size() > limit) {
             return new ArrayList<>(all.subList(all.size() - limit, all.size()));
@@ -131,5 +160,46 @@ public final class RingBuffer implements Consumer<InspectorEvent> {
         out.put("summary", new LinkedHashMap<>(entry.summary));
         out.put("events", events);
         return out;
+    }
+
+    private static Map<String, Object> applyCostDefaults(Map<String, Object> summary) {
+        summary.putIfAbsent("costDimensions", Map.of());
+        if (summary.get("costDimensions") instanceof Map<?, ?> dimensions) {
+            for (String key : COST_DIMENSION_KEYS) {
+                summary.putIfAbsent(key, dimensions.get(key));
+            }
+        }
+        summary.putIfAbsent("middlewareChain", null);
+        summary.putIfAbsent("providerCallCount", 0L);
+        summary.putIfAbsent("retryCount", 0L);
+        summary.putIfAbsent("retryOverheadUsd", 0.0);
+        summary.putIfAbsent("cacheSavingsUsd", 0.0);
+        return summary;
+    }
+
+    private static Map<String, Object> costDimensions(Object value) {
+        if (!(value instanceof Map<?, ?> map)) {
+            return Map.of();
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (String key : COST_DIMENSION_KEYS) {
+            Object v = map.get(key);
+            if (v instanceof String s && !s.isEmpty()) {
+                out.put(key, s);
+            }
+        }
+        return out;
+    }
+
+    private static long asLong(Object value) {
+        return value instanceof Number n ? n.longValue() : 0L;
+    }
+
+    private static double asDouble(Object value) {
+        return value instanceof Number n ? n.doubleValue() : 0.0;
+    }
+
+    private static double round8(double value) {
+        return Math.round(value * 1e8) / 1e8;
     }
 }

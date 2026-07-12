@@ -195,6 +195,33 @@ class InspectorAgenticTest {
     }
 
     @Test
+    void costReportEndpointGroupsCostDimensions() throws Exception {
+        String base = serve(CaptureMode.FULL);
+        GavioRequest request = GavioRequest.builder()
+                .messages(List.of(Message.of("user", "claims")))
+                .model("mock")
+                .provider(Provider.MOCK)
+                .metadata("costDimensions", Map.of(
+                        "tenant", "acme",
+                        "feature", "claims",
+                        "endpoint", "/chat",
+                        "environment", "prod",
+                        "workflow", "triage",
+                        "tool", "search"))
+                .build();
+        gateway.complete(request).join();
+
+        Map<String, Object> grouped = Json.parseObject(get(base + "/api/stats?group_by=tenant").body());
+        assertTrue(map(grouped.get("groups")).containsKey("acme"));
+
+        Map<String, Object> report = Json.parseObject(get(base + "/api/cost-report?group_by=feature").body());
+        assertTrue(map(report.get("groups")).containsKey("claims"));
+        Map<String, Object> topSpend = map(report.get("topSpend"));
+        List<Map<String, Object>> tenants = listOfMaps(topSpend.get("tenant"));
+        assertEquals("acme", tenants.get(0).get("key"));
+    }
+
+    @Test
     void statsCountsPiiAndErrorsFromSummaries() {
         Map<String, Object> a = new LinkedHashMap<>();
         a.put("traceId", "a");

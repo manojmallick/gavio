@@ -15,7 +15,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The entry point. Wires interceptors around a provider adapter.
@@ -108,8 +110,9 @@ public final class Gateway {
                 .parentTraceId(request.parentTraceId())
                 .sessionId(request.sessionId())
                 .dryRun(dryRun);
-        Executor executor = buildExecutor(ctx);
-        return chain.execute(request, ctx, executor, newEmitter());
+        TraceEmitter emitter = newEmitter();
+        Executor executor = buildExecutor(ctx, adapter::complete, emitter);
+        return chain.execute(request, ctx, executor, emitter);
     }
 
     /** Convenience overload matching the Python {@code complete(messages, ...)}. */
@@ -156,8 +159,9 @@ public final class Gateway {
         // The streaming path shares chain.execute, so it emits the same span
         // events as complete(): trace.start, interceptor.*, provider.call.*,
         // trace.end (F-DX-09).
+        TraceEmitter emitter = newEmitter();
         CompletableFuture<GavioResponse> responseFuture =
-                chain.execute(request, ctx, bufferingExecutor, newEmitter());
+                chain.execute(request, ctx, buildExecutor(ctx, bufferingExecutor, emitter), emitter);
 
         return subscriber -> subscriber.onSubscribe(new Flow.Subscription() {
             private boolean served = false;
@@ -229,8 +233,9 @@ public final class Gateway {
                 .parentTraceId(request.parentTraceId())
                 .sessionId(request.sessionId())
                 .dryRun(dryRun);
-        Executor executor = buildExecutor(ctx, adapter::embed);
-        return chain.execute(request, ctx, executor, newEmitter());
+        TraceEmitter emitter = newEmitter();
+        Executor executor = buildExecutor(ctx, adapter::embed, emitter);
+        return chain.execute(request, ctx, executor, emitter);
     }
 
     public CompletableFuture<Boolean> healthCheck() {
@@ -238,18 +243,54 @@ public final class Gateway {
     }
 
     private Executor buildExecutor(InterceptorContext ctx) {
-        return buildExecutor(ctx, adapter::complete);
+        return buildExecutor(ctx, adapter::complete, null);
     }
 
     /** Compose the executor policies around a provider call — {@code adapter::complete}
      * for completions, {@code adapter::embed} for embeddings (F-SEC-10). */
     private Executor buildExecutor(InterceptorContext ctx, Executor call) {
+        return buildExecutor(ctx, call, null);
+    }
+
+    /** Compose executor policies around a provider call instrumented per attempt. */
+    private Executor buildExecutor(InterceptorContext ctx, Executor call, TraceEmitter emitter) {
         Executor executor = call;
+        if (emitter != null) {
+            executor = instrumentProviderCall(executor, emitter);
+        }
         // Wrap so the first-registered policy ends up outermost.
         for (int i = policies.size() - 1; i >= 0; i--) {
             executor = wrapPolicy(policies.get(i), executor, ctx);
         }
         return executor;
+    }
+
+    private static Executor instrumentProviderCall(Executor inner, TraceEmitter emitter) {
+        AtomicInteger attempts = new AtomicInteger();
+        return request -> {
+            int attempt = attempts.incrementAndGet();
+            emitter.providerCallStart(request, attempt);
+            long started = System.nanoTime();
+            try {
+                return inner.execute(request).whenComplete((response, error) -> {
+                    if (error != null) {
+                        emitter.providerCallError(System.nanoTime() - started, unwrap(error), attempt);
+                    } else {
+                        emitter.providerCallEnd(System.nanoTime() - started, response, attempt);
+                    }
+                });
+            } catch (Throwable error) {
+                emitter.providerCallError(System.nanoTime() - started, unwrap(error), attempt);
+                throw error;
+            }
+        };
+    }
+
+    private static Throwable unwrap(Throwable error) {
+        if (error instanceof CompletionException ce && ce.getCause() != null) {
+            return ce.getCause();
+        }
+        return error;
     }
 
     private static Executor wrapPolicy(ExecutorPolicy policy, Executor inner, InterceptorContext ctx) {

@@ -19,6 +19,16 @@ from ..interceptors.pii.scanners.secret import SecretScanner
 from ..types import Message, TokenUsage
 
 SCHEMA_VERSION = "1.0"
+COST_DIMENSION_KEYS = ("feature", "tenant", "user", "endpoint", "environment", "workflow", "tool")
+COST_DIMENSION_ALIASES = {
+    "feature": ("feature", "featureId", "feature_id"),
+    "tenant": ("tenant", "tenantId", "tenant_id"),
+    "user": ("user", "userId", "user_id"),
+    "endpoint": ("endpoint", "route", "path"),
+    "environment": ("environment", "env"),
+    "workflow": ("workflow", "workflowId", "workflow_id"),
+    "tool": ("tool", "toolName", "tool_name"),
+}
 
 _secret_scanner = SecretScanner()
 
@@ -66,9 +76,10 @@ def trace_start_data(
     parent_trace_id: str | None,
     agent_id: str | None,
     session_id: str | None,
+    cost_dimensions: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """trace.start data — metadata shape (no content parameters)."""
-    return {
+    data: dict[str, Any] = {
         "parentTraceId": parent_trace_id,
         "agentId": agent_id,
         "sessionId": session_id,
@@ -77,6 +88,9 @@ def trace_start_data(
         "wallTimeUtc": wall_time_utc,
         "mode": mode,
     }
+    if cost_dimensions:
+        data["costDimensions"] = dict(cost_dimensions)
+    return data
 
 
 def trace_start_data_with_content(
@@ -89,6 +103,7 @@ def trace_start_data_with_content(
     agent_id: str | None,
     session_id: str | None,
     messages: list[Message],
+    cost_dimensions: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     """trace.start data — full/redacted shape, request messages included."""
     data = trace_start_data(
@@ -99,6 +114,7 @@ def trace_start_data_with_content(
         parent_trace_id=parent_trace_id,
         agent_id=agent_id,
         session_id=session_id,
+        cost_dimensions=cost_dimensions,
     )
     data["messages"] = [
         {"role": m.get("role", ""), "content": mask_secrets(m.get("content", ""))} for m in messages
@@ -189,11 +205,15 @@ def provider_call_start_data(provider: str, model: str, attempt: int) -> dict[st
 def provider_call_end_data(
     duration_us: int,
     status: str,
+    attempt: int | None = None,
     error_type: str | None = None,
     model_version: str | None = None,
     usage: TokenUsage | None = None,
+    cost_usd: float | None = None,
 ) -> dict[str, Any]:
     data: dict[str, Any] = {"durationUs": duration_us, "status": status}
+    if attempt is not None:
+        data["attempt"] = attempt
     if error_type:
         data["errorType"] = error_type
     if model_version:
@@ -204,6 +224,8 @@ def provider_call_end_data(
             "completionTokens": usage.completion_tokens,
             "totalTokens": usage.total_tokens,
         }
+    if cost_usd is not None:
+        data["costUsd"] = cost_usd
     return data
 
 
@@ -216,6 +238,7 @@ def trace_end_data(
     latency_ms: int,
     interceptors_fired: list[str],
     cost_usd: float | None = None,
+    cache_savings_usd: float | None = None,
     cache_hit: bool | None = None,
     cache_type: str | None = None,
     pii_entity_types: list[str] | None = None,
@@ -228,6 +251,8 @@ def trace_end_data(
     }
     if cost_usd is not None:
         data["costUsd"] = cost_usd
+    if cache_savings_usd is not None:
+        data["cacheSavingsUsd"] = cache_savings_usd
     if cache_hit is not None:
         data["cacheHit"] = cache_hit
         data["cacheType"] = cache_type
@@ -242,6 +267,7 @@ def trace_end_data_with_content(
     latency_ms: int,
     interceptors_fired: list[str],
     cost_usd: float | None = None,
+    cache_savings_usd: float | None = None,
     cache_hit: bool | None = None,
     cache_type: str | None = None,
     pii_entity_types: list[str] | None = None,
@@ -253,12 +279,45 @@ def trace_end_data_with_content(
         latency_ms=latency_ms,
         interceptors_fired=interceptors_fired,
         cost_usd=cost_usd,
+        cache_savings_usd=cache_savings_usd,
         cache_hit=cache_hit,
         cache_type=cache_type,
         pii_entity_types=pii_entity_types,
     )
     data["content"] = mask_secrets(content)
     return data
+
+
+def cost_dimensions_from_metadata(metadata: dict[str, Any] | None) -> dict[str, str]:
+    """Extract canonical cost attribution dimensions from request metadata."""
+    metadata = metadata or {}
+    nested = _object(metadata.get("costDimensions")) or _object(metadata.get("cost_dimensions"))
+    dimensions: dict[str, str] = {}
+    for key in COST_DIMENSION_KEYS:
+        value = _first_scalar(nested, COST_DIMENSION_ALIASES[key]) or _first_scalar(
+            metadata, COST_DIMENSION_ALIASES[key]
+        )
+        if value is not None:
+            dimensions[key] = value
+    return dimensions
+
+
+def _object(value: Any) -> dict[str, Any] | None:
+    return value if isinstance(value, dict) else None
+
+
+def _first_scalar(source: dict[str, Any] | None, aliases: tuple[str, ...]) -> str | None:
+    if source is None:
+        return None
+    for alias in aliases:
+        value = source.get(alias)
+        if isinstance(value, str):
+            stripped = value.strip()
+            if stripped:
+                return stripped
+        elif isinstance(value, (int, float, bool)):
+            return str(value)
+    return None
 
 
 def trace_error_data(

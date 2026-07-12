@@ -17,7 +17,7 @@ import pytest
 
 from gavio import Gateway
 from gavio.inspector import InspectorConfig, open_store
-from gavio.inspector.analytics import build_dag, build_sessions, build_stats
+from gavio.inspector.analytics import build_cost_report, build_dag, build_sessions, build_stats
 from gavio.interceptors.audit import AuditInterceptor, JsonlSink
 from gavio.interceptors.pii import PiiGuard
 from gavio.providers.mock import MockProvider
@@ -28,6 +28,11 @@ _API_CASES = json.loads(
         Path(__file__).resolve().parents[4] / "test-vectors" / "inspector" / "api-cases.json"
     ).read_text()
 )
+_COST_CASES = json.loads(
+    (
+        Path(__file__).resolve().parents[4] / "test-vectors" / "inspector" / "cost-report.json"
+    ).read_text()
+)["cases"]
 
 
 def _gateway(mode: str = "full", **config_kwargs) -> Gateway:
@@ -163,6 +168,34 @@ async def test_stats_endpoint_red_aggregates_and_grouping() -> None:
         with pytest.raises(urllib.error.HTTPError) as excinfo:
             _get(base, "/api/stats?group_by=nope")
         assert _http_status(excinfo) == 400
+    finally:
+        gw.inspector.stop()
+
+
+async def test_cost_report_endpoint_groups_cost_dimensions() -> None:
+    gw = _gateway()
+    try:
+        await gw.complete(
+            messages=[{"role": "user", "content": "claims"}],
+            metadata={
+                "costDimensions": {
+                    "tenant": "acme",
+                    "feature": "claims",
+                    "endpoint": "/chat",
+                    "environment": "prod",
+                    "workflow": "triage",
+                    "tool": "search",
+                }
+            },
+        )
+        base = f"http://127.0.0.1:{gw.inspector.server.port}"
+
+        grouped = _get(base, "/api/stats?group_by=tenant")
+        assert "acme" in grouped["groups"]
+
+        report = _get(base, "/api/cost-report?group_by=feature")
+        assert "claims" in report["groups"]
+        assert report["topSpend"]["tenant"][0]["key"] == "acme"
     finally:
         gw.inspector.stop()
 
@@ -424,6 +457,34 @@ def test_dag_vectors(case: dict) -> None:
     root_node = next(n for n in dag["nodes"] if n["traceId"] == root_id)
     for key, value in expected["rootSubtree"].items():
         assert root_node["subtree"][key] == pytest.approx(value), key
+
+
+@pytest.mark.parametrize("case", _COST_CASES, ids=lambda c: c["id"])
+def test_cost_report_vectors(case: dict) -> None:
+    report = build_cost_report(case["summaries"], group_by=case.get("groupBy"))
+    expected = case["expected"]
+    assert report["total"]["requests"] == expected["total"]["requests"]
+    assert report["total"]["errors"] == expected["total"]["errors"]
+    assert report["total"]["tokens"] == expected["total"]["tokens"]
+    assert report["total"]["costUsd"] == pytest.approx(expected["total"]["costUsd"])
+    assert report["total"]["averageCostUsd"] == pytest.approx(expected["total"]["averageCostUsd"])
+    assert report["total"]["cacheHits"] == expected["total"]["cacheHits"]
+    assert report["total"]["retryCount"] == expected["total"]["retryCount"]
+    assert report["total"]["retryOverheadUsd"] == pytest.approx(
+        expected["total"]["retryOverheadUsd"]
+    )
+    assert report["total"]["cacheSavingsUsd"] == pytest.approx(
+        expected["total"]["cacheSavingsUsd"]
+    )
+    for key, aggregate in expected["groups"].items():
+        assert report["groups"][key]["requests"] == aggregate["requests"]
+        assert report["groups"][key]["costUsd"] == pytest.approx(aggregate["costUsd"])
+        if "cacheHits" in aggregate:
+            assert report["groups"][key]["cacheHits"] == aggregate["cacheHits"]
+        if "errors" in aggregate:
+            assert report["groups"][key]["errors"] == aggregate["errors"]
+    assert report["topSpend"]["tenant"][:2] == expected["topSpend"]["tenant"]
+    assert report["topSpend"]["feature"][:2] == expected["topSpend"]["feature"]
 
 
 @pytest.mark.parametrize("case", _API_CASES["replayGating"], ids=lambda c: c["mode"])

@@ -17,6 +17,29 @@ import { secretScanner } from '../interceptors/pii/scanners/secret.js'
 import type { Message } from '../types.js'
 import type { InspectorMode } from './config.js'
 
+export const COST_DIMENSION_KEYS = [
+  'feature',
+  'tenant',
+  'user',
+  'endpoint',
+  'environment',
+  'workflow',
+  'tool',
+] as const
+
+export type CostDimensionKey = (typeof COST_DIMENSION_KEYS)[number]
+export type CostDimensions = Partial<Record<CostDimensionKey, string>>
+
+const COST_DIMENSION_ALIASES: Record<CostDimensionKey, string[]> = {
+  feature: ['feature', 'featureId', 'feature_id'],
+  tenant: ['tenant', 'tenantId', 'tenant_id'],
+  user: ['user', 'userId', 'user_id'],
+  endpoint: ['endpoint', 'route', 'path'],
+  environment: ['environment', 'env'],
+  workflow: ['workflow', 'workflowId', 'workflow_id'],
+  tool: ['tool', 'toolName', 'tool_name'],
+}
+
 export type InspectorEventType =
   | 'trace.start'
   | 'interceptor.before.start'
@@ -80,11 +103,24 @@ export interface TraceStartMeta {
   model: string
   wallTimeUtc: string
   mode: InspectorMode
+  costDimensions?: CostDimensions
 }
 
 /** Metadata mode — no message parameter exists on this path. */
 export function traceStartData(meta: TraceStartMeta): Record<string, unknown> {
-  return { ...meta }
+  const data: Record<string, unknown> = {
+    parentTraceId: meta.parentTraceId,
+    agentId: meta.agentId,
+    sessionId: meta.sessionId,
+    provider: meta.provider,
+    model: meta.model,
+    wallTimeUtc: meta.wallTimeUtc,
+    mode: meta.mode,
+  }
+  if (meta.costDimensions !== undefined && Object.keys(meta.costDimensions).length > 0) {
+    data['costDimensions'] = { ...meta.costDimensions }
+  }
+  return data
 }
 
 /** Full/redacted modes — messages included, secrets masked. */
@@ -92,10 +128,9 @@ export function traceStartDataWithMessages(
   meta: TraceStartMeta,
   messages: Message[],
 ): Record<string, unknown> {
-  return {
-    ...meta,
-    messages: messages.map((m) => ({ role: m.role, content: maskSecrets(m.content ?? '') })),
-  }
+  const data = traceStartData(meta)
+  data['messages'] = messages.map((m) => ({ role: m.role, content: maskSecrets(m.content ?? '') }))
+  return data
 }
 
 // ── interceptor.*.start / interceptor.*.end ─────────────────────────────────
@@ -153,20 +188,24 @@ export function providerCallStartData(
 }
 
 export interface ProviderCallEndMeta {
+  attempt?: number
   durationUs: number
   status: 'ok' | 'error'
   errorType?: string
   modelVersion?: string
   usage?: { promptTokens: number; completionTokens: number; totalTokens: number }
+  costUsd?: number
 }
 
 export function providerCallEndData(meta: ProviderCallEndMeta): Record<string, unknown> {
   const data: Record<string, unknown> = { durationUs: meta.durationUs, status: meta.status }
+  if (meta.attempt !== undefined) data['attempt'] = meta.attempt
   if (meta.errorType !== undefined) data['errorType'] = meta.errorType
   if (meta.modelVersion !== undefined && meta.modelVersion !== '') {
     data['modelVersion'] = meta.modelVersion
   }
   if (meta.usage !== undefined) data['usage'] = meta.usage
+  if (meta.costUsd !== undefined) data['costUsd'] = meta.costUsd
   return data
 }
 
@@ -176,6 +215,7 @@ export interface TraceEndMeta {
   status: 'ok' | 'error' | 'blocked'
   latencyMs: number
   costUsd?: number
+  cacheSavingsUsd?: number
   cacheHit?: boolean
   cacheType?: string | null
   interceptorsFired: string[]
@@ -190,10 +230,48 @@ export function traceEndData(meta: TraceEndMeta): Record<string, unknown> {
     interceptorsFired: [...meta.interceptorsFired],
   }
   if (meta.costUsd !== undefined) data['costUsd'] = meta.costUsd
+  if (meta.cacheSavingsUsd !== undefined) data['cacheSavingsUsd'] = meta.cacheSavingsUsd
   if (meta.cacheHit !== undefined) data['cacheHit'] = meta.cacheHit
   if (meta.cacheType !== undefined) data['cacheType'] = meta.cacheType
   if (meta.piiEntityTypes !== undefined) data['piiEntityTypes'] = [...meta.piiEntityTypes]
   return data
+}
+
+export function costDimensionsFromMetadata(metadata: Record<string, unknown> = {}): CostDimensions {
+  const nested = objectValue(metadata['costDimensions']) ?? objectValue(metadata['cost_dimensions'])
+  const dimensions: CostDimensions = {}
+  for (const key of COST_DIMENSION_KEYS) {
+    const value = firstStringValue(nested, COST_DIMENSION_ALIASES[key])
+      ?? firstStringValue(metadata, COST_DIMENSION_ALIASES[key])
+    if (value !== undefined) dimensions[key] = value
+  }
+  return dimensions
+}
+
+function firstStringValue(
+  source: Record<string, unknown> | undefined,
+  aliases: readonly string[],
+): string | undefined {
+  if (source === undefined) return undefined
+  for (const alias of aliases) {
+    const value = scalarToString(source[alias])
+    if (value !== undefined) return value
+  }
+  return undefined
+}
+
+function objectValue(value: unknown): Record<string, unknown> | undefined {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined
+  return value as Record<string, unknown>
+}
+
+function scalarToString(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    return trimmed === '' ? undefined : trimmed
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return undefined
 }
 
 /** Full/redacted modes — final response content included, secrets masked. */

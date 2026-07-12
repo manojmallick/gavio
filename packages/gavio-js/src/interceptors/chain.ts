@@ -19,8 +19,9 @@ type Phase = { kind: 'chain' } | { kind: 'interceptor'; name: string } | { kind:
  * `onError` is invoked before the error propagates.
  *
  * When an inspector {@link TraceEmitter} is supplied, the chain emits
- * interceptor.*, provider.call.* and trace.error events. Without one the
- * behaviour is byte-for-byte identical to the uninstrumented path.
+ * interceptor.* and trace.error events. Provider calls are instrumented by the
+ * gateway at the innermost executor so retry/fallback attempts each get their
+ * own provider.call.* pair.
  */
 export class InterceptorChain {
   private readonly interceptors: Interceptor[]
@@ -60,16 +61,12 @@ export class InterceptorChain {
       }
 
       phase = { kind: 'provider' }
-      emitter?.providerCallStart(req.provider, req.model)
-      const callStartedAt = emitter?.now()
       let response: GavioResponse
       try {
         response = await executor(req)
       } catch (error) {
-        emitter?.providerCallEndError(callStartedAt!, error)
         throw error
       }
-      emitter?.providerCallEndOk(callStartedAt!, response)
       phase = { kind: 'chain' }
 
       for (let i = this.interceptors.length - 1; i >= 0; i--) {
@@ -97,6 +94,7 @@ export class InterceptorChain {
       return response
     } catch (error) {
       if (emitter !== undefined) {
+        emitGovernanceEvents(ctx, emitter)
         emitter.traceError(
           phase.kind === 'interceptor' ? 'interceptor' : phase.kind === 'provider' ? 'provider' : 'chain',
           error,

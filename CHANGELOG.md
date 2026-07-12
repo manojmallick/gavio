@@ -11,7 +11,20 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Cost Intelligence (all SDKs, `F-COST-01/02/04`)** — request metadata can now
+  carry scalar cost dimensions (`tenant`, `feature`, `user`, `endpoint`,
+  `environment`, `workflow`, `tool`) that flow into Inspector trace summaries.
+  `/api/stats` can group by those dimensions plus `session_id` and
+  `middleware_chain`, and the new `/api/cost-report` endpoint returns total
+  spend, average cost/request, retry count, retry overhead, cache savings and
+  top-spend dimension lists. Shared contract:
+  `test-vectors/inspector/cost-report.json`. PR #49.
+- **Scoped budget fallback (all SDKs)** — `CostControl` now supports
+  `tenant`, `feature`, `user`, and `model` scopes in addition to existing
+  global/agent/session scopes, and can fall back to a cheaper model on hard-cap
+  breach instead of only blocking. Soft warnings and fallback/block decisions
+  surface as Inspector `governance.event` records with `kind="budget"`.
 
 ---
 
@@ -669,7 +682,8 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/manojmallick/gavio/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/manojmallick/gavio/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/manojmallick/gavio/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/manojmallick/gavio/compare/v0.6.0...v0.7.0

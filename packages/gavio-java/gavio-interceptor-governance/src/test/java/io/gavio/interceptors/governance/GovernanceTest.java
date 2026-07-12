@@ -48,6 +48,22 @@ class GovernanceTest {
     }
 
     @Test
+    void budgetFallsBackForScopedBudget() {
+        PricingProvider pricing = new PricingProvider(Map.of("mock", new double[] {1000, 1000}));
+        MockProvider provider = new MockProvider("x", "mock-1", pricing);
+        Gateway gw = gw(provider, CostControl.builder()
+                .hardCapUsd(0.01)
+                .scope("tenant")
+                .window("total")
+                .fallbackModel("mock-mini")
+                .build());
+        gw.complete(req("one", Map.of("costDimensions", Map.of("tenant", "acme")))).join();
+        GavioResponse response =
+                gw.complete(req("two", Map.of("costDimensions", Map.of("tenant", "acme")))).join();
+        assertEquals("mock-mini", response.model());
+    }
+
+    @Test
     void rateLimiterBlocks() {
         Gateway gw = gw(new MockProvider("x"), RateLimiter.builder().maxRequestsPerMinute(2).build());
         gw.complete(req("1", null)).join();

@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, it, expect, afterEach } from 'vitest'
 import { Gateway } from '../../src/gateway.js'
-import { buildDag } from '../../src/inspector/analytics.js'
+import { buildCostReport, buildDag } from '../../src/inspector/analytics.js'
 import type { SummaryLike } from '../../src/inspector/analytics.js'
 import type { InspectorMode } from '../../src/inspector/index.js'
 import { mockProvider } from '../../src/providers/mock.js'
@@ -36,6 +36,20 @@ const vectors = JSON.parse(
     'utf-8',
   ),
 ) as { dagCases: DagCase[]; replayGating: ReplayGatingCase[] }
+
+const costVectors = JSON.parse(
+  readFileSync(
+    new URL('../../../../test-vectors/inspector/cost-report.json', import.meta.url),
+    'utf-8',
+  ),
+) as {
+  cases: Array<{
+    id: string
+    groupBy?: string
+    summaries: SummaryLike[]
+    expected: Record<string, any>
+  }>
+}
 
 describe('shared test-vectors — inspector/api-cases.json dagCases', () => {
   for (const dagCase of vectors.dagCases) {
@@ -85,6 +99,36 @@ describe('shared test-vectors — inspector/api-cases.json replayGating', () => 
         expect(body.traceId).toBeTruthy()
         expect(body.replayOf).toBe(original.traceId)
       }
+    })
+  }
+})
+
+describe('shared test-vectors — inspector/cost-report.json', () => {
+  for (const costCase of costVectors.cases) {
+    it(costCase.id, () => {
+      const report = buildCostReport(costCase.summaries, costCase.groupBy)
+      const expected = costCase.expected
+      expect(report.total.requests).toBe(expected.total.requests)
+      expect(report.total.errors).toBe(expected.total.errors)
+      expect(report.total.tokens).toEqual(expected.total.tokens)
+      expect(report.total.costUsd).toBeCloseTo(expected.total.costUsd, 8)
+      expect(report.total.averageCostUsd).toBeCloseTo(expected.total.averageCostUsd, 8)
+      expect(report.total.cacheHits).toBe(expected.total.cacheHits)
+      expect(report.total.retryCount).toBe(expected.total.retryCount)
+      expect(report.total.retryOverheadUsd).toBeCloseTo(expected.total.retryOverheadUsd, 8)
+      expect(report.total.cacheSavingsUsd).toBeCloseTo(expected.total.cacheSavingsUsd, 8)
+      for (const [key, aggregate] of Object.entries(expected.groups)) {
+        expect(report.groups![key]!.requests).toBe(aggregate.requests)
+        expect(report.groups![key]!.costUsd).toBeCloseTo(aggregate.costUsd, 8)
+        if (aggregate.cacheHits !== undefined) {
+          expect(report.groups![key]!.cacheHits).toBe(aggregate.cacheHits)
+        }
+        if (aggregate.errors !== undefined) {
+          expect(report.groups![key]!.errors).toBe(aggregate.errors)
+        }
+      }
+      expect(report.topSpend.tenant.slice(0, 2)).toEqual(expected.topSpend.tenant)
+      expect(report.topSpend.feature.slice(0, 2)).toEqual(expected.topSpend.feature)
     })
   }
 })

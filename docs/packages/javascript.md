@@ -132,8 +132,20 @@ const gw = new Gateway({ devMode: true, inspect: true })
 ```
 
 The embedded server exposes the same JSON API in every SDK (`/api/traces`,
-`/api/dag`, `/api/stats`, …); the store-backed `gavio inspect --store` CLI is
-Python-only.
+`/api/dag`, `/api/stats`, `/api/cost-report`, …); the store-backed
+`gavio inspect --store` CLI is Python-only.
+
+Cost Intelligence (v0.11.0) reads scalar labels from request metadata:
+
+```typescript
+await gw.complete({
+  messages: [{ role: 'user', content: 'price this' }],
+  metadata: { costDimensions: { tenant: 'acme', feature: 'claims', endpoint: '/chat' } },
+})
+```
+
+Those labels can be used with `/api/stats?group_by=tenant` and
+`/api/cost-report?group_by=feature`.
 
 ## Embeddings
 

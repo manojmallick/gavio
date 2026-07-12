@@ -5,7 +5,7 @@ Serves the vendored single-file UI at ``/`` and a small JSON API under
 so it never blocks interpreter shutdown.
 
 v0.7.0 adds the agentic and production endpoints: ``/api/dag``,
-``/api/sessions``, ``/api/stats``, ``/api/simulate-cost``,
+``/api/sessions``, ``/api/stats``, ``/api/cost-report``, ``/api/simulate-cost``,
 ``/api/chain/verify``, ``/api/traces/{id}/export`` and ``POST /api/replay``.
 """
 
@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs, urlparse
 
 from ..types import TokenUsage
-from .analytics import build_dag, build_sessions, build_stats
+from .analytics import build_cost_report, build_dag, build_sessions, build_stats
 from .export import EXPORT_FORMATS, export_trace
 
 if TYPE_CHECKING:
@@ -94,6 +94,8 @@ class _Handler(BaseHTTPRequestHandler):
                 )
             elif path == "/api/stats":
                 self._handle_stats(params)
+            elif path == "/api/cost-report":
+                self._handle_cost_report(params)
             elif path == "/api/simulate-cost":
                 self._handle_simulate_cost(params)
             elif path == "/api/chain/verify":
@@ -194,6 +196,18 @@ class _Handler(BaseHTTPRequestHandler):
             self._send_json(400, {"error": str(error)})
             return
         self._send_json(200, stats)
+
+    def _handle_cost_report(self, params: dict[str, list[str]]) -> None:
+        try:
+            report = build_cost_report(
+                self.inspector.buffer.summaries(),
+                group_by=self._param(params, "group_by"),
+                since=self._param(params, "since"),
+            )
+        except ValueError as error:
+            self._send_json(400, {"error": str(error)})
+            return
+        self._send_json(200, report)
 
     def _handle_simulate_cost(self, params: dict[str, list[str]]) -> None:
         trace_id = self._param(params, "trace_id")

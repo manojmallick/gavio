@@ -11,7 +11,20 @@ import math
 from datetime import datetime
 from typing import Any
 
-_GROUP_BY_FIELDS = {"provider": "provider", "model": "model", "agent_id": "agentId"}
+_GROUP_BY_FIELDS = {
+    "provider": "provider",
+    "model": "model",
+    "agent_id": "agentId",
+    "session_id": "sessionId",
+    "feature": "feature",
+    "tenant": "tenant",
+    "user": "user",
+    "endpoint": "endpoint",
+    "environment": "environment",
+    "workflow": "workflow",
+    "tool": "tool",
+    "middleware_chain": "middlewareChain",
+}
 
 
 def build_sessions(summaries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -137,24 +150,52 @@ def build_stats(
 
     Raises ValueError for an unknown ``group_by`` or an unparsable ``since``.
     """
-    if group_by is not None and group_by not in _GROUP_BY_FIELDS:
-        raise ValueError(f"group_by must be one of {sorted(_GROUP_BY_FIELDS)}")
-    if since is not None:
-        since_dt = datetime.fromisoformat(since)
-        summaries = [
-            s
-            for s in summaries
-            if s.get("wallTimeUtc") and datetime.fromisoformat(s["wallTimeUtc"]) >= since_dt
-        ]
+    summaries = _filter_and_validate(summaries, group_by, since)
 
     out: dict[str, Any] = {"total": _aggregate(summaries)}
     if group_by is not None:
-        field = _GROUP_BY_FIELDS[group_by]
         groups: dict[str, list[dict[str, Any]]] = {}
         for s in summaries:
-            groups.setdefault(str(s.get(field)), []).append(s)
+            groups.setdefault(_group_key(s, group_by), []).append(s)
         out["groups"] = {key: _aggregate(members) for key, members in groups.items()}
     return out
+
+
+def build_cost_report(
+    summaries: list[dict[str, Any]],
+    group_by: str | None = None,
+    since: str | None = None,
+) -> dict[str, Any]:
+    """Cost intelligence rollup: spend, retries, cache savings and top dimensions."""
+    summaries = _filter_and_validate(summaries, group_by, since)
+    out: dict[str, Any] = {"total": _aggregate(summaries), "topSpend": _top_spend(summaries)}
+    if group_by is not None:
+        groups: dict[str, list[dict[str, Any]]] = {}
+        for s in summaries:
+            groups.setdefault(_group_key(s, group_by), []).append(s)
+        out["groups"] = {key: _aggregate(members) for key, members in groups.items()}
+    return out
+
+
+def _filter_and_validate(
+    summaries: list[dict[str, Any]], group_by: str | None, since: str | None
+) -> list[dict[str, Any]]:
+    if group_by is not None and group_by not in _GROUP_BY_FIELDS:
+        raise ValueError(f"group_by must be one of {sorted(_GROUP_BY_FIELDS)}")
+    if since is None:
+        return summaries
+    since_dt = datetime.fromisoformat(since)
+    return [
+        s
+        for s in summaries
+        if s.get("wallTimeUtc") and datetime.fromisoformat(s["wallTimeUtc"]) >= since_dt
+    ]
+
+
+def _group_key(summary: dict[str, Any], group_by: str) -> str:
+    field = _GROUP_BY_FIELDS[group_by]
+    value = summary.get(field)
+    return str(value) if value not in (None, "") else "unknown"
 
 
 def _aggregate(summaries: list[dict[str, Any]]) -> dict[str, Any]:
@@ -172,6 +213,7 @@ def _aggregate(summaries: list[dict[str, Any]]) -> dict[str, Any]:
         for metric in s.get("driftAlerts") or []:
             drift[metric] = drift.get(metric, 0) + 1
     n = len(summaries)
+    cost_usd = round(sum(s.get("costUsd") or 0.0 for s in summaries), 8)
     return {
         "requests": n,
         "errors": errors,
@@ -182,12 +224,32 @@ def _aggregate(summaries: list[dict[str, Any]]) -> dict[str, Any]:
             "p99": _percentile(latencies, 99),
         },
         "tokens": {"prompt": prompt, "completion": completion, "total": prompt + completion},
-        "costUsd": round(sum(s.get("costUsd") or 0.0 for s in summaries), 8),
+        "costUsd": cost_usd,
+        "averageCostUsd": round(cost_usd / n, 8) if n else 0.0,
         "cacheHits": cache_hits,
         "cacheHitRate": round(cache_hits / n, 4) if n else 0.0,
+        "retryCount": sum(s.get("retryCount") or 0 for s in summaries),
+        "retryOverheadUsd": round(sum(s.get("retryOverheadUsd") or 0.0 for s in summaries), 8),
+        "cacheSavingsUsd": round(sum(s.get("cacheSavingsUsd") or 0.0 for s in summaries), 8),
         "piiDetections": pii,
         "driftAlerts": drift,
     }
+
+
+def _top_spend(summaries: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    out: dict[str, list[dict[str, Any]]] = {}
+    for dimension in _GROUP_BY_FIELDS:
+        groups: dict[str, dict[str, Any]] = {}
+        for s in summaries:
+            key = _group_key(s, dimension)
+            entry = groups.setdefault(key, {"key": key, "requests": 0, "costUsd": 0.0})
+            entry["requests"] += 1
+            entry["costUsd"] = round(entry["costUsd"] + (s.get("costUsd") or 0.0), 8)
+        out[dimension] = sorted(
+            groups.values(),
+            key=lambda entry: (-entry["costUsd"], -entry["requests"], entry["key"]),
+        )[:5]
+    return out
 
 
 def _percentile(sorted_values: list[int], pct: int) -> int | None:

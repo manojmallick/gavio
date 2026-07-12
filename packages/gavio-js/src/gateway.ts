@@ -9,6 +9,7 @@ import { InterceptorChain } from './interceptors/chain.js'
 import { envInspectEnabled, resolveInspectorConfig } from './inspector/config.js'
 import type { InspectorConfig } from './inspector/config.js'
 import { Inspector } from './inspector/inspector.js'
+import type { TraceEmitter } from './inspector/emitter.js'
 import { pipelineLints } from './inspector/server.js'
 import type { PipelineInfo } from './inspector/server.js'
 import { StreamBuffer } from './interceptors/reliability/stream-buffer.js'
@@ -201,8 +202,7 @@ export class Gateway {
       dryRun: this.dryRunMode,
     })
 
-    const { chain, executor } = this.buildPipeline(adapter, ctx)
-    return this.executeTraced(request, ctx, chain, executor)
+    return this.executeTraced(request, ctx, adapter)
   }
 
   /**
@@ -238,22 +238,23 @@ export class Gateway {
       dryRun: this.dryRunMode,
     })
 
-    const { chain, executor } = this.buildPipeline(adapter, ctx, (req) => adapter.embed!(req))
-    return this.executeTraced(request, ctx, chain, executor)
+    return this.executeTraced(request, ctx, adapter, (req) => adapter.embed!(req))
   }
 
   /** Run the chain, bracketed by trace.start / trace.end when inspecting. */
   private async executeTraced(
     request: GavioRequest,
     ctx: InterceptorContext,
-    chain: InterceptorChain,
-    executor: Executor,
+    adapter: ProviderAdapter,
+    call?: Executor,
   ): Promise<GavioResponse> {
     if (this.inspectorInstance === null) {
+      const { chain, executor } = this.buildPipeline(adapter, ctx, call)
       return chain.execute(request, ctx, executor)
     }
 
     const emitter = this.inspectorInstance.beginTrace(request)
+    const { chain, executor } = this.buildPipeline(adapter, ctx, call, emitter)
     const startedAt = performance.now()
     emitter.traceStart(request)
     try {
@@ -303,13 +304,13 @@ export class Gateway {
 
     const startedAt = performance.now()
     const buffer = new StreamBuffer()
-    const { chain } = this.buildPipeline(adapter, ctx)
     const bufferingExecutor: Executor = async (req) => {
       for await (const chunk of adapter.stream!(req)) buffer.append(chunk)
       return adapter.buildStreamResponse!(req, buffer.text(), startedAt)
     }
 
     if (this.inspectorInstance === null) {
+      const { chain } = this.buildPipeline(adapter, ctx)
       const response = await chain.execute(request, ctx, bufferingExecutor)
       // Post-interceptors have run on the fully buffered response; emit it now.
       yield response.content
@@ -319,10 +320,11 @@ export class Gateway {
     // Streaming is buffered (F-REL-06), so the inspector sees the same event
     // shape as complete(): trace.start → provider.call.* → trace.end.
     const emitter = this.inspectorInstance.beginTrace(request)
+    const { chain, executor } = this.buildPipeline(adapter, ctx, bufferingExecutor, emitter)
     emitter.traceStart(request)
     let response: GavioResponse
     try {
-      response = await chain.execute(request, ctx, bufferingExecutor, emitter)
+      response = await chain.execute(request, ctx, executor, emitter)
       emitter.traceEndOk(response, ctx, Math.round(performance.now() - startedAt))
     } catch (error) {
       emitter.traceEndError(ctx, Math.round(performance.now() - startedAt))
@@ -339,6 +341,7 @@ export class Gateway {
     adapter: ProviderAdapter,
     ctx: InterceptorContext,
     call?: Executor,
+    emitter?: TraceEmitter,
   ): { chain: InterceptorChain; executor: Executor } {
     let interceptors = [...this.interceptors]
 
@@ -352,6 +355,21 @@ export class Gateway {
     const chain = new InterceptorChain(regular)
 
     let executor: Executor = call ?? ((request) => adapter.complete(request))
+    if (emitter !== undefined) {
+      const inner = executor
+      executor = async (request) => {
+        emitter.providerCallStart(request.provider, request.model)
+        const startedAt = emitter.now()
+        try {
+          const response = await inner(request)
+          emitter.providerCallEndOk(startedAt, response)
+          return response
+        } catch (error) {
+          emitter.providerCallEndError(startedAt, error)
+          throw error
+        }
+      }
+    }
     // Wrap so the first-registered policy ends up outermost.
     for (let i = policies.length - 1; i >= 0; i--) {
       executor = this.wrapPolicy(policies[i]!, executor, ctx)

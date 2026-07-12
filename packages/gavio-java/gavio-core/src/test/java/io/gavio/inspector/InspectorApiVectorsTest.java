@@ -35,9 +35,13 @@ class InspectorApiVectorsTest {
 
     /** Walk up from the working dir to find the repo's test-vectors directory. */
     private static Path vectorsFile() {
+        return vectorsFile("api-cases.json");
+    }
+
+    private static Path vectorsFile(String name) {
         Path dir = Path.of("").toAbsolutePath();
         while (dir != null) {
-            Path candidate = dir.resolve("test-vectors/inspector/api-cases.json");
+            Path candidate = dir.resolve("test-vectors/inspector/" + name);
             if (Files.isRegularFile(candidate)) {
                 return candidate;
             }
@@ -50,6 +54,14 @@ class InspectorApiVectorsTest {
         return Json.parseObject(Files.readString(vectorsFile()));
     }
 
+    private static double number(Map<String, Object> map, String key) {
+        return ((Number) map.get(key)).doubleValue();
+    }
+
+    private static Map<String, Object> costVectors() throws IOException {
+        return Json.parseObject(Files.readString(vectorsFile("cost-report.json")));
+    }
+
     @SuppressWarnings("unchecked")
     static Stream<Map<String, Object>> dagCases() throws IOException {
         return ((List<Object>) vectors().get("dagCases")).stream()
@@ -59,6 +71,12 @@ class InspectorApiVectorsTest {
     @SuppressWarnings("unchecked")
     static Stream<Map<String, Object>> replayGatingCases() throws IOException {
         return ((List<Object>) vectors().get("replayGating")).stream()
+                .map(c -> (Map<String, Object>) c);
+    }
+
+    @SuppressWarnings("unchecked")
+    static Stream<Map<String, Object>> costReportCases() throws IOException {
+        return ((List<Object>) costVectors().get("cases")).stream()
                 .map(c -> (Map<String, Object>) c);
     }
 
@@ -99,6 +117,48 @@ class InspectorApiVectorsTest {
             double got = ((Number) subtree.get(entry.getKey())).doubleValue();
             assertEquals(want, got, 1e-8, entry.getKey());
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("costReportCases")
+    void costReportVectors(Map<String, Object> costCase) {
+        List<Map<String, Object>> summaries =
+                (List<Map<String, Object>>) (List<?>) costCase.get("summaries");
+        Map<String, Object> report = InspectorAnalytics.buildCostReport(
+                summaries, (String) costCase.get("groupBy"), null);
+        Map<String, Object> expected = (Map<String, Object>) costCase.get("expected");
+        Map<String, Object> total = (Map<String, Object>) report.get("total");
+        Map<String, Object> expectedTotal = (Map<String, Object>) expected.get("total");
+        assertEquals(number(expectedTotal, "requests"), number(total, "requests"), 1e-8);
+        assertEquals(number(expectedTotal, "errors"), number(total, "errors"), 1e-8);
+        assertEquals(expectedTotal.get("tokens"), total.get("tokens"));
+        assertEquals(number(expectedTotal, "costUsd"), number(total, "costUsd"), 1e-8);
+        assertEquals(number(expectedTotal, "averageCostUsd"), number(total, "averageCostUsd"), 1e-8);
+        assertEquals(number(expectedTotal, "cacheHits"), number(total, "cacheHits"), 1e-8);
+        assertEquals(number(expectedTotal, "retryCount"), number(total, "retryCount"), 1e-8);
+        assertEquals(number(expectedTotal, "retryOverheadUsd"), number(total, "retryOverheadUsd"), 1e-8);
+        assertEquals(number(expectedTotal, "cacheSavingsUsd"), number(total, "cacheSavingsUsd"), 1e-8);
+
+        Map<String, Object> groups = (Map<String, Object>) report.get("groups");
+        Map<String, Object> expectedGroups = (Map<String, Object>) expected.get("groups");
+        for (Map.Entry<String, Object> entry : expectedGroups.entrySet()) {
+            Map<String, Object> got = (Map<String, Object>) groups.get(entry.getKey());
+            Map<String, Object> want = (Map<String, Object>) entry.getValue();
+            assertEquals(number(want, "requests"), number(got, "requests"), 1e-8);
+            assertEquals(number(want, "costUsd"), number(got, "costUsd"), 1e-8);
+            if (want.containsKey("cacheHits")) {
+                assertEquals(number(want, "cacheHits"), number(got, "cacheHits"), 1e-8);
+            }
+            if (want.containsKey("errors")) {
+                assertEquals(number(want, "errors"), number(got, "errors"), 1e-8);
+            }
+        }
+
+        Map<String, Object> topSpend = (Map<String, Object>) report.get("topSpend");
+        Map<String, Object> expectedTopSpend = (Map<String, Object>) expected.get("topSpend");
+        assertEquals(expectedTopSpend.get("tenant"), ((List<?>) topSpend.get("tenant")).subList(0, 2));
+        assertEquals(expectedTopSpend.get("feature"), ((List<?>) topSpend.get("feature")).subList(0, 2));
     }
 
     @ParameterizedTest(name = "mode={0}")
