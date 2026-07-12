@@ -1,6 +1,6 @@
 {
   "name": "gavio",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "The open standard AI gateway for production systems — PII guarding, audit, reliability, and cost tracking.",
   "license": "MIT",
   "repository": {

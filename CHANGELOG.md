@@ -11,6 +11,20 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [0.12.0] — 2026-07-12
+
+### Summary
+**Policy Pack architecture.** Core PII and FinTech scanners now ship as
+first-class policy packs across **Python, Java, and JavaScript**, with manifest
+metadata and custom regex-rule packs for organization-specific detectors.
+Feature IDs `F-PACK-01`, `F-PACK-02`, and `F-PACK-05`. Feature PR #52.
+
+Tests: Python 236 · JavaScript 250 · Java modules green.
+
 ### Added
 - **Policy Pack architecture (all SDKs, `F-PACK-01/02/05`)** — new
   `PolicyPack` manifest API exposes detector metadata, default action,
@@ -19,7 +33,7 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   existing scanner factory APIs, and custom organization regex-rule packs can
   define entity type, pattern, confidence, replacement prefix, action and
   redaction strategy. Shared contract:
-  `test-vectors/policy-packs/manifest.json`. PR #51.
+  `test-vectors/policy-packs/manifest.json`. PR #52 (#51).
 
 ---
 
@@ -704,7 +718,8 @@ Stable release. API stability guarantee. Full documentation. LTS designation.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/manojmallick/gavio/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/manojmallick/gavio/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/manojmallick/gavio/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/manojmallick/gavio/compare/v0.8.0...v0.9.0
