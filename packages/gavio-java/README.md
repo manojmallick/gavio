@@ -22,22 +22,22 @@ Multi-artifact Maven layout — depend only on what you need. `gavio-core` has
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>2.3.0</version>
+  <version>2.4.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>2.3.0</version>
+  <version>2.4.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>2.3.0</version>
+  <version>2.4.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-reliability</artifactId>
-  <version>2.3.0</version>
+  <version>2.4.0</version>
 </dependency>
 ```
 
@@ -229,7 +229,7 @@ import io.gavio.trust.ProductionTrustVerification;
 
 Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
     .generatedAt("2026-07-12T12:00:00Z")
-    .release("2.3.0", "v2.3.0", commit)
+    .release("2.4.0", "v2.4.0", commit)
     .runtime("production", "project:prod-support", true, "metadata_only")
     .auditChain(recordCount, chainOk, headHash, tailHash)
     .build();
@@ -271,6 +271,9 @@ Java v2.2.0 adds Prompt Registry v2 manifests with signed file loading,
 semantic-version selectors, approval metadata, and metadata-safe diffs
 (`F-EVAL-04`).
 
+Java v2.4.0 adds prompt-to-eval links, per-version regression gates, failure
+triage metadata, and prompt release bundles (`F-EVAL-05`).
+
 ## What's inside
 
 Every feature is an interceptor you compose explicitly — no hidden magic.
@@ -298,7 +301,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   `StdoutSink`.
 - **Prompt Registry + Evals** — `PromptRegistry`, `PromptTemplate`, and
   `EvalSuite` in `io.gavio.prompts`, plus signed manifests, semantic-version
-  selectors, approvals, and metadata-safe prompt diffs (`F-EVAL-01/02/04`).
+  selectors, approvals, metadata-safe prompt diffs, prompt-to-eval links,
+  triage metadata, and prompt release bundles (`F-EVAL-01/02/04/05`).
 - **Runtime export** — metadata-safe JSONL runtime events (`F-EXP-01`) and
   OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
   eval integrations.
@@ -333,7 +337,7 @@ mvn test              # JUnit 5 suite, all modules
 
 ## Module map
 
-All artifacts share the `io.github.manojmallick` group id and version `2.3.0`.
+All artifacts share the `io.github.manojmallick` group id and version `2.4.0`.
 
 | Artifact | Contains |
 |---|---|

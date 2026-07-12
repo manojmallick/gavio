@@ -125,7 +125,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install "gavio[yaml]>=2.3.0"
+      - run: pip install "gavio[yaml]>=2.4.0"
       - run: mkdir -p reports
       - run: |
           gavio eval run examples/python/21-eval-ci-gate/suite.yaml \

@@ -31,19 +31,19 @@ pull only what you need.
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>2.3.0</version>
+  <version>2.4.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>2.3.0</version>
+  <version>2.4.0</version>
 </dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 ```kotlin
-implementation("io.github.manojmallick:gavio-core:2.3.0")
-implementation("io.github.manojmallick:gavio-interceptor-pii:2.3.0")
+implementation("io.github.manojmallick:gavio-core:2.4.0")
+implementation("io.github.manojmallick:gavio-interceptor-pii:2.4.0")
 ```
 
 > The Maven **groupId** is `io.github.manojmallick`; the Java **package** in
@@ -342,7 +342,7 @@ import io.gavio.trust.ProductionTrustVerification;
 
 Map<String, Object> bundle = ProductionTrust.builder("trust-prod-support-2026-07-12")
     .generatedAt("2026-07-12T12:00:00Z")
-    .release("2.3.0", "v2.3.0", commit)
+    .release("2.4.0", "v2.4.0", commit)
     .runtime("production", "project:prod-support", true, "metadata_only")
     .auditChain(recordCount, chainOk, headHash, tailHash)
     .build();
@@ -378,6 +378,9 @@ EvalReport report = new EvalSuite("support-smoke", List.of(new EvalCase(
     List.of(new EvalAssertion("contains", "refund", false)),
     Map.of()))).run(registry, (prompt, testCase) -> "Avery refund approved");
 ```
+
+Java v2.4.0 adds prompt-to-eval links, per-version regression gates, failure
+triage metadata, and prompt release bundles for release evidence.
 
 ## Embeddings
 

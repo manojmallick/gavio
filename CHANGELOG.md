@@ -15,6 +15,39 @@ Nothing yet.
 
 ---
 
+## [2.4.0] — 2026-07-12
+
+### Summary
+**Eval + Prompt Workflow.** v2.4.0 links prompt registry versions to the eval
+suites that gate them. The workflow records prompt-to-eval links, enforces
+per-version regression gates, adds failure triage metadata without storing raw
+prompt or output text, and builds prompt release bundles for release evidence.
+Feature ID `F-EVAL-05`. Feature PR #91 (#90).
+
+Tests: Python 310 · JavaScript typecheck/build/308 tests green · Java modules
+green · control-plane app green · docs build green · stable release gate green ·
+eval CI example green. Inspector benchmarks were not rerun locally because this
+release changes prompt/eval workflow metadata and examples, not Inspector
+runtime overhead.
+
+### Added
+- **Eval + Prompt Workflow (all SDKs, `F-EVAL-05`)** — added prompt/eval link
+  contracts, per-prompt-version regression gates, metadata-safe failure triage,
+  prompt release bundles, shared workflow vectors, and SDK helpers for release
+  tooling.
+- **Eval runner workflow integration (Python)** — `gavio eval run` now
+  discovers prompt/eval links from suite and template metadata, fails linked
+  prompt gates, and includes workflow, gate, and triage metadata in JSON/JUnit
+  reports.
+
+### Changed
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, package/runtime versions, and
+  prompt/eval workflow docs to the `2.4.0` release line while keeping
+  historical feature "since" labels intact.
+
+---
+
 ## [2.3.0] — 2026-07-12
 
 ### Summary
@@ -1286,7 +1319,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/manojmallick/gavio/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/manojmallick/gavio/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/manojmallick/gavio/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/manojmallick/gavio/compare/v2.0.0...v2.1.0

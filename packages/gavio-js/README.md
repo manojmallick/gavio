@@ -215,7 +215,7 @@ import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
 const bundle = buildProductionTrustBundle({
   bundleId: 'trust-prod-support-2026-07-12',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '2.3.0', tag: 'v2.3.0' },
+  release: { version: '2.4.0', tag: 'v2.4.0' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',
@@ -267,6 +267,9 @@ JavaScript v2.2.0 adds Prompt Registry v2 manifests with signed file loading,
 semantic-version selectors, approval metadata, and metadata-safe diffs
 (`F-EVAL-04`).
 
+JavaScript v2.4.0 adds prompt-to-eval links, per-version regression gates,
+failure triage metadata, and prompt release bundles (`F-EVAL-05`).
+
 ## What's inside
 
 Every feature is an interceptor you compose explicitly — no hidden magic.
@@ -293,7 +296,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
   (`F-OBS-04`), Prometheus metrics (`F-OBS-08`), stdout sink.
 - **Prompt Registry + Evals** — `PromptRegistry`, `PromptTemplate`, and
   `EvalSuite` via `gavio/prompts`, plus signed manifests, semantic-version
-  selectors, approvals, and metadata-safe prompt diffs (`F-EVAL-01/02/04`).
+  selectors, approvals, metadata-safe prompt diffs, prompt-to-eval links,
+  triage metadata, and prompt release bundles (`F-EVAL-01/02/04/05`).
 - **Runtime export** — metadata-safe JSONL runtime events (`F-EXP-01`) and
   OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
   eval integrations.

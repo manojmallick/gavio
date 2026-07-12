@@ -220,7 +220,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "2.3.0", "tag": "v2.3.0"},
+    release={"version": "2.4.0", "tag": "v2.4.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",
@@ -272,6 +272,9 @@ Python v2.2.0 adds Prompt Registry v2 manifests with signed file loading,
 semantic-version selectors, approval metadata, and metadata-safe diffs
 (`F-EVAL-04`).
 
+Python v2.4.0 adds prompt-to-eval links, per-version regression gates, failure
+triage metadata, and prompt release bundles (`F-EVAL-05`).
+
 Python v2.1.0 also adds `gavio eval run` for CI gates over JSON/YAML suites:
 
 ```bash
@@ -310,7 +313,8 @@ Every feature is an interceptor you compose explicitly — no hidden magic.
 - **Prompt Registry + Evals** — versioned templates, lineage-preserving render,
   deterministic eval cases, privacy-safe output hashes, `gavio eval run` CI
   gates, signed manifests, semantic-version selectors, approvals, and
-  metadata-safe prompt diffs (`F-EVAL-01/02/03/04`).
+  metadata-safe prompt diffs, prompt-to-eval links, triage metadata, and prompt
+  release bundles (`F-EVAL-01/02/03/04/05`).
 - **Runtime export** — metadata-safe JSONL runtime events (`F-EXP-01`) and
   OpenTelemetry-style span JSON (`F-OBS-07`) for gateway, observability, and
   eval integrations.

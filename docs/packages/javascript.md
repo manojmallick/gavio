@@ -373,7 +373,7 @@ import { buildProductionTrustBundle, verifyProductionTrustBundle } from 'gavio'
 const bundle = buildProductionTrustBundle({
   bundleId: 'trust-prod-support-2026-07-12',
   generatedAt: '2026-07-12T12:00:00Z',
-  release: { version: '2.3.0', tag: 'v2.3.0' },
+  release: { version: '2.4.0', tag: 'v2.4.0' },
   runtime: {
     environment: 'production',
     policySource: 'project:prod-support',
@@ -422,6 +422,9 @@ const suite = new EvalSuite({
 const report = await suite.run(registry, () => 'Avery refund approved')
 console.log(report.score)
 ```
+
+JavaScript v2.4.0 adds prompt-to-eval links, per-version regression gates,
+failure triage metadata, and prompt release bundles for release evidence.
 
 See [Prompt Registry + Evals](../prompt-registry-evals.md) for all SDKs and the
 shared schemas.
