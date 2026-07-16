@@ -51,7 +51,7 @@ release date: 2026-07-12 through 2028-07-12.
 Before any stable tag is published, maintainers must run:
 
 ```bash
-python3 scripts/stable_release_gate.py --version 2.4.0
+python3 scripts/stable_release_gate.py --version 3.1.0
 ```
 
 The release workflow runs the same gate with the tag name:

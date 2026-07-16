@@ -311,6 +311,133 @@ test('stores platform workflow releases with sanitized metadata', async () => {
   assert.deepEqual(listed.items[0].metadata, { owner: 'platform', nested: { ticket: 'REL-300' } })
 })
 
+test('serves control-plane UX v2 assets', async () => {
+  const html = await getText('/')
+  const app = await getText('/app.js')
+  const css = await getText('/styles.css')
+
+  assert.match(html, /Control Plane/)
+  assert.match(html, /\/app\.js/)
+  assert.match(app, /workflow-releases\/import/)
+  assert.match(css, /\.shell/)
+})
+
+test('overview summarizes resources without content-bearing metadata', async () => {
+  await post('/api/events', {
+    id: 'evt_overview_001',
+    kind: 'runtime.event',
+    traceId: 'trace-overview-001',
+    tenant: 'acme',
+    feature: 'control-plane',
+    model: 'gpt-4o-mini',
+    provider: 'openai',
+    risk: 'medium',
+    policySource: 'project:overview',
+    metadata: {
+      decision: { action: 'allow' },
+      content: 'raw overview prompt must not persist',
+      nested: { messages: [{ role: 'user', content: 'raw overview message' }], ticket: 'OV-31' },
+    },
+  })
+
+  const overview = await get('/api/overview')
+  const serialized = JSON.stringify(overview)
+  assert.equal(overview.schemaVersion, 'gavio.control-plane-overview.v1')
+  assert.ok(overview.counts.events >= 1)
+  assert.ok(Array.isArray(overview.activeRollouts))
+  assert.ok(Array.isArray(overview.latestWorkflowReleases))
+  assert.ok(serialized.includes('OV-31'))
+  assert.ok(!serialized.includes('raw overview prompt'))
+  assert.ok(!serialized.includes('raw overview message'))
+})
+
+test('demo seed is opt-in and creates usable metadata-safe records', async () => {
+  const disabled = await fetch(`${base}/api/demo/seed`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{}',
+  })
+  assert.equal(disabled.status, 403)
+
+  const dir = mkdtempSync(join(tmpdir(), 'gavio-control-plane-demo-'))
+  const demo = await startControlPlane({ port: 0, statePath: join(dir, 'state.json'), demo: true })
+  try {
+    const seeded = await post('/api/demo/seed', {}, {}, demo.url)
+    assert.equal(seeded.schemaVersion, 'gavio.control-plane-demo.v1')
+    assert.match(seeded.runtimeToken, /^gav_rt_/)
+    assert.equal(seeded.items.runtimeKey.token, undefined)
+
+    const overview = await get('/api/overview', {}, demo.url)
+    const serialized = JSON.stringify(overview)
+    assert.equal(overview.demoEnabled, true)
+    assert.equal(overview.counts.projects, 1)
+    assert.equal(overview.counts.workflowReleases, 1)
+    assert.ok(!serialized.includes('demo prompt content'))
+    assert.ok(!serialized.includes('demo release metadata'))
+
+    const config = await get(
+      `/api/runtime/config?policy_source=${encodeURIComponent(seeded.policySource)}`,
+      { authorization: `Bearer ${seeded.runtimeToken}` },
+      demo.url,
+    )
+    assert.equal(config.projectId, seeded.items.project.id)
+    assert.equal(config.policy.id, seeded.items.policy.id)
+  } finally {
+    await closeServer(demo.server)
+  }
+})
+
+test('imports canonical workflow releases with filters and sanitized metadata', async () => {
+  const imported = await post('/api/workflow-releases/import', {
+    schemaVersion: 'gavio.platform-workflow-release.v1',
+    workflowId: 'support-imported-release',
+    generatedAt: '2026-07-16T12:00:00.000Z',
+    release: { version: '3.1.0', tag: 'v3.1.0', commit: 'abc1234' },
+    passed: false,
+    reasons: ['eval:blocked'],
+    prompts: { releaseBundles: [{ bundleId: 'support.reply', passed: true }] },
+    evals: [{ suite: 'suite.json', passed: false }],
+    policies: [{ id: 'core-policy', signatureValid: true }],
+    trust: { valid: true, runtime: { policySource: 'project:imported-support' } },
+    runtimeProfile: {
+      profileId: 'platform-imported-support',
+      valid: true,
+      readiness: { ready: false },
+    },
+    metadata: {
+      owner: 'platform',
+      content: 'raw imported release note must not persist',
+      nested: { diff: 'raw release diff', ticket: 'REL-31' },
+    },
+    workflowHash: 'sha256:imported31',
+  })
+
+  assert.equal(imported.workflowId, 'support-imported-release')
+  assert.match(imported.id, /^workflow_/)
+  assert.equal(imported.releaseVersion, '3.1.0')
+  assert.equal(imported.status, 'blocked')
+  assert.equal(imported.policySource, 'project:imported-support')
+  assert.equal(imported.profileId, 'platform-imported-support')
+  assert.deepEqual(imported.metadata, {
+    owner: 'platform',
+    nested: { ticket: 'REL-31' },
+    importedSchemaVersion: 'gavio.platform-workflow-release.v1',
+  })
+
+  const listed = await get('/api/workflow-releases?policySource=project:imported-support&releaseVersion=3.1.0&status=blocked')
+  const serialized = JSON.stringify(listed)
+  assert.equal(listed.items.length, 1)
+  assert.ok(!serialized.includes('raw imported release note'))
+  assert.ok(!serialized.includes('raw release diff'))
+
+  const invalid = await fetch(`${base}/api/workflow-releases/import`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ schemaVersion: 'wrong' }),
+  })
+  assert.equal(invalid.status, 400)
+})
+
 test('sqlite storage migrates and persists control-plane records across restarts', { skip: !hasNodeSqlite }, async () => {
   const dir = mkdtempSync(join(tmpdir(), 'gavio-control-plane-sqlite-'))
   const sqlitePath = join(dir, 'control-plane.sqlite')

@@ -15,6 +15,44 @@ Nothing yet.
 
 ---
 
+## [3.1.0] — 2026-07-16
+
+### Summary
+**Control Plane UX v2.** v3.1.0 turns the self-hosted Control Plane from a
+basic dashboard into a richer local/private admin experience. The release adds
+a no-build UI for overview, projects/environments, keys, policies/rollouts,
+budgets, runtime events, audit records, workflow releases, enterprise admin,
+and retention views; adds metadata-safe overview, demo-seed, and workflow
+release import APIs; and refreshes the control-plane docs/examples to show the
+path from local startup to usable runtime config. Feature ID `F-CP-02`. Feature
+PR #102 (#101).
+
+Tests: control-plane app green · docs build green · stable release gate green ·
+browser smoke check green. Inspector benchmarks were not rerun locally because
+this release changes the self-hosted Control Plane UI/API/docs, not Inspector
+runtime overhead.
+
+### Added
+- **Control Plane UX v2 (`F-CP-02`)** — added a richer self-hosted UI with
+  overview, projects/environments, keys, policies/rollouts, budgets, runtime
+  events, audit records, workflow releases, enterprise admin, and retention
+  views.
+- **Control Plane overview/demo/import APIs** — added `/api/overview`,
+  opt-in local demo seeding through `/api/demo/seed`, canonical
+  `/api/workflow-releases/import`, and status/release-version filters while
+  preserving metadata-only storage.
+
+### Changed
+- **Control Plane docs/examples** — refreshed the app README, control-plane
+  guides, and SDK example READMEs with the v3.1.0 path from local server start
+  to usable runtime config.
+- **Current-version docs** — refreshed install snippets, examples, package
+  docs, docs-site nav, stable gate fixtures, package/runtime versions, and
+  release docs to the `3.1.0` release line while keeping historical feature
+  "since" labels intact.
+
+---
+
 ## [3.0.0] — 2026-07-12
 
 ### Summary
@@ -1456,7 +1494,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/manojmallick/gavio/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/manojmallick/gavio/compare/v2.7.0...v3.0.0
 [2.7.0]: https://github.com/manojmallick/gavio/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/manojmallick/gavio/compare/v2.5.0...v2.6.0

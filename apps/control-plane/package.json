@@ -1,6 +1,6 @@
 {
   "name": "@gavio/control-plane",
-  "version": "1.7.0",
+  "version": "3.1.0",
   "private": true,
   "description": "Self-hosted Gavio control plane for local and private deployments.",
   "type": "module",

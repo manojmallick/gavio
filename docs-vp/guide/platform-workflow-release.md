@@ -24,7 +24,7 @@ for triage.
 {
   "schemaVersion": "gavio.platform-workflow.v1",
   "workflowId": "support-platform-release",
-  "release": { "version": "3.0.0", "tag": "v3.0.0", "commit": "abc1234" },
+  "release": { "version": "3.1.0", "tag": "v3.1.0", "commit": "abc1234" },
   "prompts": {
     "manifest": "prompts.json",
     "promptId": "support.reply",

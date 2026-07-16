@@ -925,6 +925,10 @@ function searchRecords(records, filters) {
     if (!matches(record.provider, filters.provider)) return false
     if (!matches(record.risk, filters.risk)) return false
     if (!matches(record.policySource, filters.policySource ?? filters.policy_source)) return false
+    if (!matches(record.status, filters.status)) return false
+    if (!matches(record.releaseVersion, filters.releaseVersion ?? filters.release_version ?? filters.version)) return false
+    if (!matches(record.resource, filters.resource)) return false
+    if (!matches(record.resourceId, filters.resourceId ?? filters.resource_id)) return false
     if (start !== null && Date.parse(record.createdAt) < start) return false
     if (end !== null && Date.parse(record.createdAt) > end) return false
     return true
