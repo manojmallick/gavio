@@ -46,7 +46,7 @@ features:
 ```bash
 pip install gavio            # Python 3.10+
 npm install gavio            # Node 18+
-# Maven: io.github.manojmallick:gavio-core:3.0.0  (Java 17+)
+# Maven: io.github.manojmallick:gavio-core:3.1.0  (Java 17+)
 ```
 
 ## 30-second taste (Python, dev mode — no key)

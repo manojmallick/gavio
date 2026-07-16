@@ -9,6 +9,6 @@
     "start:cjs": "node quickstart.cjs"
   },
   "dependencies": {
-    "gavio": "^3.0.0"
+    "gavio": "^3.1.0"
   }
 }

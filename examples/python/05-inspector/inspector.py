@@ -4,7 +4,7 @@ Dev mode + inspect(True) serves the Inspector at http://127.0.0.1:7411 while a
 small orchestrator → researcher/writer flow runs through the gateway. No API
 key, no network beyond localhost.
 
-    pip install "gavio>=3.0.0"
+    pip install "gavio>=3.1.0"
     python inspector.py
 """
 

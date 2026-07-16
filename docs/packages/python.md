@@ -401,7 +401,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "3.0.0", "tag": "v3.0.0"},
+    release={"version": "3.1.0", "tag": "v3.1.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",
