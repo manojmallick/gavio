@@ -1,6 +1,6 @@
 # Self-hosted Control Plane
 
-Since: `1.7.0`; durable persistence since `2.3.0`; Enterprise Admin v2 since `2.6.0`
+Since: `1.7.0`; durable persistence since `2.3.0`; Enterprise Admin v2 since `2.6.0`; UX v2 since `3.1.0`
 
 The Gavio control plane is optional and self-hosted. It manages runtime
 projects, environments, hashed runtime keys, policy rollout, budgets, audit
@@ -9,7 +9,9 @@ light. v2.3.0 adds storage adapters for the control-plane app: the default JSON
 file store, migration-backed SQLite for durable local/private deployments, and
 a Postgres adapter path for managed database deployments. v2.6.0 adds
 Enterprise Admin v2 for OIDC/SAML-lite identity-provider metadata, scoped admin
-API keys, rollout approvals, audit export, and retention controls.
+API keys, rollout approvals, audit export, and retention controls. v3.1.0 adds
+the Control Plane UX v2 admin UI, `/api/overview`, opt-in demo seeding, and
+canonical Platform Workflow Release import.
 
 ## Local server
 
@@ -18,8 +20,34 @@ cd apps/control-plane
 npm start
 ```
 
-The local API listens on `http://127.0.0.1:8787` by default and stores state in
-`.gavio-control-plane/state.json`.
+The local API and UI listen on `http://127.0.0.1:8787` by default and store
+state in `.gavio-control-plane/state.json`.
+
+The UI includes views for overview, projects/environments, runtime keys,
+policies/rollouts, budgets, runtime events, audit records, workflow releases,
+enterprise admin, and retention policies. It uses the same API as automation,
+so records created in the UI are available to SDK runtime config calls.
+
+## Demo mode
+
+Demo seeding is disabled unless explicitly enabled:
+
+```bash
+cd apps/control-plane
+GAVIO_CONTROL_PLANE_DEMO=1 npm start
+```
+
+Use the UI `Seed demo` action or call:
+
+```bash
+curl -s -X POST http://127.0.0.1:8787/api/demo/seed \
+  -H 'content-type: application/json' \
+  -d '{}'
+```
+
+The response includes a one-time `gav_rt_...` key and a `policySource` that can
+be passed directly into the SDK examples. Demo records strip content-bearing
+fields before storage and are intended for local/private use only.
 
 ## Storage
 
@@ -105,6 +133,7 @@ Gateway gateway = Gateway.builder()
 
 | Resource | Purpose |
 |---|---|
+| `/api/overview` | Counts, recent events/audit, active rollouts, latest workflow releases |
 | `/api/projects` | Runtime project scopes |
 | `/api/environments` | Environment scopes such as `dev`, `staging`, `prod` |
 | `/api/keys` | Runtime keys; plaintext is returned once, hashes are stored |
@@ -122,6 +151,29 @@ Gateway gateway = Gateway.builder()
 | `/api/config-snapshots` | Point-in-time runtime config snapshots |
 | `/api/retention-policies` | Retention windows for events, audit records, and config snapshots |
 | `/api/retention/apply` | Dry-run or apply active retention policies |
+| `/api/workflow-releases` | Searchable Platform Workflow Release records |
+| `/api/workflow-releases/import` | Canonical metadata-only Platform Workflow Release import |
+| `/api/demo/seed` | Local-only demo records when `GAVIO_CONTROL_PLANE_DEMO=1` |
+
+Search filters include trace id, tenant, feature, model, provider, risk,
+policy source, release version, status, resource, and resource id where those
+fields apply.
+
+## Workflow releases
+
+Platform Workflow Release artifacts from `gavio workflow release` can be stored
+directly or imported through the canonical endpoint:
+
+```bash
+curl -s -X POST http://127.0.0.1:8787/api/workflow-releases/import \
+  -H 'content-type: application/json' \
+  -d @workflow-release.json
+```
+
+The import requires `schemaVersion:
+gavio.platform-workflow-release.v1` and maps `workflowId`, release version,
+status, reasons, policy source, runtime profile, workflow hash, and evidence
+counts into a control-plane record. Metadata is sanitized before persistence.
 
 ## Enterprise Admin v2
 
@@ -225,8 +277,9 @@ self-hosted development and private deployments.
 
 ## Privacy
 
-The control plane strips content-bearing fields before storing events and audit
-records. By default it keeps metadata such as trace, tenant, feature, model,
-provider, risk, policy decision, cost, and timing, not raw prompts or responses.
-Enterprise Admin v2 applies the same metadata-only posture to approval metadata
-and audit exports.
+The control plane strips content-bearing fields before storing events, audit
+records, approvals, and workflow releases. By default it keeps metadata such as
+trace, tenant, feature, model, provider, risk, policy decision, cost, timing,
+release status, and workflow hash, not raw prompts or responses. Enterprise
+Admin v2 applies the same metadata-only posture to approval metadata and audit
+exports.

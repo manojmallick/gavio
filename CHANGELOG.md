@@ -11,7 +11,20 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Control Plane UX v2 (`F-CP-02`)** — added a richer self-hosted UI with
+  overview, projects/environments, keys, policies/rollouts, budgets, runtime
+  events, audit records, workflow releases, enterprise admin, and retention
+  views.
+- **Control Plane overview/demo/import APIs** — added `/api/overview`,
+  opt-in local demo seeding through `/api/demo/seed`, canonical
+  `/api/workflow-releases/import`, and status/release-version filters while
+  preserving metadata-only storage.
+
+### Changed
+- **Control Plane docs/examples** — refreshed the app README, control-plane
+  guides, and SDK example READMEs with the v3.1.0 path from local server start
+  to usable runtime config.
 
 ---
 

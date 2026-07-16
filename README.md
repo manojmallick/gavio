@@ -44,7 +44,7 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Audit by default** — every call logged as metadata + SHA-256 content hashes (never raw text).
 - **Runtime event export** — metadata-safe JSONL events for integrations with gateways, observability, and eval workflows.
 - **Ecosystem integrations** — compatibility matrix, dependency-light metadata helpers, adapter payloads, generated conformance evidence, and sample production apps for LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, Vercel AI SDK, and related stack tools.
-- **Self-hosted Control Plane** — optional local/private server for runtime config, policy rollout, budget config, audit search, and cached SDK fallback.
+- **Self-hosted Control Plane** — optional local/private server and admin UI for runtime config, policy rollout, budget config, audit search, workflow releases, and cached SDK fallback.
 - **Production Trust Package** — metadata-only release evidence bundles that verify audit-chain, runtime-event, policy, benchmark, and document evidence.
 - **Platform Runtime Profile** — metadata-only readiness score and gap report for platform-grade production runtime posture.
 - **Platform Workflow Release** — one metadata-only release artifact for prompts, evals, policy packs, trust bundles, and runtime profiles.
@@ -89,6 +89,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `2.6.0` | Enterprise Admin v2 | OIDC/SAML-lite metadata, scoped admin keys, rollout approvals, audit export, and retention controls |
 | `2.7.0` | Ecosystem Trust Package | Integration conformance vectors, generated compatibility matrix, offline sample production apps, and cross-SDK trust checks |
 | `3.0.0` | Platform Workflow Release | Unified prompt, eval, policy, trust, and runtime-profile release artifacts with CLI and control-plane storage |
+| `3.1.0` | Control Plane UX v2 | Self-hosted admin UI, overview endpoint, opt-in demo seed, workflow release import, and richer filters |
 
 ---
 
@@ -149,7 +150,7 @@ pipeline in reverse order:
 - **Domain-aware Policy Packs** — signed catalog manifests for core, finance, healthcare, legal, HR, support, code security, and regional identifiers, plus custom regex-rule packs with overrides and false-positive suppression.
 - **Tool Runtime** — validate tool inputs/outputs, freshness, conflicts, permissions, approvals, replay records, and MCP provenance before tool results re-enter model context.
 - **Runtime context** — interceptors can now read first-class `tenant`, `feature`, `cost`, `retry`, `tools`, and `policy` fields derived from request metadata.
-- **Self-hosted Control Plane** — runtime projects, environments, hashed keys, policy rollout, budget config, audit/event search, config snapshots, v2.3.0 durable SQLite/Postgres storage, and v2.6.0 Enterprise Admin v2 controls for local/private deployments.
+- **Self-hosted Control Plane** — runtime projects, environments, hashed keys, policy rollout, budget config, audit/event search, workflow release import, config snapshots, v2.3.0 durable SQLite/Postgres storage, v2.6.0 Enterprise Admin v2 controls, and v3.1.0 UX v2 for local/private deployments.
 - **Production Trust Package** — build and verify metadata-only evidence bundles for release reviews, threat models, benchmarks, and production architecture signoff.
 - **Platform Runtime Profile** — compute metadata-only readiness scores and deterministic gaps across audit, runtime events, policies, costs, tools, and trust evidence.
 - **Platform Workflow Release** — produce reviewable release artifacts with prompt release bundles, eval gates, policy signatures, trust verification, and runtime-profile readiness.
@@ -265,7 +266,7 @@ compared side by side.
 | 08 | Runtime Export — metadata-safe runtime events and JSONL export | [py](./examples/python/08-runtime-export/) | [js](./examples/javascript/08-runtime-export/) | [java](./examples/java/08-runtime-export/) | no |
 | 09 | Prompt Registry + Evals — versioned templates and metadata-safe reports | [py](./examples/python/09-prompt-registry-evals/) | [js](./examples/javascript/09-prompt-registry-evals/) | [java](./examples/java/09-prompt-registry-evals/) | no |
 | 12 | Domain Policy Pack Catalog — signed packs, overrides, suppression | [py](./examples/python/12-domain-policy-packs/) | [js](./examples/javascript/12-domain-policy-packs/) | [java](./examples/java/12-domain-policy-packs/) | no |
-| 13 | Self-hosted Control Plane — runtime config, policy source, cached fallback | [py](./examples/python/13-control-plane/) | [js](./examples/javascript/13-control-plane/) | [java](./examples/java/13-control-plane/) | no |
+| 13 | Self-hosted Control Plane — UX v2, demo seed, runtime config, cached fallback | [py](./examples/python/13-control-plane/) | [js](./examples/javascript/13-control-plane/) | [java](./examples/java/13-control-plane/) | no |
 | 14 | Production Trust Package — metadata-only release evidence bundle and verifier | [py](./examples/python/14-production-trust/) | [js](./examples/javascript/14-production-trust/) | [java](./examples/java/14-production-trust/) | no |
 | 15 | Ecosystem integrations — compatibility matrix, metadata labels, adapter payloads, generated trust matrix, sample production apps | [py](./examples/integrations/) | — | — | no |
 | 20 | Platform Runtime Profile — metadata-only readiness profile and deterministic gaps | [py](./examples/python/20-platform-runtime/) | — | — | no |
@@ -427,6 +428,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Self-hosted Control Plane — runtime config, policy rollout, budget config, audit search, snapshots | — | 1.7.0 |
 | Control Plane Persistence — SQLite migrations, Postgres adapter path, durable runtime/admin records | `F-CP-01` | 2.3.0 |
 | Enterprise Admin v2 — OIDC/SAML-lite metadata, scoped admin keys, rollout approvals, audit export, retention controls | `F-ADMIN-02` | 2.6.0 |
+| Control Plane UX v2 — admin UI, overview, demo seed, workflow release import, richer filters | `F-CP-02` | 3.1.0 |
 | Production Trust Package — metadata-only release evidence bundle and verifier | `F-TRUST-01` | 1.8.0 |
 | Ecosystem integration catalog — compatibility matrix, metadata helpers, JS subpath, and offline recipes | `F-INT-01` | 1.9.0 |
 | Ecosystem adapter payloads — dependency-light payload fragments for LiteLLM, promptfoo, Langfuse, OpenLIT, LangChain, LangGraph, and Vercel AI SDK | `F-INT-02` | 2.5.0 |
@@ -470,7 +472,7 @@ the [interceptors guide](./docs/interceptors.md) for every built-in interceptor.
 | [docs/inspector.md](./docs/inspector.md) | The Inspector: dev visualizer, agent DAGs, replay, production dashboard |
 | [docs/runtime-events.md](./docs/runtime-events.md) | Runtime event/export contract and JSONL exporter |
 | [docs/prompt-registry-evals.md](./docs/prompt-registry-evals.md) | Prompt Registry templates and metadata-safe eval reports |
-| [docs/control-plane.md](./docs/control-plane.md) | Self-hosted Control Plane runtime config, policy rollout, budget config, and audit search |
+| [docs/control-plane.md](./docs/control-plane.md) | Self-hosted Control Plane UI, runtime config, policy rollout, budget config, workflow releases, and audit search |
 | [docs/trust-package.md](./docs/trust-package.md) | Production trust bundle threat model, privacy boundary, and SDK APIs |
 | [docs/integrations.md](./docs/integrations.md) | How Gavio fits beside gateway, observability, and eval tools |
 | [docs/platform-runtime.md](./docs/platform-runtime.md) | Platform runtime readiness profile, metadata-only posture checks, and SDK APIs |

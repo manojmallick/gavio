@@ -13,15 +13,30 @@ Defaults:
 - Storage: JSON file at `.gavio-control-plane/state.json`
 - Local admin role header: `x-gavio-role: owner`
 
-The default file store and SQLite mode use Node built-ins only; Postgres mode
-requires the optional `pg` driver. Runtime keys are returned once at creation
-time and stored as SHA-256 hashes. Events and audit records are metadata-first:
-content-bearing fields such as `messages`, `content`, and `diff` are stripped
-before persistence.
+The v3.1.0 app includes a dependency-light admin UI at `/` with views for
+overview, projects/environments, runtime keys, policies/rollouts, budgets,
+runtime events, audit records, workflow releases, enterprise admin, and
+retention policies.
 
-Enterprise Admin v2 adds OIDC/SAML-lite identity-provider metadata, scoped
-admin API keys, rollout approvals, audit export, and retention controls without
-adding external service dependencies.
+## Demo mode
+
+Demo seeding is disabled by default. Enable it only for local/private demos:
+
+```bash
+GAVIO_CONTROL_PLANE_DEMO=1 npm start
+```
+
+Then use the UI `Seed demo` action or call:
+
+```bash
+curl -s -X POST http://127.0.0.1:8787/api/demo/seed \
+  -H 'content-type: application/json' \
+  -d '{}'
+```
+
+The response returns a one-time `gav_rt_...` runtime key plus the matching
+`policySource`. Seeded records are metadata-only; content-bearing fields such
+as `messages`, `content`, and `diff` are stripped before persistence.
 
 ## Storage modes
 
@@ -45,12 +60,13 @@ npm start
 
 SQLite and Postgres use the same migration-backed record schema for projects,
 environments, runtime keys, policies, rollouts, budgets, runtime events, audit
-records, and config snapshots. `/health` reports the active storage mode.
+records, config snapshots, enterprise admin records, retention policies, and
+workflow releases. `/health` reports the active storage mode.
 
-## Runtime Config
+## Runtime config
 
-Create a project, environment, policy, budget, runtime key, and rollout, then
-load config from an SDK using:
+Create a project, environment, policy, budget, runtime key, and rollout in the
+UI or API, then load config from an SDK using:
 
 ```text
 GET /api/runtime/config?policy_source=project:prod-support
@@ -60,7 +76,26 @@ Authorization: Bearer gav_rt_...
 The response matches `spec/ControlPlaneRuntimeConfig.schema.json` and can be
 cached by SDK clients for offline fail-open or fail-closed behavior.
 
-## Enterprise Admin v2
+## Workflow releases
+
+Platform Workflow Release artifacts from `gavio workflow release` can be stored
+directly or imported through the canonical import endpoint:
+
+```bash
+curl -s -X POST http://127.0.0.1:8787/api/workflow-releases/import \
+  -H 'content-type: application/json' \
+  -d @workflow-release.json
+```
+
+The import maps `workflowId`, release version, status, policy source, runtime
+profile, hash, and evidence counts into a searchable control-plane record.
+Release metadata is sanitized before storage.
+
+## Enterprise admin
+
+Enterprise Admin v2 adds OIDC/SAML-lite identity-provider metadata, scoped
+admin API keys, rollout approvals, audit export, and retention controls without
+adding external service dependencies.
 
 Create scoped admin keys with `POST /api/admin-keys`. The plaintext
 `gav_admin_...` token is returned once, the stored record keeps only a prefix
