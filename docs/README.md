@@ -16,6 +16,7 @@ Start here, then dive into the language you use.
 - [Integrations](./integrations.md) — how Gavio fits beside gateways, observability, and eval tools
 - [Platform Runtime Profile](./platform-runtime.md) — metadata-only readiness score and production posture gaps
 - [Stability](./stability.md) — API stability, LTS policy, and stable release gate
+- [Learning Resources](./learning-resources.md) — external resources for staying current on developer news and tooling
 
 ## Per-package guides
 
