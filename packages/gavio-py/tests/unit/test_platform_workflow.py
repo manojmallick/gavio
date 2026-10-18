@@ -13,6 +13,9 @@ from gavio import (
 )
 from gavio.cli import main as cli_main
 from gavio.interceptors.pii import load_policy_pack
+from gavio.workflow import canonical_json
+
+_VECTORS = Path(__file__).resolve().parents[4] / "test-vectors" / "workflow" / "release.json"
 
 
 def _prompt_manifest() -> dict:
@@ -222,3 +225,97 @@ def test_platform_workflow_release_cli_fails_closed_unless_allowed(
 
     allowed = cli_main(["workflow", "release", str(manifest_path), "--allow-failures"])
     assert allowed == 0
+
+
+def _vectors() -> dict:
+    return json.loads(_VECTORS.read_text(encoding="utf-8"))
+
+
+def _strip_environment(artifact: dict) -> dict:
+    out = json.loads(json.dumps(artifact))
+    for item in out["evals"]:
+        item.pop("runner", None)
+        item.pop("source", None)
+    return out
+
+
+@pytest.mark.parametrize("case", _vectors()["canonicalJsonCases"], ids=lambda c: c["id"])
+def test_canonical_json_vectors(case: dict) -> None:
+    assert canonical_json(case["value"]) == case["expected"]
+
+
+@pytest.mark.parametrize("case", _vectors()["hashCases"], ids=lambda c: c["id"])
+def test_workflow_hash_vectors(case: dict) -> None:
+    assert platform_workflow_release_hash(case["artifact"]) == case["expectedHash"]
+
+
+@pytest.mark.parametrize("case", _vectors()["releaseCases"], ids=lambda c: c["id"])
+def test_workflow_release_vectors(case: dict, tmp_path: Path) -> None:
+    for relative, document in case["files"].items():
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(document), encoding="utf-8")
+    manifest_path = tmp_path / "workflow.json"
+    manifest_path.write_text(json.dumps(case["manifest"]), encoding="utf-8")
+
+    result = run_platform_workflow_release_file(manifest_path)
+
+    expected = case["expected"]
+    assert result.passed is expected["passed"]
+    assert list(result.reasons) == expected["reasons"]
+    artifact = _strip_environment(result.artifact)
+    assert canonical_json(artifact) == canonical_json(expected["artifact"])
+    assert artifact["workflowHash"] == platform_workflow_release_hash(result.artifact)
+    serialized = json.dumps(result.artifact, ensure_ascii=False)
+    for forbidden in case["forbiddenStrings"]:
+        assert forbidden not in serialized
+
+
+def test_workflow_hash_ignores_environment_fields(tmp_path: Path) -> None:
+    result = run_platform_workflow_release_file(_write_minimal_suite_workflow(tmp_path))
+    artifact = result.artifact
+    moved = json.loads(json.dumps(artifact))
+    moved["evals"][0]["source"] = "/somewhere/else/suite.json"
+    moved["evals"][0]["runner"] = {"name": "gavio-eval-runner", "version": "0", "node": "v22"}
+
+    assert platform_workflow_release_hash(moved) == artifact["workflowHash"]
+
+
+def _write_minimal_suite_workflow(root: Path) -> Path:
+    (root / "suite.json").write_text(
+        json.dumps(
+            {
+                "id": "smoke",
+                "templates": [
+                    {
+                        "id": "hello",
+                        "version": "1.0.0",
+                        "messages": [{"role": "user", "content": "Hi {{ name }}"}],
+                        "requiredVariables": ["name"],
+                    }
+                ],
+                "cases": [
+                    {
+                        "id": "greets",
+                        "templateId": "hello",
+                        "variables": {"name": "Sam"},
+                        "mockOutput": "Hello Sam",
+                        "assertions": [{"type": "contains", "value": "Sam"}],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    manifest = root / "workflow.json"
+    manifest.write_text(
+        json.dumps(
+            {
+                "workflowId": "smoke",
+                "generatedAt": "2026-07-12T12:00:00Z",
+                "evals": ["suite.json"],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return manifest
