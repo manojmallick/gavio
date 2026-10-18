@@ -1,0 +1,351 @@
+{
+  "schemaVersion": 1,
+  "benchmark": "chain-overhead",
+  "gavioVersion": "3.1.0",
+  "generatedAt": "2026-10-18T21:57:45Z",
+  "pass": true,
+  "runs": [
+    {
+      "schemaVersion": 1,
+      "benchmark": "chain-overhead",
+      "sdk": "python",
+      "gavioVersion": "3.1.0",
+      "date": "2026-10-18T21:57:27Z",
+      "seed": 1337,
+      "methodology": {
+        "simulatedDelayMs": 5.0,
+        "warmup": 20,
+        "iterations": 200,
+        "percentile": "nearest-rank",
+        "interleaved": true,
+        "payloadCount": 220,
+        "payloadDigest": "sha256:3ddd21265fcffeaac221de04419224919a6debc8564a2db73d4d822246f77b42"
+      },
+      "runner": {
+        "os": "macos",
+        "osRelease": "25.5.0",
+        "arch": "arm64",
+        "cpuModel": "Apple M4",
+        "cpuCount": 10,
+        "memoryGb": 16.0,
+        "runtime": {
+          "name": "CPython",
+          "version": "3.11.15"
+        },
+        "ci": false,
+        "ciProvider": null,
+        "ciImage": null
+      },
+      "configurations": [
+        {
+          "configuration": "baseline",
+          "description": "Raw provider call, no gateway",
+          "interceptors": [],
+          "p50Us": 6375.8,
+          "p95Us": 6443.6,
+          "overheadP50Us": 0.0,
+          "overheadPct": 0.0,
+          "budgetPct": null,
+          "checks": {},
+          "pass": true
+        },
+        {
+          "configuration": "gateway",
+          "description": "Gateway with no interceptors",
+          "interceptors": [],
+          "p50Us": 6405.4,
+          "p95Us": 6486.5,
+          "overheadP50Us": 29.6,
+          "overheadPct": 0.59,
+          "budgetPct": 10.0,
+          "checks": {},
+          "pass": true
+        },
+        {
+          "configuration": "audit",
+          "description": "Audit only",
+          "interceptors": [
+            "audit"
+          ],
+          "p50Us": 6464.0,
+          "p95Us": 6562.7,
+          "overheadP50Us": 88.2,
+          "overheadPct": 1.76,
+          "budgetPct": 20.0,
+          "checks": {
+            "auditRecords": 220,
+            "piiEntities": 0
+          },
+          "pass": true
+        },
+        {
+          "configuration": "audit_pii",
+          "description": "Audit + PII guard",
+          "interceptors": [
+            "audit",
+            "pii_guard"
+          ],
+          "p50Us": 6815.5,
+          "p95Us": 7103.4,
+          "overheadP50Us": 439.7,
+          "overheadPct": 8.79,
+          "budgetPct": 50.0,
+          "checks": {
+            "auditRecords": 220,
+            "piiEntities": 207
+          },
+          "pass": true
+        },
+        {
+          "configuration": "audit_pii_ratelimit_guardrails",
+          "description": "Audit + PII guard + rate limiter + guardrails",
+          "interceptors": [
+            "audit",
+            "pii_guard",
+            "rate_limiter",
+            "guardrails"
+          ],
+          "p50Us": 6865.7,
+          "p95Us": 7093.7,
+          "overheadP50Us": 489.9,
+          "overheadPct": 9.8,
+          "budgetPct": 60.0,
+          "checks": {
+            "auditRecords": 220,
+            "piiEntities": 207
+          },
+          "pass": true
+        }
+      ],
+      "pass": true
+    },
+    {
+      "schemaVersion": 1,
+      "benchmark": "chain-overhead",
+      "sdk": "js",
+      "gavioVersion": "3.1.0",
+      "date": "2026-10-18T21:57:35Z",
+      "seed": 1337,
+      "methodology": {
+        "simulatedDelayMs": 5.0,
+        "warmup": 20,
+        "iterations": 200,
+        "percentile": "nearest-rank",
+        "interleaved": true,
+        "payloadCount": 220,
+        "payloadDigest": "sha256:3ddd21265fcffeaac221de04419224919a6debc8564a2db73d4d822246f77b42"
+      },
+      "runner": {
+        "os": "macos",
+        "osRelease": "25.5.0",
+        "arch": "arm64",
+        "cpuModel": "Apple M4",
+        "cpuCount": 10,
+        "memoryGb": 16.0,
+        "runtime": {
+          "name": "Node.js",
+          "version": "25.6.0"
+        },
+        "ci": false,
+        "ciProvider": null,
+        "ciImage": null
+      },
+      "configurations": [
+        {
+          "configuration": "baseline",
+          "description": "Raw provider call, no gateway",
+          "interceptors": [],
+          "p50Us": 6366.6,
+          "p95Us": 6421.4,
+          "overheadP50Us": 0.0,
+          "overheadPct": 0.0,
+          "budgetPct": null,
+          "checks": {},
+          "pass": true
+        },
+        {
+          "configuration": "gateway",
+          "description": "Gateway with no interceptors",
+          "interceptors": [],
+          "p50Us": 6386.3,
+          "p95Us": 6463.5,
+          "overheadP50Us": 19.7,
+          "overheadPct": 0.39,
+          "budgetPct": 10.0,
+          "checks": {},
+          "pass": true
+        },
+        {
+          "configuration": "audit",
+          "description": "Audit only",
+          "interceptors": [
+            "audit"
+          ],
+          "p50Us": 6453.3,
+          "p95Us": 6584.8,
+          "overheadP50Us": 86.7,
+          "overheadPct": 1.73,
+          "budgetPct": 20.0,
+          "checks": {
+            "auditRecords": 220,
+            "piiEntities": 0
+          },
+          "pass": true
+        },
+        {
+          "configuration": "audit_pii",
+          "description": "Audit + PII guard",
+          "interceptors": [
+            "audit",
+            "pii_guard"
+          ],
+          "p50Us": 6562.8,
+          "p95Us": 6742.1,
+          "overheadP50Us": 196.2,
+          "overheadPct": 3.92,
+          "budgetPct": 50.0,
+          "checks": {
+            "auditRecords": 220,
+            "piiEntities": 207
+          },
+          "pass": true
+        },
+        {
+          "configuration": "audit_pii_ratelimit_guardrails",
+          "description": "Audit + PII guard + rate limiter + guardrails",
+          "interceptors": [
+            "audit",
+            "pii_guard",
+            "rate_limiter",
+            "guardrails"
+          ],
+          "p50Us": 6570.8,
+          "p95Us": 6707.4,
+          "overheadP50Us": 204.2,
+          "overheadPct": 4.08,
+          "budgetPct": 60.0,
+          "checks": {
+            "auditRecords": 220,
+            "piiEntities": 207
+          },
+          "pass": true
+        }
+      ],
+      "pass": true
+    },
+    {
+      "schemaVersion": 1,
+      "benchmark": "chain-overhead",
+      "sdk": "java",
+      "gavioVersion": "3.1.0",
+      "date": "2026-10-18T21:57:45Z",
+      "seed": 1337,
+      "methodology": {
+        "simulatedDelayMs": 5.0,
+        "warmup": 20,
+        "iterations": 200,
+        "percentile": "nearest-rank",
+        "interleaved": true,
+        "payloadCount": 220,
+        "payloadDigest": "sha256:3ddd21265fcffeaac221de04419224919a6debc8564a2db73d4d822246f77b42"
+      },
+      "runner": {
+        "os": "macos",
+        "osRelease": "26.5.2",
+        "arch": "arm64",
+        "cpuModel": "Apple M4",
+        "cpuCount": 10,
+        "memoryGb": 16.0,
+        "runtime": {
+          "name": "OpenJDK 64-Bit Server VM",
+          "version": "26.0.1"
+        },
+        "ci": false,
+        "ciProvider": null,
+        "ciImage": null
+      },
+      "configurations": [
+        {
+          "configuration": "baseline",
+          "description": "Raw provider call, no gateway",
+          "interceptors": [],
+          "p50Us": 7530.8,
+          "p95Us": 7678.2,
+          "overheadP50Us": 0.0,
+          "overheadPct": 0.0,
+          "budgetPct": null,
+          "checks": {},
+          "pass": true
+        },
+        {
+          "configuration": "gateway",
+          "description": "Gateway with no interceptors",
+          "interceptors": [],
+          "p50Us": 7612.8,
+          "p95Us": 7767.7,
+          "overheadP50Us": 82.0,
+          "overheadPct": 1.64,
+          "budgetPct": 10.0,
+          "checks": {},
+          "pass": true
+        },
+        {
+          "configuration": "audit",
+          "description": "Audit only",
+          "interceptors": [
+            "audit"
+          ],
+          "p50Us": 7631.7,
+          "p95Us": 8025.2,
+          "overheadP50Us": 100.9,
+          "overheadPct": 2.02,
+          "budgetPct": 20.0,
+          "checks": {
+            "auditRecords": 220,
+            "piiEntities": 0
+          },
+          "pass": true
+        },
+        {
+          "configuration": "audit_pii",
+          "description": "Audit + PII guard",
+          "interceptors": [
+            "audit",
+            "pii_guard"
+          ],
+          "p50Us": 7779.0,
+          "p95Us": 8562.0,
+          "overheadP50Us": 248.2,
+          "overheadPct": 4.96,
+          "budgetPct": 50.0,
+          "checks": {
+            "auditRecords": 220,
+            "piiEntities": 207
+          },
+          "pass": true
+        },
+        {
+          "configuration": "audit_pii_ratelimit_guardrails",
+          "description": "Audit + PII guard + rate limiter + guardrails",
+          "interceptors": [
+            "audit",
+            "pii_guard",
+            "rate_limiter",
+            "guardrails"
+          ],
+          "p50Us": 7867.4,
+          "p95Us": 8592.0,
+          "overheadP50Us": 336.6,
+          "overheadPct": 6.73,
+          "budgetPct": 60.0,
+          "checks": {
+            "auditRecords": 220,
+            "piiEntities": 207
+          },
+          "pass": true
+        }
+      ],
+      "pass": true
+    }
+  ]
+}
