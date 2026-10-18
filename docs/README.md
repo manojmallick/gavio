@@ -17,6 +17,7 @@ Start here, then dive into the language you use.
 - [Platform Runtime Profile](./platform-runtime.md) — metadata-only readiness score and production posture gaps
 - [Stability](./stability.md) — API stability, LTS policy, and stable release gate
 - [Roadmap](./roadmap.md) — v3.2 → v5.0 release train, feature IDs, and exit gates
+- [Learning Resources](./learning-resources.md) — external resources for staying current on developer news and tooling
 
 ## Per-package guides
 

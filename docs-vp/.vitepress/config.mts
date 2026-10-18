@@ -92,6 +92,7 @@ export default defineConfig({
           { text: 'Platform Runtime', link: '/guide/platform-runtime' },
           { text: 'Platform Workflow Release', link: '/guide/platform-workflow-release' },
           { text: 'Stability', link: '/guide/stability' },
+          { text: 'Learning Resources', link: '/guide/learning-resources' },
         ],
       },
       {
