@@ -11,7 +11,14 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Fixed
+- **Maven Central publish under Maven 3.10.** GitHub's `ubuntu-latest` image now ships
+  Apache Maven 3.10.0, which writes a `maven-metadata-local.xml` into every artifact
+  directory of the Central staging area. `central-publishing-maven-plugin` 0.10.0 zipped
+  those files into the bundle and Central rejected it ("Bundle has content that does NOT
+  have a .pom file"), so the `3.2.0` Java artifacts were not published by the tag run.
+  The plugin is now `0.12.0`, which keeps the bundle clean on Maven 3.10.0. The `3.2.0`
+  Java artifacts are published from `main` with the manual `release-java.yml` workflow.
 
 ---
 
