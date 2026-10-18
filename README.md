@@ -52,7 +52,7 @@ interceptors, with **identical behaviour across three languages** — enforced b
 - **Inspector** — opt-in dev-time visualizer: live traces, per-interceptor waterfall, PII redaction diffs, and pipeline lints at `http://127.0.0.1:7411` (`inspect(true)` or `GAVIO_INSPECT=1`).
 - **Inspector agentic & production mode** — multi-agent call graphs and session views, trace replay & edit-resend (full mode only), RED stats, hash-chain verification, PII-sanitized export of any trace as a test case, and a read-only dashboard over a persisted audit store: `gavio inspect --store audit.jsonl`.
 
-> **Status:** v3.1.0 is the current stable package line. Gavio has an API
+> **Status:** v3.2.0 is the current stable package line. Gavio has an API
 > stability guarantee, a 24-month 1.x LTS policy, and release automation that
 > checks lockstep SDK versions before publishing. See
 > [STABILITY.md](./STABILITY.md) and the [CHANGELOG](./CHANGELOG.md).
@@ -90,6 +90,7 @@ last pre-1.0 product milestones, then v1.0.0 became the stable release.
 | `2.7.0` | Ecosystem Trust Package | Integration conformance vectors, generated compatibility matrix, offline sample production apps, and cross-SDK trust checks |
 | `3.0.0` | Platform Workflow Release | Unified prompt, eval, policy, trust, and runtime-profile release artifacts with CLI and control-plane storage |
 | `3.1.0` | Control Plane UX v2 | Self-hosted admin UI, overview endpoint, opt-in demo seed, workflow release import, and richer filters |
+| `3.2.0` | Tool calling + overhead benchmark | Normalised tool-calling spec, shared vectors and Python reference adapters; reproducible interceptor-chain overhead benchmark; published v3.2 → v5.0 [roadmap](./docs/roadmap.md) |
 
 ---
 
@@ -242,9 +243,9 @@ The Java snippet uses `gavio-core`, `gavio-interceptor-pii`, and
 
 | Language | Command | Docs |
 |---|---|---|
-| **Python** 3.10+ | `pip install gavio==3.1.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
-| **JavaScript** (Node 18+) | `npm install gavio@3.1.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
-| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:3.1.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
+| **Python** 3.10+ | `pip install gavio==3.2.0` | [packages/gavio-py](./packages/gavio-py/README.md) · [docs/packages/python.md](./docs/packages/python.md) |
+| **JavaScript** (Node 18+) | `npm install gavio@3.2.0` | [packages/gavio-js](./packages/gavio-js/README.md) · [docs/packages/javascript.md](./docs/packages/javascript.md) |
+| **Java** 17+ (Maven) | `io.github.manojmallick:gavio-core:3.2.0` plus interceptor artifacts as needed | [packages/gavio-java](./packages/gavio-java/README.md) · [docs/packages/java.md](./docs/packages/java.md) |
 
 ---
 
@@ -295,7 +296,7 @@ optional extras include `gavio[redis]`, `gavio[presidio]`, `gavio[otel]`,
 `gavio[elasticsearch]`, `gavio[pgvector]`, and `gavio[ocr]`.
 
 ```bash
-pip install gavio==3.1.0
+pip install gavio==3.2.0
 ```
 
 → **[Full Python guide](./docs/packages/python.md)** · [package README](./packages/gavio-py/README.md)
@@ -307,7 +308,7 @@ with per-subpath `exports` for tree-shaking. Native `fetch`, `node:crypto`.
 Node 18+, Deno, Bun.
 
 ```bash
-npm install gavio@3.1.0
+npm install gavio@3.2.0
 ```
 
 → **[Full JavaScript guide](./docs/packages/javascript.md)** · [package README](./packages/gavio-js/README.md)
@@ -327,17 +328,17 @@ Quickstart stack:
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-core</artifactId>
-  <version>3.1.0</version>
+  <version>3.2.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-pii</artifactId>
-  <version>3.1.0</version>
+  <version>3.2.0</version>
 </dependency>
 <dependency>
   <groupId>io.github.manojmallick</groupId>
   <artifactId>gavio-interceptor-audit</artifactId>
-  <version>3.1.0</version>
+  <version>3.2.0</version>
 </dependency>
 ```
 
@@ -413,6 +414,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Read-only production dashboard — RED stats, hash-chain verifier, `gavio inspect --store` | `F-DX-08` | 0.7.0 |
 | Export any trace as a PII-sanitized `GavioTestKit` test / test vector | `F-DX-12` | 0.7.0 |
 | Overhead benchmarks with CI-enforced budget (<1% metadata / <5% full p50) | `F-DX-09` | 0.8.0 |
+| Interceptor-chain overhead benchmark — fixed-seed Python/JS/Java harnesses and a validated `benchmarks/latest.json` ([reproduce](./benchmarks/chain-overhead/REPRODUCE.md)) | `F-TRUST-02` | 3.2.0 |
 | Cost reports — `/api/cost-report`, top spend dimensions, retry overhead, cache savings | `F-COST-02` | 0.11.0 |
 
 ### 🛠️ Developer experience & providers
@@ -425,6 +427,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | AI Request Runtime / Inspector positioning | `F-DOC-V4` | 0.13.0 |
 | Tool Runtime — schema validation, freshness, conflict detection, provenance | `F-TOOL-01/02/03/04` | 0.14.0 |
 | Tool Runtime v2 — registry-backed permissions, approval gates, replay, MCP metadata | `F-TOOL-05/06/07/08` | 1.5.0 |
+| Normalised tool calling — one `ToolCall` / `ToolResult` model across OpenAI, Azure OpenAI, OpenRouter, Anthropic, Gemini, and Ollama; tool arguments pass through PII and secret scanning. **Python reference only; JS and Java adapters follow** | `F-ADP-03` | 3.2.0 |
 | Self-hosted Control Plane — runtime config, policy rollout, budget config, audit search, snapshots | — | 1.7.0 |
 | Control Plane Persistence — SQLite migrations, Postgres adapter path, durable runtime/admin records | `F-CP-01` | 2.3.0 |
 | Enterprise Admin v2 — OIDC/SAML-lite metadata, scoped admin keys, rollout approvals, audit export, retention controls | `F-ADMIN-02` | 2.6.0 |

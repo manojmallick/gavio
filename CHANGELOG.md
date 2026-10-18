@@ -11,6 +11,29 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [3.2.0] — 2026-10-19
+
+### Summary
+**Tool calling and a reproducible overhead benchmark.** v3.2.0 is the first
+release on the v3.2 → v5.0 [roadmap](docs/roadmap.md). It ships two slices of
+that plan: the normalised tool-calling model (`F-ADP-03`) as spec, shared
+vectors and the Python reference SDK, and a reproducible interceptor-chain
+overhead benchmark (`F-TRUST-02`). It is additive: no API is removed or
+changed incompatibly. **The JavaScript and Java SDKs do not have tool-calling
+adapters yet**, so this release does not meet the lockstep rule for
+`F-ADP-03`; they follow in a later release. The rest of the v3.2 roadmap
+(`F-DOC-10`, `F-DX-13`, `F-REL-09`, `F-DOC-11`) is not part of this release.
+Feature PRs #105 and #106.
+
+Tests: Python `ruff check` clean and 475 unit tests passed (the 6 Redis cache
+tests need a server and were deselected locally) · JavaScript typecheck clean
+and 310 tests passed · Java `mvn test` green · docs site build green · stable
+release gate green.
+
 ### Added
 - **Normalised tool calling — spec, shared vectors and Python reference (F-ADP-03).**
   New `ToolCall` and `ToolResult` schemas; optional `tools`, `toolChoice` on `GavioRequest`,
@@ -28,6 +51,20 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   yet supported.
 - `spec/GavioRequest.schema.json` lists `openrouter` in the provider enum (the Python SDK already
   had it).
+- **Reproducible interceptor-chain overhead benchmark (F-TRUST-02).** `benchmarks/chain-overhead/`
+  has Python, JavaScript and Java harnesses that compare a raw provider call with realistic
+  default stacks (gateway only, audit, audit + PII guard, audit + PII + rate limiter +
+  guardrails) using the Inspector benchmark methodology, with fixed seeds and a seeded payload
+  generator that is identical across SDKs. `benchmarks/latest.json` is validated by
+  `benchmarks/latest.schema.json` and `benchmarks/validate_latest.py`; `REPRODUCE.md` gives a
+  one-command run per SDK; a new `benchmarks.yml` workflow runs the harnesses and uploads
+  `latest.json`. The committed `latest.json` comes from a local Apple M4 run and records the
+  SDK version it ran under (`3.1.0`); the CI thresholds have not been calibrated on a GitHub
+  runner yet, and an outside rerun is still pending.
+- **Roadmap and deprecation ledger.** `docs/roadmap.md` (also on the docs site) lays out the
+  v3.2 → v5.0 release train, feature IDs and exit gates; `DEPRECATIONS.md` is the ledger for
+  deprecated APIs. A Learning Resources page was added to the docs and the docs site (#103).
+- The docs site Python guide documents tool calling.
 
 ### Changed
 - `GavioRequest.copy_with_messages` and `GavioResponse.copy_with_content` now use
@@ -1516,7 +1553,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/manojmallick/gavio/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/manojmallick/gavio/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/manojmallick/gavio/compare/v2.7.0...v3.0.0
 [2.7.0]: https://github.com/manojmallick/gavio/compare/v2.6.0...v2.7.0

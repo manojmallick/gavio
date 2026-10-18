@@ -188,6 +188,43 @@ gw = (Gateway.builder()
       .build())
 ```
 
+### Tool calling (F-ADP-03)
+
+OpenAI, Azure OpenAI, OpenRouter, Anthropic, Gemini, and Ollama share one tool-calling
+shape. Declare `tools` (the same `ToolDefinition` dicts Tool Runtime uses), read
+`response.tool_calls`, and answer with tool-role messages — the adapter translates to and
+from each provider's native format, parallel calls included.
+
+```python
+tools = [{"name": "get_weather", "description": "Current weather",
+          "inputSchema": {"type": "object", "properties": {"city": {"type": "string"}},
+                          "required": ["city"]}}]
+messages = [{"role": "user", "content": "Weather in Paris and Rome?"}]
+
+response = await gw.complete(messages, tools=tools, tool_choice="auto")
+while response.tool_calls:                       # parallel calls arrive together
+    messages.append(response.to_assistant_message())
+    for call in response.tool_calls:             # ToolCall(id, name, arguments: dict)
+        messages.append(call.result(run_tool(call.name, **call.arguments)).to_message())
+    response = await gw.complete(messages, tools=tools)
+```
+
+`tool_choice` is `"auto"`, `"none"`, `"required"`, or `{"name": "get_weather"}`;
+`response.finish_reason` is a normalised `FinishReason`. Gemini and Ollama send no call ids,
+so Gavio assigns `call_<index>_<name>`.
+
+Privacy applies to tool traffic too: `PiiGuard` and the secret scanner cover tool-call
+arguments and tool-role messages before the provider payload is built, and audit records keep
+only the tool name and an arguments hash. To validate what the model asked for, pass the
+calls to Tool Runtime: `analyze_provider_tool_calls(response.tool_calls, tools_context,
+definitions=tools)`.
+
+Available in the Python SDK in `3.2.0`; the JavaScript and Java adapters follow. Not yet
+supported: streaming tool-call deltas, and provider-opaque per-call state such as Gemini
+thought signatures. The Ollama mapping follows its documented `/api/chat` shape and has not
+been exercised against a live server; Ollama has no `tool_choice`, so only `"auto"` is
+accepted there.
+
 ---
 
 ## Inspector
@@ -343,7 +380,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "3.1.0", "tag": "v3.1.0"},
+    release={"version": "3.2.0", "tag": "v3.2.0"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",
