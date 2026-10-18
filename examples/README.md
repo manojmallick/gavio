@@ -95,8 +95,8 @@ or port an example, update `matrix.json` and both tables in the same change.
 
 ## Run against the in-repo SDKs
 
-The example manifests depend on the **published** packages (`gavio>=3.1.0`,
-`gavio@^3.1.0`, Maven `gavio-*:3.1.0`). CI instead runs every example against
+The example manifests depend on the **published** packages (`gavio>=3.2.0`,
+`gavio@^3.2.0`, Maven `gavio-*:3.2.0`). CI instead runs every example against
 the code in this repository, so an unreleased feature can ship with its example
 before the release is cut. Nothing in the examples is edited; the override is
 applied by [`scripts/run-examples.mjs`](../scripts/run-examples.mjs):

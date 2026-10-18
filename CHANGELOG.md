@@ -18,20 +18,25 @@ Nothing yet.
 ## [3.2.0] — 2026-10-19
 
 ### Summary
-**Tool calling and a reproducible overhead benchmark.** v3.2.0 is the first
-release on the v3.2 → v5.0 [roadmap](docs/roadmap.md). It ships two slices of
-that plan: the normalised tool-calling model (`F-ADP-03`) as spec, shared
-vectors and the Python reference SDK, and a reproducible interceptor-chain
-overhead benchmark (`F-TRUST-02`). It is additive: no API is removed or
-changed incompatibly. **The JavaScript and Java SDKs do not have tool-calling
-adapters yet**, so this release does not meet the lockstep rule for
-`F-ADP-03`; they follow in a later release. The rest of the v3.2 roadmap
-(`F-DOC-10`, `F-DX-13`, `F-REL-09`, `F-DOC-11`) is not part of this release.
-Feature PRs #105 and #106.
+**Tool calling, SDK parity foundations and a reproducible overhead benchmark.**
+v3.2.0 is the first release on the v3.2 → v5.0 [roadmap](docs/roadmap.md). It
+ships three slices of that plan: the normalised tool-calling model (`F-ADP-03`)
+as spec, shared vectors and the Python reference SDK; the foundations of example
+parity (`F-DX-13`: an example matrix, an in-repo example runner, and the
+platform workflow release ported to JavaScript and Java); and a reproducible
+interceptor-chain overhead benchmark (`F-TRUST-02`). **The JavaScript and Java
+SDKs do not have tool-calling adapters yet**, so this release does not meet the
+lockstep rule for `F-ADP-03`; they follow in a later release. The remaining
+example ports (04, 05, 15, 20 to 25) are still listed as `planned` in the
+matrix, and `F-DOC-10`, `F-REL-09` and `F-DOC-11` are not part of this release.
+One behaviour change to know about: workflow release hashes are now computed
+over canonical JSON (see Changed), so hashes of artifacts built by earlier
+releases differ. Feature PRs #105, #106 and #107.
 
-Tests: Python `ruff check` clean and 475 unit tests passed (the 6 Redis cache
+Tests: Python `ruff check` clean and 492 unit tests passed (the 6 Redis cache
 tests need a server and were deselected locally) · JavaScript typecheck clean
-and 310 tests passed · Java `mvn test` green · docs site build green · stable
+and 328 tests passed · Java `mvn test` green · 40 examples passed against the
+in-repo SDKs · example matrix check green · docs site build green · stable
 release gate green.
 
 ### Added
