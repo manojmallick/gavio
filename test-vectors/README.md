@@ -30,6 +30,12 @@ offending SDK's test-vector run goes red.
 | [`prompts/registry-evals.json`](./prompts/registry-evals.json) | Prompt Registry + Evals cases (`F-EVAL-01/02`) — render versioned prompt templates, validate missing variables, attach metadata-only lineage, score eval cases, and keep raw outputs out of reports. |
 | [`tool-runtime/permissions.json`](./tool-runtime/permissions.json) | Tool Runtime v2 permissions and approval cases — registry-backed permission checks, destructive approval gates, provenance requirements, and MCP metadata capture. |
 | [`tool-runtime/replay.json`](./tool-runtime/replay.json) | Tool Runtime v2 replay cases — reconstruct deterministic runtime decisions from stored tool-call records. |
+| [`tool-calling/openai.json`](./tool-calling/openai.json) | Normalised tool calling (F-ADP-03), OpenAI Chat Completions — `requestCases` (normalised request → native payload: tools, `toolChoice`, assistant `toolCalls`, tool-role results), `responseCases` (native response → `content`/`toolCalls`/`finishReason`/`usage`), and `errorCases` (malformed arguments). OpenRouter reuses the same shape and must pass this file unchanged. |
+| [`tool-calling/azure.json`](./tool-calling/azure.json) | Azure OpenAI tool calling — same shape as OpenAI, request body without `model`, extra content-filter response members ignored. |
+| [`tool-calling/anthropic.json`](./tool-calling/anthropic.json) | Anthropic Messages tool calling — `tool_use` / `tool_result` blocks, `tool_choice` mapping, consecutive tool results merged into one user turn. |
+| [`tool-calling/gemini.json`](./tool-calling/gemini.json) | Gemini tool calling — `functionCall` / `functionResponse` parts, synthetic `call_<index>_<name>` ids, `toolConfig` mapping, `requestErrorCases` for unmatched results. |
+| [`tool-calling/ollama.json`](./tool-calling/ollama.json) | Ollama `/api/chat` tool calling per the documented shape (object arguments, no ids, `tool_name` on results, no `tool_choice`). Not exercised against a live server. |
+| [`tool-calling/arguments-hash.json`](./tool-calling/arguments-hash.json) | `ToolCall.arguments` hash — canonical JSON (sorted keys, no whitespace, UTF-8) and its SHA-256, the only form of tool arguments an audit record keeps. |
 | [`license/detection.json`](./license/detection.json) | License detection cases (F-QUA-10) — run the default license detector over `text`, collect the sorted SPDX ids, compare to `expectedLicenses`. Snippets are synthetic license text; the shipped corpus contains only shingle hashes. |
 | [`inspector/cost-report.json`](./inspector/cost-report.json) | Cost Intelligence cases (F-COST-02) — run the Inspector cost-report builder over trace summaries with attribution dimensions, compare total spend, grouped spend, retry overhead, cache savings, and top-spend dimensions. |
 | [`cost-governance/budget-decisions.json`](./cost-governance/budget-decisions.json) | Cost Governance v2 cases — evaluate shared `BudgetPolicy` decisions for allow, warn, block, fallback, downgrade, and dry-run actions. |
@@ -236,11 +242,37 @@ node scripts/gen-ecosystem-trust-matrix.mjs --check
 }
 ```
 
+`tool-calling/*.json` (provider files):
+```json
+{
+  "provider": "openai",
+  "requestCases": [{
+    "id": "history-single-call",
+    "request": { "model": "gpt-4o", "provider": "openai", "messages": ["..."], "tools": ["..."], "toolChoice": "auto", "options": { "temperature": 0.2, "maxTokens": 256 } },
+    "expectedPayload": { "model": "gpt-4o", "messages": ["..."], "temperature": 0.2, "max_tokens": 256 }
+  }],
+  "requestErrorCases": [{ "id": "...", "request": {}, "expectedError": "Configuration" }],
+  "responseCases": [{
+    "id": "parallel-calls",
+    "providerResponse": { "choices": ["..."] },
+    "expected": { "content": "", "toolCalls": [{ "id": "call_1", "name": "get_weather", "arguments": {} }], "finishReason": "tool_calls", "usage": { "promptTokens": 41, "completionTokens": 25, "totalTokens": 66 }, "modelVersion": "gpt-4o-2024-08-06" }
+  }],
+  "errorCases": [{ "id": "invalid-json-arguments", "providerResponse": {}, "expectedError": "MalformedToolCall" }]
+}
+```
+
+Each SDK's provider adapter exposes two pure functions — build the native request body from a normalised request, and parse a native response body — so no case needs a network. A `requestCase` builds a request from `request` (messages use the spec's camelCase `toolCalls` / `toolCallId` / `isError`; an SDK may spell them natively as long as it produces the same payload) and compares the adapter's body to `expectedPayload` exactly, including the compact `arguments` string OpenAI-style bodies carry. A `responseCase` compares the parsed `content`, `toolCalls`, `finishReason`, `usage`, and `modelVersion` (`null` when the provider reports none) to `expected`. `expectedError` is `Configuration` (invalid request) or `MalformedToolCall` (invalid provider tool call); an error message must never contain the tool arguments. Every `request` validates against `spec/GavioRequest.schema.json`, and every `expected` against `spec/GavioResponse.schema.json`.
+
+`tool-calling/arguments-hash.json`:
+```json
+{ "id": "key-order-does-not-matter-a", "arguments": { "a": 2, "b": 1 }, "expectedCanonical": "{\"a\":2,\"b\":1}", "expectedHash": "<sha256 hex>" }
+```
+
 ## Runners (one per SDK)
 
 | SDK | Test that consumes these vectors |
 |---|---|
-| Python | `packages/gavio-py/tests/unit/test_vectors.py` · `packages/gavio-py/tests/unit/test_policy_packs.py` · `packages/gavio-py/tests/unit/test_inspector_agentic.py` · `packages/gavio-py/tests/unit/test_runtime_exporters.py` · `packages/gavio-py/tests/unit/test_otel_exporter.py` · `packages/gavio-py/tests/unit/test_cost_governance_v2.py` · `packages/gavio-py/tests/unit/test_prompt_registry_evals.py` · `packages/gavio-py/tests/unit/test_tool_runtime.py` · `packages/gavio-py/tests/unit/test_control_plane.py` · `packages/gavio-py/tests/unit/test_trust.py` · `packages/gavio-py/tests/unit/test_integrations.py` · `packages/gavio-py/tests/unit/test_platform_workflow.py` |
+| Python | `packages/gavio-py/tests/unit/test_vectors.py` · `packages/gavio-py/tests/unit/test_policy_packs.py` · `packages/gavio-py/tests/unit/test_inspector_agentic.py` · `packages/gavio-py/tests/unit/test_runtime_exporters.py` · `packages/gavio-py/tests/unit/test_otel_exporter.py` · `packages/gavio-py/tests/unit/test_cost_governance_v2.py` · `packages/gavio-py/tests/unit/test_prompt_registry_evals.py` · `packages/gavio-py/tests/unit/test_tool_runtime.py` · `packages/gavio-py/tests/unit/test_control_plane.py` · `packages/gavio-py/tests/unit/test_trust.py` · `packages/gavio-py/tests/unit/test_integrations.py` · `packages/gavio-py/tests/unit/test_tool_calling.py` · `packages/gavio-py/tests/unit/test_platform_workflow.py` |
 | JavaScript | `packages/gavio-js/tests/unit/test-vectors.test.ts` · `packages/gavio-js/tests/unit/policy-packs.test.ts` · `packages/gavio-js/tests/unit/inspector-api-vectors.test.ts` · `packages/gavio-js/tests/unit/runtime-exporters.test.ts` · `packages/gavio-js/tests/unit/otel-exporter.test.ts` · `packages/gavio-js/tests/unit/cost-governance-v2.test.ts` · `packages/gavio-js/tests/unit/prompt-registry-evals.test.ts` · `packages/gavio-js/tests/unit/tool-runtime.test.ts` · `packages/gavio-js/tests/unit/control-plane.test.ts` · `packages/gavio-js/tests/unit/trust.test.ts` · `packages/gavio-js/tests/unit/integrations.test.ts` · `packages/gavio-js/tests/unit/platform-workflow.test.ts` |
 | Java | `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/TestVectorsTest.java` (PII) · `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/interceptors/pii/policy/PolicyPackTest.java` (policy packs) · `packages/gavio-java/gavio-interceptor-guardrails/src/test/java/io/gavio/vectors/LicenseVectorsTest.java` (license) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/ToolRuntimeInterceptorTest.java` (Tool Runtime) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/inspector/InspectorApiVectorsTest.java` (Inspector) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/RuntimeExporterTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/OtelSpanExporterTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/prompts/PromptRegistryEvalTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/trust/ProductionTrustTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/integrations/IntegrationCatalogTest.java` · `packages/gavio-java/gavio-interceptor-governance/src/test/java/io/gavio/interceptors/governance/CostGovernanceV2Test.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/ControlPlaneClientTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/platform/PlatformWorkflowTest.java` (canonical JSON, hash, policy-free release) · `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/PlatformWorkflowVectorsTest.java` (full workflow release) |
 

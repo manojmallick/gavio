@@ -1,0 +1,79 @@
+name: Benchmarks
+
+# Reproducible interceptor-chain overhead benchmark (F-TRUST-02).
+#
+# Runs the Python, JavaScript and Java harnesses in benchmarks/chain-overhead/,
+# merges them into benchmarks/latest.json, validates that file against
+# benchmarks/latest.schema.json, and uploads it as an artifact.
+#
+# Thresholds in benchmarks/chain-overhead/spec.json are deliberately loose
+# (like the Inspector ones in ci.yml): a failure means something structural
+# regressed, not that a shared runner was noisy. The Inspector overhead
+# benchmarks keep running in the `benchmarks` job of ci.yml.
+#
+# See benchmarks/chain-overhead/REPRODUCE.md to rerun this on your own machine.
+
+on:
+  pull_request:
+    paths:
+      - "benchmarks/**"
+      - "packages/**"
+      - ".github/workflows/benchmarks.yml"
+  push:
+    branches: [main]
+    paths:
+      - "benchmarks/**"
+      - "packages/**"
+      - ".github/workflows/benchmarks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmarks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chain-overhead:
+    name: Chain overhead benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: packages/gavio-js/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+      - name: Install schema validator
+        run: pip install jsonschema
+      - name: Build JS SDK
+        working-directory: packages/gavio-js
+        run: npm ci && npm run build
+      - name: Run harnesses, combine into latest.json, validate
+        env:
+          VALIDATE_ARGS: --require-schema
+        run: bash benchmarks/chain-overhead/run.sh all
+      - name: Upload latest.json
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks-latest-json
+          path: benchmarks/latest.json
+          if-no-files-found: warn
+      - name: Upload per-SDK runs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmarks-chain-overhead-runs
+          path: benchmarks/chain-overhead/out/*.json
+          if-no-files-found: warn

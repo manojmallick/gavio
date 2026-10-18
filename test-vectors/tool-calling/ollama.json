@@ -1,0 +1,863 @@
+{
+  "feature": "F-ADP-03",
+  "provider": "ollama",
+  "description": "Ollama /api/chat tool calling, per the documented shape (object arguments, no call ids, tool results name the tool in tool_name, no tool_choice). Not exercised against a live server.",
+  "requestCases": [
+    {
+      "id": "declares-tools-auto",
+      "request": {
+        "model": "llama3.1",
+        "provider": "ollama",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          },
+          {
+            "name": "ping",
+            "description": "Check connectivity"
+          }
+        ],
+        "toolChoice": "auto"
+      },
+      "expectedPayload": {
+        "model": "llama3.1",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "stream": false,
+        "options": {
+          "temperature": 0.2
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Get the current weather for a city",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "celsius",
+                      "fahrenheit"
+                    ]
+                  }
+                },
+                "required": [
+                  "city"
+                ]
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "ping",
+              "description": "Check connectivity",
+              "parameters": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "tools-without-choice",
+      "request": {
+        "model": "llama3.1",
+        "provider": "ollama",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "model": "llama3.1",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "stream": false,
+        "options": {
+          "temperature": 0.2
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Get the current weather for a city",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "celsius",
+                      "fahrenheit"
+                    ]
+                  }
+                },
+                "required": [
+                  "city"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "choice-ignored-without-tools",
+      "request": {
+        "model": "llama3.1",
+        "provider": "ollama",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "toolChoice": "required"
+      },
+      "expectedPayload": {
+        "model": "llama3.1",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "stream": false,
+        "options": {
+          "temperature": 0.2
+        }
+      }
+    },
+    {
+      "id": "no-tools-payload-unchanged",
+      "request": {
+        "model": "llama3.1",
+        "provider": "ollama",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        }
+      },
+      "expectedPayload": {
+        "model": "llama3.1",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "stream": false,
+        "options": {
+          "temperature": 0.2
+        }
+      }
+    },
+    {
+      "id": "history-single-call-result-carries-tool-name",
+      "request": {
+        "model": "llama3.1",
+        "provider": "ollama",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "toolCalls": [
+              {
+                "id": "call_0_get_weather",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_0_get_weather",
+            "content": "{\"temp_c\":18}"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "model": "llama3.1",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "get_weather",
+                  "arguments": {
+                    "city": "Paris"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "content": "{\"temp_c\":18}",
+            "tool_name": "get_weather"
+          }
+        ],
+        "stream": false,
+        "options": {
+          "temperature": 0.2
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Get the current weather for a city",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "celsius",
+                      "fahrenheit"
+                    ]
+                  }
+                },
+                "required": [
+                  "city"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "history-parallel-calls-stay-separate-tool-messages",
+      "request": {
+        "model": "llama3.1",
+        "provider": "ollama",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "Checking both.",
+            "toolCalls": [
+              {
+                "id": "call_0_get_weather",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris"
+                }
+              },
+              {
+                "id": "call_1_get_time",
+                "name": "get_time",
+                "arguments": {
+                  "city": "Rome"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_0_get_weather",
+            "content": "{\"temp_c\":18}"
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_1_get_time",
+            "content": "14:05"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "model": "llama3.1",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "Checking both.",
+            "tool_calls": [
+              {
+                "function": {
+                  "name": "get_weather",
+                  "arguments": {
+                    "city": "Paris"
+                  }
+                }
+              },
+              {
+                "function": {
+                  "name": "get_time",
+                  "arguments": {
+                    "city": "Rome"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "content": "{\"temp_c\":18}",
+            "tool_name": "get_weather"
+          },
+          {
+            "role": "tool",
+            "content": "14:05",
+            "tool_name": "get_time"
+          }
+        ],
+        "stream": false,
+        "options": {
+          "temperature": 0.2
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Get the current weather for a city",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "celsius",
+                      "fahrenheit"
+                    ]
+                  }
+                },
+                "required": [
+                  "city"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "history-result-name-from-message-when-call-not-in-history",
+      "request": {
+        "model": "llama3.1",
+        "provider": "ollama",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_0_get_weather",
+            "name": "get_weather",
+            "content": "18"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "model": "llama3.1",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "tool",
+            "content": "18",
+            "tool_name": "get_weather"
+          }
+        ],
+        "stream": false,
+        "options": {
+          "temperature": 0.2
+        },
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Get the current weather for a city",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "celsius",
+                      "fahrenheit"
+                    ]
+                  }
+                },
+                "required": [
+                  "city"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "requestErrorCases": [
+    {
+      "id": "choice-required-is-rejected",
+      "request": {
+        "model": "llama3.1",
+        "provider": "ollama",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "toolChoice": "required"
+      },
+      "expectedError": "Configuration"
+    },
+    {
+      "id": "choice-named-is-rejected",
+      "request": {
+        "model": "llama3.1",
+        "provider": "ollama",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "toolChoice": {
+          "name": "get_weather"
+        }
+      },
+      "expectedError": "Configuration"
+    }
+  ],
+  "responseCases": [
+    {
+      "id": "text-only",
+      "providerResponse": {
+        "model": "llama3.1",
+        "created_at": "2025-01-01T00:00:00Z",
+        "message": {
+          "role": "assistant",
+          "content": "It is sunny."
+        },
+        "done": true,
+        "done_reason": "stop",
+        "prompt_eval_count": 20,
+        "eval_count": 5
+      },
+      "expected": {
+        "content": "It is sunny.",
+        "toolCalls": [],
+        "finishReason": "stop",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 5,
+          "totalTokens": 25
+        },
+        "modelVersion": "llama3.1"
+      }
+    },
+    {
+      "id": "single-call-gets-synthetic-id",
+      "providerResponse": {
+        "model": "llama3.1",
+        "created_at": "2025-01-01T00:00:00Z",
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "function": {
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris"
+                }
+              }
+            }
+          ]
+        },
+        "done": true,
+        "done_reason": "stop",
+        "prompt_eval_count": 26,
+        "eval_count": 12
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [
+          {
+            "id": "call_0_get_weather",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Paris"
+            }
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 26,
+          "completionTokens": 12,
+          "totalTokens": 38
+        },
+        "modelVersion": "llama3.1"
+      }
+    },
+    {
+      "id": "parallel-calls",
+      "providerResponse": {
+        "model": "llama3.1",
+        "created_at": "2025-01-01T00:00:00Z",
+        "message": {
+          "role": "assistant",
+          "content": "",
+          "tool_calls": [
+            {
+              "function": {
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris"
+                }
+              }
+            },
+            {
+              "function": {
+                "name": "get_time",
+                "arguments": {
+                  "city": "Rome"
+                }
+              }
+            }
+          ]
+        },
+        "done": true,
+        "done_reason": "stop",
+        "prompt_eval_count": 30,
+        "eval_count": 20
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [
+          {
+            "id": "call_0_get_weather",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Paris"
+            }
+          },
+          {
+            "id": "call_1_get_time",
+            "name": "get_time",
+            "arguments": {
+              "city": "Rome"
+            }
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 30,
+          "completionTokens": 20,
+          "totalTokens": 50
+        },
+        "modelVersion": "llama3.1"
+      }
+    },
+    {
+      "id": "length",
+      "providerResponse": {
+        "model": "llama3.1",
+        "created_at": "2025-01-01T00:00:00Z",
+        "message": {
+          "role": "assistant",
+          "content": "It is su"
+        },
+        "done": true,
+        "done_reason": "length",
+        "prompt_eval_count": 20,
+        "eval_count": 256
+      },
+      "expected": {
+        "content": "It is su",
+        "toolCalls": [],
+        "finishReason": "length",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 256,
+          "totalTokens": 276
+        },
+        "modelVersion": "llama3.1"
+      }
+    }
+  ],
+  "errorCases": []
+}

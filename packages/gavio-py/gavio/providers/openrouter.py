@@ -9,9 +9,11 @@ from ..exceptions import ConfigurationError, ProviderUnavailableError
 from ..pricing import PricingProvider
 from ..request import GavioRequest
 from ..response import GavioResponse
-from ..types import TokenUsage
 from ._http import post_json
 from .base import ProviderAdapter
+from .openai import from_provider_response, to_provider_payload
+
+__all__ = ["OpenRouterAdapter", "from_provider_response", "to_provider_payload"]
 
 _DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
 
@@ -66,28 +68,13 @@ class OpenRouterAdapter(ProviderAdapter):
 
     async def complete(self, request: GavioRequest) -> GavioResponse:
         started = time.monotonic()
-        payload = {
-            "model": request.model,
-            "messages": request.messages,
-            "temperature": request.temperature,
-            "max_tokens": request.max_tokens,
-        }
         data = await post_json(
             self.url(),
-            payload,
+            to_provider_payload(request),
             self.headers(),
             timeout=self.timeout_seconds,
         )
-        choice = data["choices"][0]
-        content = choice["message"]["content"] or ""
-        usage_data = data.get("usage", {})
-        usage = TokenUsage(
-            prompt_tokens=usage_data.get("prompt_tokens", 0),
-            completion_tokens=usage_data.get("completion_tokens", 0),
-        )
-        return self._build_response(
-            request, content, usage, data.get("model", request.model), started
-        )
+        return self._build_completion_response(request, from_provider_response(data), started)
 
     async def health_check(self) -> bool:
         try:

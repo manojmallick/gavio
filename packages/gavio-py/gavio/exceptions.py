@@ -19,6 +19,13 @@ class ProviderError(GavioError):
     """Base class for provider-adapter failures."""
 
 
+class MalformedToolCallError(ProviderError):
+    """The provider returned a tool call whose arguments are not a JSON object.
+
+    The message names the tool only — never the arguments, which may hold PII.
+    """
+
+
 class ProviderUnavailableError(ProviderError):
     """The provider could not be reached (network / health-check failure)."""
 

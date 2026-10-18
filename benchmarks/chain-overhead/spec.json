@@ -1,0 +1,67 @@
+{
+  "specVersion": 1,
+  "seed": 1337,
+  "simulatedDelayMs": 5.0,
+  "warmup": 20,
+  "iterations": 200,
+  "defaultPayloadDigest": "sha256:3ddd21265fcffeaac221de04419224919a6debc8564a2db73d4d822246f77b42",
+  "payload": {
+    "vocabulary": [
+      "invoice", "quarterly", "report", "summary", "customer", "renewal", "contract", "shipment",
+      "inventory", "warehouse", "pricing", "forecast", "roadmap", "release", "feature", "backlog",
+      "sprint", "review", "budget", "vendor", "policy", "audit", "risk", "compliance",
+      "training", "onboarding", "support", "ticket", "escalation", "incident", "postmortem", "latency",
+      "throughput", "capacity", "cluster", "deployment", "pipeline", "artifact", "dashboard", "metric",
+      "alert", "threshold", "baseline", "regression", "benchmark", "dataset", "schema", "migration",
+      "index", "query", "cache", "session", "gateway", "request", "response", "payload",
+      "template", "draft", "approval", "meeting", "agenda", "minutes", "owner", "deadline"
+    ],
+    "wordCountMin": 48,
+    "wordCountSpan": 33,
+    "emailPrefix": "user",
+    "emailModulus": 1000,
+    "emailDomain": "example.com",
+    "iban": "NL91ABNA0417164300",
+    "phone": "+31 6 12345678"
+  },
+  "piiGuard": { "logEntityTypes": false },
+  "guardrailsDenylist": ["[Pp]assword\\s*[:=]", "sk-[A-Za-z0-9]{20,}", "BEGIN (RSA )?PRIVATE KEY"],
+  "rateLimiter": { "maxRequestsPerMinute": 1000000, "maxTokensPerMinute": 1000000000 },
+  "configurations": [
+    {
+      "id": "baseline",
+      "description": "Raw provider call, no gateway",
+      "gateway": false,
+      "interceptors": [],
+      "budgetPct": null
+    },
+    {
+      "id": "gateway",
+      "description": "Gateway with no interceptors",
+      "gateway": true,
+      "interceptors": [],
+      "budgetPct": 10.0
+    },
+    {
+      "id": "audit",
+      "description": "Audit only",
+      "gateway": true,
+      "interceptors": ["audit"],
+      "budgetPct": 20.0
+    },
+    {
+      "id": "audit_pii",
+      "description": "Audit + PII guard",
+      "gateway": true,
+      "interceptors": ["audit", "pii_guard"],
+      "budgetPct": 50.0
+    },
+    {
+      "id": "audit_pii_ratelimit_guardrails",
+      "description": "Audit + PII guard + rate limiter + guardrails",
+      "gateway": true,
+      "interceptors": ["audit", "pii_guard", "rate_limiter", "guardrails"],
+      "budgetPct": 60.0
+    }
+  ]
+}

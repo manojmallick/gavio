@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/ToolCall.v1.json",
+  "title": "ToolCall",
+  "description": "A provider-agnostic request from the model to invoke one tool (F-ADP-03). Adapters translate OpenAI tool_calls, Anthropic tool_use blocks, Gemini functionCall parts, and Ollama tool_calls into this shape. Parallel calls are an ordered array of ToolCall on the response (GavioResponse.toolCalls) or on an assistant message (message.toolCalls). Audit records keep only `name` and the arguments hash — never `arguments` (see AuditRecord.toolCalls). The arguments hash is the lowercase hex SHA-256 of the canonical JSON of `arguments`: object keys sorted ascending by Unicode code point at every depth, no insignificant whitespace (separators ',' and ':'), UTF-8 without \\u escaping of non-ASCII characters.",
+  "type": "object",
+  "required": ["id", "name", "arguments"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Correlates this call with the tool-role message that carries its result (message.toolCallId). Taken from the provider when it supplies one (OpenAI id, Anthropic tool_use id). Providers that do not supply ids (Gemini, Ollama) get a deterministic synthetic id `call_<index>_<name>`, where <index> is the zero-based position of the call within the response."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Name of the tool to invoke; matches ToolDefinition.name."
+    },
+    "arguments": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Parsed JSON arguments. Always an object — a provider that sends arguments as a JSON string (OpenAI) is parsed by the adapter; an empty string becomes {}. Arguments that are not a JSON object are a provider error, not a ToolCall."
+    }
+  },
+  "additionalProperties": false
+}

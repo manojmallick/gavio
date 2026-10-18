@@ -1,0 +1,86 @@
+{
+  "feature": "F-ADP-03",
+  "description": "ToolCall.arguments hash: lowercase hex SHA-256 of the canonical JSON of `arguments` (keys sorted at every depth, no whitespace, UTF-8, non-ASCII not escaped). Audit records store this hash instead of the arguments.",
+  "cases": [
+    {
+      "id": "empty-object",
+      "arguments": {},
+      "expectedCanonical": "{}",
+      "expectedHash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "id": "key-order-does-not-matter-a",
+      "arguments": {
+        "a": 2,
+        "b": 1
+      },
+      "expectedCanonical": "{\"a\":2,\"b\":1}",
+      "expectedHash": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772"
+    },
+    {
+      "id": "key-order-does-not-matter-b",
+      "arguments": {
+        "b": 1,
+        "a": 2
+      },
+      "expectedCanonical": "{\"a\":2,\"b\":1}",
+      "expectedHash": "d3626ac30a87e6f7a6428233b3c68299976865fa5508e4267c5415c76af7a772"
+    },
+    {
+      "id": "nested-keys-are-sorted",
+      "arguments": {
+        "z": {
+          "y": 1,
+          "x": [
+            3,
+            2,
+            1
+          ]
+        },
+        "a": null
+      },
+      "expectedCanonical": "{\"a\":null,\"z\":{\"x\":[3,2,1],\"y\":1}}",
+      "expectedHash": "7962721eeed151f8d41d9669829c7cabe65d18fad40893750a198f291b66a78a"
+    },
+    {
+      "id": "scalars",
+      "arguments": {
+        "flag": true,
+        "off": false,
+        "n": 0,
+        "neg": -7,
+        "text": "x"
+      },
+      "expectedCanonical": "{\"flag\":true,\"n\":0,\"neg\":-7,\"off\":false,\"text\":\"x\"}",
+      "expectedHash": "8d8100fb0d6ccf4573a73c6f98f72681298076af720ed59e69f5d34eb853be87"
+    },
+    {
+      "id": "non-ascii-is-not-escaped",
+      "arguments": {
+        "note": "café ☕"
+      },
+      "expectedCanonical": "{\"note\":\"café ☕\"}",
+      "expectedHash": "c66c162ec1ba8033aa78cbab7d8c35979155c48c62b38504e7a37dc310202cf5"
+    },
+    {
+      "id": "string-escapes",
+      "arguments": {
+        "s": "quote \" backslash \\ newline \n tab \t"
+      },
+      "expectedCanonical": "{\"s\":\"quote \\\" backslash \\\\ newline \\n tab \\t\"}",
+      "expectedHash": "7a475e86b9a0007817692d7e8a99d392c802c5dc79e02aca62f655502e50ce14"
+    },
+    {
+      "id": "array-order-is-kept",
+      "arguments": {
+        "items": [
+          "b",
+          "a",
+          "c"
+        ]
+      },
+      "expectedCanonical": "{\"items\":[\"b\",\"a\",\"c\"]}",
+      "expectedHash": "69b18dfccf7a868badaf0e37acd292455445775465f8e17eff6c605f205efa87"
+    }
+  ]
+}
