@@ -229,4 +229,4 @@ def _installed_version() -> str:
     try:
         return version("gavio")
     except PackageNotFoundError:
-        return "3.1.0"
+        return "3.2.0"

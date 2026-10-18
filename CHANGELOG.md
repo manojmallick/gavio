@@ -11,6 +11,34 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+Nothing yet.
+
+---
+
+## [3.2.0] — 2026-10-19
+
+### Summary
+**Tool calling, SDK parity foundations and a reproducible overhead benchmark.**
+v3.2.0 is the first release on the v3.2 → v5.0 [roadmap](docs/roadmap.md). It
+ships three slices of that plan: the normalised tool-calling model (`F-ADP-03`)
+as spec, shared vectors and the Python reference SDK; the foundations of example
+parity (`F-DX-13`: an example matrix, an in-repo example runner, and the
+platform workflow release ported to JavaScript and Java); and a reproducible
+interceptor-chain overhead benchmark (`F-TRUST-02`). **The JavaScript and Java
+SDKs do not have tool-calling adapters yet**, so this release does not meet the
+lockstep rule for `F-ADP-03`; they follow in a later release. The remaining
+example ports (04, 05, 15, 20 to 25) are still listed as `planned` in the
+matrix, and `F-DOC-10`, `F-REL-09` and `F-DOC-11` are not part of this release.
+One behaviour change to know about: workflow release hashes are now computed
+over canonical JSON (see Changed), so hashes of artifacts built by earlier
+releases differ. Feature PRs #105, #106 and #107.
+
+Tests: Python `ruff check` clean and 492 unit tests passed (the 6 Redis cache
+tests need a server and were deselected locally) · JavaScript typecheck clean
+and 328 tests passed · Java `mvn test` green · 40 examples passed against the
+in-repo SDKs · example matrix check green · docs site build green · stable
+release gate green.
+
 ### Added
 - **Example parity matrix (F-DX-13)** — `examples/matrix.json` lists, per example
   and SDK, the implementing directory or an explicit `planned` / `n/a` gap with a
@@ -51,6 +79,20 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   yet supported.
 - `spec/GavioRequest.schema.json` lists `openrouter` in the provider enum (the Python SDK already
   had it).
+- **Reproducible interceptor-chain overhead benchmark (F-TRUST-02).** `benchmarks/chain-overhead/`
+  has Python, JavaScript and Java harnesses that compare a raw provider call with realistic
+  default stacks (gateway only, audit, audit + PII guard, audit + PII + rate limiter +
+  guardrails) using the Inspector benchmark methodology, with fixed seeds and a seeded payload
+  generator that is identical across SDKs. `benchmarks/latest.json` is validated by
+  `benchmarks/latest.schema.json` and `benchmarks/validate_latest.py`; `REPRODUCE.md` gives a
+  one-command run per SDK; a new `benchmarks.yml` workflow runs the harnesses and uploads
+  `latest.json`. The committed `latest.json` comes from a local Apple M4 run and records the
+  SDK version it ran under (`3.1.0`); the CI thresholds have not been calibrated on a GitHub
+  runner yet, and an outside rerun is still pending.
+- **Roadmap and deprecation ledger.** `docs/roadmap.md` (also on the docs site) lays out the
+  v3.2 → v5.0 release train, feature IDs and exit gates; `DEPRECATIONS.md` is the ledger for
+  deprecated APIs. A Learning Resources page was added to the docs and the docs site (#103).
+- The docs site Python guide documents tool calling.
 
 ### Changed
 - **Workflow release hashing is now cross-SDK canonical JSON (Python)** —
@@ -1548,7 +1590,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/manojmallick/gavio/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/manojmallick/gavio/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/manojmallick/gavio/compare/v2.7.0...v3.0.0
 [2.7.0]: https://github.com/manojmallick/gavio/compare/v2.6.0...v2.7.0
