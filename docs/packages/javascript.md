@@ -14,6 +14,7 @@ Source: [`packages/gavio-js`](../../packages/gavio-js/).
 - [Platform Runtime Profile](#platform-runtime-profile)
 - [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
+- [Platform Workflow Release](#platform-workflow-release)
 - [Testing](#testing)
 - [Module format & runtimes](#module-format--runtimes)
 
@@ -436,6 +437,29 @@ failure triage metadata, and prompt release bundles for release evidence.
 
 See [Prompt Registry + Evals](../prompt-registry-evals.md) for all SDKs and the
 shared schemas.
+
+## Platform Workflow Release
+
+The platform workflow release (`F-DX-13`, Python since v3.0.0) is ported to
+JavaScript: one metadata-only artifact joins prompt release bundles, eval
+reports, policy-pack signature evidence, production trust verification, and
+platform-runtime readiness. For the same inputs the artifact and its
+`workflowHash` are identical to the Python reference.
+
+```typescript
+import { runPlatformWorkflowReleaseFile } from 'gavio/workflow'
+
+const result = await runPlatformWorkflowReleaseFile('workflow.json')
+console.log(result.passed, result.artifact.workflowHash)
+```
+
+`buildPlatformWorkflowRelease(manifest, { basePath })` builds the same artifact
+from an in-memory manifest, and `runEvalFile` (from `gavio/prompts/runner`) is
+the library eval runner the workflow uses. The `gavio workflow release` CLI and
+YAML manifests stay Python-only; JavaScript reads JSON documents.
+
+See [Platform Workflow Release](../platform-workflow-release.md) for the manifest format, the canonical
+hash definition, and the shared test vector.
 
 ## Embeddings
 

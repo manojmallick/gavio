@@ -29,6 +29,7 @@ serialise to shapes valid against these schemas.
 | [`IntegrationRecipe.schema.json`](./IntegrationRecipe.schema.json) | Ecosystem integration compatibility recipe with role boundaries, supported Gavio surfaces, docs path, and example path |
 | [`IntegrationAdapterPayload.schema.json`](./IntegrationAdapterPayload.schema.json) | Dependency-light ecosystem adapter payload envelope for gateway, eval, observability, and framework tools |
 | [`PlatformRuntimeProfile.schema.json`](./PlatformRuntimeProfile.schema.json) | Metadata-only platform-grade runtime profile with enabled surfaces, evidence, readiness score, and deterministic gaps |
+| [`PlatformWorkflowRelease.schema.json`](./PlatformWorkflowRelease.schema.json) | Metadata-only platform workflow release artifact (prompts, evals, policy packs, trust, runtime profile) with the canonical-JSON `workflowHash`, plus the input manifest shape |
 | [`BudgetPolicy.schema.json`](./BudgetPolicy.schema.json) | Cost Governance v2 scoped budget policy |
 | [`BudgetDecision.schema.json`](./BudgetDecision.schema.json) | Cost Governance v2 allow/warn/block/fallback decision |
 | [`CostReport.schema.json`](./CostReport.schema.json) | Cost Governance v2 spend, overhead, savings, and budget report |

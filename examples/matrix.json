@@ -1,0 +1,230 @@
+{
+  "schemaVersion": "gavio.example-matrix.v1",
+  "description": "Source of truth for example parity across the Python, JavaScript, and Java SDKs. Checked by scripts/check-example-matrix.mjs --check; run against the in-repo SDKs by scripts/run-examples.mjs.",
+  "sdks": ["python", "javascript", "java"],
+  "entryFormat": {
+    "available": "{ \"path\": \"examples/<sdk>/<id>-<name>\", \"entry\": [optional override], \"cliOnly\": [optional], \"skipRun\": \"optional reason\" }",
+    "planned": "{ \"status\": \"planned\", \"reason\": \"...\" } - a gap that will be ported; the directory must not exist yet",
+    "n/a": "{ \"status\": \"n/a\", \"reason\": \"...\" } - intentionally not applicable for this SDK",
+    "cliOnly": "Steps that need the Python-only `gavio` CLI. CLIs stay Python-only; the library API behind them is ported to every SDK."
+  },
+  "examples": [
+    {
+      "id": "01",
+      "title": "Quickstart",
+      "needsKey": "no",
+      "python": { "path": "examples/python/01-quickstart" },
+      "javascript": { "path": "examples/javascript/01-quickstart" },
+      "java": { "path": "examples/java/01-quickstart" }
+    },
+    {
+      "id": "02",
+      "title": "Production gateway",
+      "needsKey": "optional",
+      "python": { "path": "examples/python/02-production-gateway" },
+      "javascript": { "path": "examples/javascript/02-production-gateway" },
+      "java": { "path": "examples/java/02-production-gateway" }
+    },
+    {
+      "id": "03",
+      "title": "Custom scanner",
+      "needsKey": "no",
+      "python": { "path": "examples/python/03-custom-scanner" },
+      "javascript": { "path": "examples/javascript/03-custom-scanner" },
+      "java": { "path": "examples/java/03-custom-scanner" }
+    },
+    {
+      "id": "04",
+      "title": "Production core stack",
+      "needsKey": "no",
+      "python": { "path": "examples/python/04-production-stack" },
+      "javascript": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: port the audit-chain, PII, rate limit, guardrails, and semantic cache stack to JavaScript."
+      },
+      "java": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: port the audit-chain, PII, rate limit, guardrails, and semantic cache stack to Java."
+      }
+    },
+    {
+      "id": "05",
+      "title": "Inspector & multi-agent tracing",
+      "needsKey": "no",
+      "python": { "path": "examples/python/05-inspector" },
+      "javascript": { "path": "examples/javascript/05-inspector" },
+      "java": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: Java Inspector API exists in gavio-core; only the example is missing."
+      }
+    },
+    {
+      "id": "06",
+      "title": "Policy Packs",
+      "needsKey": "no",
+      "python": { "path": "examples/python/06-policy-packs" },
+      "javascript": { "path": "examples/javascript/06-policy-packs" },
+      "java": { "path": "examples/java/06-policy-packs" }
+    },
+    {
+      "id": "07",
+      "title": "Tool Runtime",
+      "needsKey": "no",
+      "python": { "path": "examples/python/07-tool-runtime" },
+      "javascript": { "path": "examples/javascript/07-tool-runtime" },
+      "java": { "path": "examples/java/07-tool-runtime" }
+    },
+    {
+      "id": "08",
+      "title": "Runtime Export",
+      "needsKey": "no",
+      "python": { "path": "examples/python/08-runtime-export" },
+      "javascript": { "path": "examples/javascript/08-runtime-export" },
+      "java": { "path": "examples/java/08-runtime-export" }
+    },
+    {
+      "id": "09",
+      "title": "Prompt Registry + Evals",
+      "needsKey": "no",
+      "python": { "path": "examples/python/09-prompt-registry-evals" },
+      "javascript": { "path": "examples/javascript/09-prompt-registry-evals" },
+      "java": { "path": "examples/java/09-prompt-registry-evals" }
+    },
+    {
+      "id": "12",
+      "title": "Domain Policy Pack Catalog",
+      "needsKey": "no",
+      "python": { "path": "examples/python/12-domain-policy-packs" },
+      "javascript": { "path": "examples/javascript/12-domain-policy-packs" },
+      "java": { "path": "examples/java/12-domain-policy-packs" }
+    },
+    {
+      "id": "13",
+      "title": "Self-hosted Control Plane",
+      "needsKey": "no",
+      "python": { "path": "examples/python/13-control-plane" },
+      "javascript": { "path": "examples/javascript/13-control-plane" },
+      "java": { "path": "examples/java/13-control-plane" }
+    },
+    {
+      "id": "14",
+      "title": "Production Trust Package",
+      "needsKey": "no",
+      "python": { "path": "examples/python/14-production-trust" },
+      "javascript": { "path": "examples/javascript/14-production-trust" },
+      "java": { "path": "examples/java/14-production-trust" }
+    },
+    {
+      "id": "15",
+      "title": "Ecosystem integrations",
+      "needsKey": "no",
+      "python": {
+        "path": "examples/integrations",
+        "entry": [
+          "adapters/recipe.py",
+          "full-stack/integration_stack.py",
+          "production-gateway-observability-eval/app.py",
+          "production-agent-framework/app.py"
+        ]
+      },
+      "javascript": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: adapter-payload demo using the JavaScript integrations module (not all 13 sample apps)."
+      },
+      "java": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: adapter-payload demo using io.gavio.integrations (not all 13 sample apps)."
+      }
+    },
+    {
+      "id": "20",
+      "title": "Platform Runtime Profile",
+      "needsKey": "no",
+      "python": { "path": "examples/python/20-platform-runtime" },
+      "javascript": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: platform-runtime module already ships in JavaScript; example only."
+      },
+      "java": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: io.gavio.platform.PlatformRuntime already ships; example only."
+      }
+    },
+    {
+      "id": "21",
+      "title": "Eval CI Gate",
+      "needsKey": "no",
+      "python": {
+        "path": "examples/python/21-eval-ci-gate",
+        "cliOnly": ["gavio eval run suite.yaml --baseline ... --junit ..."]
+      },
+      "javascript": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: library eval runner (EvalRunner) with gates and baseline comparison; `gavio eval run` stays Python-only."
+      },
+      "java": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: library eval runner (EvalRunner) with gates and baseline comparison; `gavio eval run` stays Python-only."
+      }
+    },
+    {
+      "id": "22",
+      "title": "Platform Feature Tour",
+      "needsKey": "no",
+      "python": { "path": "examples/python/22-platform-feature-tour" },
+      "javascript": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4 (last): umbrella tour; depends on the other JavaScript ports."
+      },
+      "java": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4 (last): umbrella tour; depends on the other Java ports."
+      }
+    },
+    {
+      "id": "23",
+      "title": "Prompt Registry v2",
+      "needsKey": "no",
+      "python": { "path": "examples/python/23-prompt-registry-v2" },
+      "javascript": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: signed manifests, semver selectors, approvals, and diffs already ship in the JavaScript SDK; example only."
+      },
+      "java": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: signed manifests, semver selectors, approvals, and diffs already ship in the Java SDK; example only."
+      }
+    },
+    {
+      "id": "24",
+      "title": "Enterprise Admin v2",
+      "needsKey": "no",
+      "python": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: start apps/control-plane and drive it from the Python SDK client."
+      },
+      "javascript": { "path": "examples/javascript/24-enterprise-admin-v2" },
+      "java": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: start apps/control-plane and drive it from the Java ControlPlaneClient."
+      }
+    },
+    {
+      "id": "25",
+      "title": "Platform Workflow Release",
+      "needsKey": "no",
+      "python": {
+        "path": "examples/python/25-platform-workflow-release",
+        "cliOnly": ["gavio workflow release workflow.json --output workflow-release.json --pretty"]
+      },
+      "javascript": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: library API (runPlatformWorkflowReleaseFile) shipped with step 3; example port remains."
+      },
+      "java": {
+        "status": "planned",
+        "reason": "F-DX-13 step 4: library API (PlatformWorkflow.runFile) shipped with step 3; example port remains."
+      }
+    }
+  ]
+}

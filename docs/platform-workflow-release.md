@@ -39,6 +39,35 @@ eval gate results, policy pack signature evidence, trust bundle verification,
 and runtime-profile readiness. Raw prompt text, raw model output, and
 content-bearing metadata keys are omitted or replaced with hashes.
 
+## SDK support
+
+| SDK | Library API | Notes |
+|---|---|---|
+| Python | `run_platform_workflow_release_file`, `build_platform_workflow_release`, `platform_workflow_release_hash` | Reference implementation; also the `gavio workflow release` CLI and YAML manifests |
+| JavaScript | `runPlatformWorkflowReleaseFile`, `buildPlatformWorkflowRelease`, `platformWorkflowReleaseHash` from `gavio/workflow` | JSON documents only; asynchronous |
+| Java | `PlatformWorkflow.runFile`, `PlatformWorkflow.build`, `PlatformWorkflow.releaseHash` in `gavio-core` | JSON documents only; Policy Pack evidence comes from `gavio-interceptor-pii` through `PlatformWorkflowPolicyResolver` |
+
+CLIs stay Python-only. All three SDKs load the same vectors in
+[`test-vectors/workflow/release.json`](../test-vectors/workflow/release.json), and the artifact shape is
+[`spec/PlatformWorkflowRelease.schema.json`](../spec/PlatformWorkflowRelease.schema.json).
+
+### `workflowHash`
+
+`workflowHash` is `sha256:` over the **canonical JSON** of the artifact without
+`workflowHash`, `evals[*].runner`, and `evals[*].source` (the interpreter
+version and local suite path describe the machine, not the release). Canonical
+JSON has no whitespace; sorts object keys by Unicode code point; emits non-ASCII
+as UTF-8 and control characters as lowercase `\u00xx` escapes; writes integral
+numbers as integers (`1.0` becomes `1`); and writes every other number as the
+shortest round-trip decimal without an exponent. That is what makes the hash
+byte-identical across languages.
+
+> Python releases before this change hashed with `json.dumps`, which wrote
+> `1.0` for integral floats. Artifacts hashed that way re-hash differently;
+> rebuild them with the current SDK. Numbers inside the *input* prompt manifest
+> feed its `digest`, so write integral values without a fraction (`1`, not
+> `1.0`) if the same manifest must hash identically in every SDK.
+
 ## Control Plane
 
 The self-hosted control plane stores workflow releases at

@@ -16,6 +16,7 @@ pull only what you need.
 - [Platform Runtime Profile](#platform-runtime-profile)
 - [Production Trust Package](#production-trust-package)
 - [Prompt Registry + Evals](#prompt-registry--evals)
+- [Platform Workflow Release](#platform-workflow-release)
 - [Testing](#testing)
 - [Notes](#notes)
 
@@ -450,6 +451,32 @@ triage metadata, and prompt release bundles for release evidence.
 
 See [Prompt Registry + Evals](../prompt-registry-evals.md) for all SDKs and the
 shared schemas.
+
+## Platform Workflow Release
+
+The platform workflow release (`F-DX-13`, Python since v3.0.0) is ported to
+Java: one metadata-only artifact joins prompt release bundles, eval reports,
+policy-pack signature evidence, production trust verification, and
+platform-runtime readiness. For the same inputs the artifact and its
+`workflowHash` are identical to the Python reference.
+
+```java
+import io.gavio.platform.PlatformWorkflow;
+import io.gavio.platform.PlatformWorkflowResult;
+
+PlatformWorkflowResult result = PlatformWorkflow.runFile(Path.of("workflow.json"));
+System.out.println(result.passed() + " " + result.artifact().get("workflowHash"));
+```
+
+`PlatformWorkflow.build(manifest, basePath)` builds the same artifact from an
+in-memory manifest, and `io.gavio.prompts.EvalRunner` is the library eval runner
+the workflow uses. Policy Pack evidence is read through the
+`PlatformWorkflowPolicyResolver` SPI, which `gavio-interceptor-pii` provides, so
+keep that artifact on the classpath (or pass a resolver). The `gavio workflow
+release` CLI and YAML manifests stay Python-only; Java reads JSON documents.
+
+See [Platform Workflow Release](../platform-workflow-release.md) for the manifest format, the canonical
+hash definition, and the shared test vector.
 
 ## Embeddings
 

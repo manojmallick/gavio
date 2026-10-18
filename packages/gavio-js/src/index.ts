@@ -123,6 +123,28 @@ export type {
 } from './prompts/index.js'
 
 export {
+  EVAL_RUNNER_SCHEMA_VERSION,
+  EvalRunResult,
+  evaluateGate,
+  loadEvalDocument,
+  runEvalFile,
+} from './prompts/runner.js'
+export type { EvalGate, EvalGateOptions, RunEvalFileOptions } from './prompts/runner.js'
+
+export {
+  WORKFLOW_MANIFEST_SCHEMA_VERSION,
+  WORKFLOW_RELEASE_SCHEMA_VERSION,
+  buildPlatformWorkflowRelease,
+  canonicalJson,
+  platformWorkflowReleaseHash,
+  runPlatformWorkflowReleaseFile,
+} from './workflow.js'
+export type {
+  BuildPlatformWorkflowReleaseOptions,
+  PlatformWorkflowReleaseResult,
+} from './workflow.js'
+
+export {
   jsonlRuntimeExporter,
   metadataOnlyEvent,
   otelSpanExporter,

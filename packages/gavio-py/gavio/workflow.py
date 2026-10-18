@@ -13,6 +13,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +29,9 @@ from .trust import verify_production_trust_bundle
 
 WORKFLOW_MANIFEST_SCHEMA_VERSION = "gavio.platform-workflow.v1"
 WORKFLOW_RELEASE_SCHEMA_VERSION = "gavio.platform-workflow-release.v1"
+
+# Fields of an ``evals[*]`` entry that describe the machine that ran the suite.
+_ENVIRONMENT_EVAL_KEYS = frozenset({"runner", "source"})
 
 _CONTENT_KEY_NAMES = {
     "messages",
@@ -162,12 +166,69 @@ def build_platform_workflow_release(
 
 
 def platform_workflow_release_hash(artifact: Mapping[str, Any]) -> str:
-    """Return ``sha256:<hex>`` for a workflow release without its hash field."""
+    """Return ``sha256:<hex>`` for a workflow release in canonical JSON form.
+
+    The hash covers the portable content of the artifact. ``workflowHash``
+    itself and the environment-specific ``evals[*].runner`` / ``evals[*].source``
+    fields (interpreter version, local file path) are excluded so every SDK that
+    builds the same release computes the same hash. See
+    ``spec/PlatformWorkflowRelease.schema.json`` and
+    ``test-vectors/workflow/release.json``.
+    """
 
     data = dict(artifact)
     data.pop("workflowHash", None)
-    canonical = json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    return f"sha256:{hashlib.sha256(canonical.encode('utf-8')).hexdigest()}"
+    evals = data.get("evals")
+    if isinstance(evals, list):
+        data["evals"] = [
+            {key: value for key, value in item.items() if key not in _ENVIRONMENT_EVAL_KEYS}
+            if isinstance(item, Mapping)
+            else item
+            for item in evals
+        ]
+    return f"sha256:{hashlib.sha256(canonical_json(data).encode('utf-8')).hexdigest()}"
+
+
+def canonical_json(value: Any) -> str:
+    """Serialize ``value`` to the cross-SDK canonical JSON form.
+
+    Compact separators, object keys sorted by Unicode code point, non-ASCII
+    characters emitted as-is, control characters as lowercase ``\\u00xx``
+    escapes, integral numbers written as integers (``1.0`` -> ``1``), and every
+    other number as the shortest round-trip decimal without an exponent.
+    """
+
+    if value is None:
+        return "null"
+    if value is True:
+        return "true"
+    if value is False:
+        return "false"
+    if isinstance(value, str):
+        return json.dumps(value, ensure_ascii=False)
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        return _canonical_number(value)
+    if isinstance(value, Mapping):
+        items = sorted(((str(key), item) for key, item in value.items()), key=lambda pair: pair[0])
+        return "{" + ",".join(
+            f"{json.dumps(key, ensure_ascii=False)}:{canonical_json(item)}" for key, item in items
+        ) + "}"
+    if isinstance(value, Sequence) and not isinstance(value, (bytes, bytearray)):
+        return "[" + ",".join(canonical_json(item) for item in value) + "]"
+    raise TypeError(f"cannot canonicalize {type(value).__name__}")
+
+
+def _canonical_number(value: float) -> str:
+    if value != value or value in (float("inf"), float("-inf")):
+        raise ValueError("canonical JSON cannot represent NaN or Infinity")
+    if value == int(value):
+        return str(int(value))
+    text = repr(value)
+    if "e" in text or "E" in text:
+        text = format(Decimal(text), "f")
+    return text
 
 
 def _run_eval_sections(
@@ -354,8 +415,7 @@ def _sanitize_metadata(value: Any) -> Any:
 
 
 def _sha256_json(value: Any) -> str:
-    canonical = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
 
 
 def _normalize_key(value: Any) -> str:

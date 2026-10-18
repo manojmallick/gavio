@@ -1,0 +1,305 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.dev/schemas/PlatformWorkflowRelease.v1.json",
+  "title": "PlatformWorkflowRelease",
+  "description": "Metadata-only platform workflow release artifact that joins prompts, evals, policy packs, production trust evidence, and a platform runtime profile (F-DX-13). Built by gavio.build_platform_workflow_release (Python), buildPlatformWorkflowRelease (JavaScript), and io.gavio.platform.PlatformWorkflow (Java). The input manifest shape is described by #/$defs/workflowManifest.",
+  "$comment": "workflowHash is sha256 over the canonical JSON of the artifact without workflowHash, evals[*].runner, and evals[*].source. Canonical JSON: no whitespace; object keys sorted by Unicode code point; strings escape only \\\", \\\\, \\b, \\f, \\n, \\r, \\t and other control characters as lowercase \\u00xx (non-ASCII is emitted as UTF-8 as-is); integral numbers are written as integers (1.0 -> 1, -0.0 -> 0); every other number is the shortest round-trip decimal without an exponent. Vectors: test-vectors/workflow/release.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "workflowId",
+    "generatedAt",
+    "release",
+    "passed",
+    "reasons",
+    "prompts",
+    "evals",
+    "policies",
+    "trust",
+    "runtimeProfile",
+    "metadata",
+    "workflowHash"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "gavio.platform-workflow-release.v1" },
+    "workflowId": { "type": "string", "minLength": 1 },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "release": {
+      "type": "object",
+      "description": "Free-form release identity (version, tag, commit). Content-bearing keys are replaced by <key>Hash.",
+      "additionalProperties": true
+    },
+    "passed": {
+      "type": "boolean",
+      "description": "True exactly when reasons is empty."
+    },
+    "reasons": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Gate failures in a fixed order: eval:*, prompt:*, prompt release bundle ... did not pass, policy ... signature is invalid, trust:*, profile:*."
+    },
+    "prompts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manifest", "releaseBundles"],
+      "properties": {
+        "manifest": {
+          "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/promptManifestIdentity" }]
+        },
+        "releaseBundles": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/promptReleaseBundle" }
+        }
+      }
+    },
+    "evals": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evalRun" }
+    },
+    "policies": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/policyEvidence" }
+    },
+    "trust": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/trustEvidence" }]
+    },
+    "runtimeProfile": {
+      "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/profileEvidence" }]
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "workflowHash": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    }
+  },
+  "$defs": {
+    "sha256Hex": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "promptManifestIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "registryId", "digest"],
+      "properties": {
+        "schemaVersion": { "type": ["string", "null"] },
+        "registryId": { "type": ["string", "null"] },
+        "digest": { "$ref": "#/$defs/sha256Hex" },
+        "signature": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "algorithm": { "type": "string" },
+            "keyId": { "type": "string" },
+            "value": { "type": "string" }
+          }
+        }
+      }
+    },
+    "promptReleaseBundle": {
+      "type": "object",
+      "description": "gavio.prompt-release-bundle.v1 as produced by build_prompt_release_bundle; eval reports follow EvalReport.schema.json.",
+      "required": ["schemaVersion", "bundleId", "prompt", "generatedAt", "manifest", "passed", "gates", "evalReports"],
+      "properties": {
+        "schemaVersion": { "const": "gavio.prompt-release-bundle.v1" },
+        "bundleId": { "type": "string" },
+        "prompt": {
+          "type": "object",
+          "required": ["id", "version"],
+          "properties": { "id": { "type": "string" }, "version": { "type": "string" } }
+        },
+        "generatedAt": { "type": "string" },
+        "manifest": { "$ref": "#/$defs/promptManifestIdentity" },
+        "passed": { "type": "boolean" },
+        "gates": { "type": "array", "items": { "$ref": "#/$defs/promptVersionGate" } },
+        "evalReports": { "type": "array", "items": { "$ref": "https://gavio.io/schema/EvalReport.v1.json" } },
+        "promptDiff": { "type": "object" },
+        "metadata": { "type": "object" }
+      }
+    },
+    "promptVersionGate": {
+      "type": "object",
+      "required": ["promptId", "promptVersion", "suiteId", "passed", "score", "totalCases", "passedCases", "failedCases", "reasons", "maxRegression"],
+      "properties": {
+        "promptId": { "type": "string" },
+        "promptVersion": { "type": "string" },
+        "suiteId": { "type": "string" },
+        "passed": { "type": "boolean" },
+        "score": { "type": "number" },
+        "totalCases": { "type": "integer" },
+        "passedCases": { "type": "integer" },
+        "failedCases": { "type": "array", "items": { "type": "string" } },
+        "reasons": { "type": "array", "items": { "type": "string" } },
+        "baselineScore": { "type": ["number", "null"] },
+        "failUnder": { "type": ["number", "null"] },
+        "maxRegression": { "type": "number" },
+        "scoreDelta": { "type": ["number", "null"] }
+      }
+    },
+    "evalRun": {
+      "description": "An EvalReport plus the runner gate. runner and source describe the machine that ran the suite and are excluded from workflowHash; JavaScript and Java name their runtime key (node, java) where Python uses python.",
+      "allOf": [{ "$ref": "https://gavio.io/schema/EvalReport.v1.json" }],
+      "type": "object",
+      "required": ["schemaVersion", "runner", "source", "gate"],
+      "properties": {
+        "schemaVersion": { "const": "1.0" },
+        "runner": {
+          "type": "object",
+          "required": ["name", "version"],
+          "properties": {
+            "name": { "const": "gavio-eval-runner" },
+            "version": { "type": "string" }
+          },
+          "additionalProperties": { "type": "string" }
+        },
+        "source": { "type": "string" },
+        "gate": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["passed", "reasons", "failUnder", "baselineScore", "maxRegression", "scoreDelta"],
+          "properties": {
+            "passed": { "type": "boolean" },
+            "reasons": { "type": "array", "items": { "type": "string" } },
+            "failUnder": { "type": ["number", "null"] },
+            "baselineScore": { "type": ["number", "null"] },
+            "maxRegression": { "type": "number" },
+            "scoreDelta": { "type": ["number", "null"] }
+          }
+        },
+        "workflow": {
+          "type": "object",
+          "required": ["passed", "links", "gates"],
+          "properties": {
+            "passed": { "type": "boolean" },
+            "links": { "type": "array", "items": { "type": "object" } },
+            "gates": { "type": "array", "items": { "$ref": "#/$defs/promptVersionGate" } }
+          }
+        }
+      }
+    },
+    "policyEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "version", "domain", "source", "signatureValid", "manifestDigest", "detectorCount", "metadata"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "domain": { "type": "string" },
+        "source": { "type": "string", "description": "The pathOrName the manifest referenced." },
+        "signatureValid": { "type": "boolean" },
+        "manifestDigest": { "$ref": "#/$defs/sha256Hex" },
+        "detectorCount": { "type": "integer", "minimum": 0 },
+        "metadata": { "type": "object" }
+      }
+    },
+    "trustEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["valid", "errors", "computedHash", "bundle"],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "errors": { "type": "array", "items": { "type": "string" } },
+        "computedHash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "bundle": { "$ref": "ProductionTrustBundle.v1.json" }
+      }
+    },
+    "profileEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["valid", "errors", "computedHash", "readiness", "profile"],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "errors": { "type": "array", "items": { "type": "string" } },
+        "computedHash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+        "readiness": { "type": "object" },
+        "profile": { "$ref": "PlatformRuntimeProfile.v2.json" }
+      }
+    },
+    "workflowManifest": {
+      "title": "PlatformWorkflowManifest",
+      "description": "Input manifest (gavio.platform-workflow.v1). Relative paths resolve against the manifest's directory. SDKs also accept the snake_case and alias spellings Python has always accepted (workflow_id, generated_at, prompt, eval, policyPacks, trust, platformRuntimeProfile, fail_under, max_regression, ...). Only JSON documents are supported outside Python (YAML manifests are Python-only).",
+      "type": "object",
+      "properties": {
+        "schemaVersion": { "const": "gavio.platform-workflow.v1" },
+        "workflowId": { "type": "string", "default": "workflow-release" },
+        "generatedAt": { "type": "string", "description": "Defaults to the current UTC time; pin it for reproducible hashes." },
+        "release": { "type": "object" },
+        "prompts": {
+          "type": "object",
+          "properties": {
+            "manifest": { "type": "string" },
+            "promptId": { "type": "string" },
+            "promptVersion": { "type": "string" },
+            "fromVersion": { "type": "string" },
+            "releases": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["promptId", "promptVersion"],
+                "properties": {
+                  "promptId": { "type": "string" },
+                  "promptVersion": { "type": "string" },
+                  "fromVersion": { "type": "string" },
+                  "generatedAt": { "type": "string" },
+                  "bundleId": { "type": "string" },
+                  "metadata": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "evals": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string", "description": "Path to an eval suite." },
+              {
+                "type": "object",
+                "required": ["suite"],
+                "properties": {
+                  "suite": { "type": "string" },
+                  "templates": { "type": "array", "items": { "type": "string" } },
+                  "template": { "type": "string" },
+                  "baseline": { "type": "string" },
+                  "failUnder": { "type": "number" },
+                  "maxRegression": { "type": "number" }
+                }
+              }
+            ]
+          }
+        },
+        "policies": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string", "description": "Policy pack catalog name or path." },
+              {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string" },
+                  "pathOrName": { "type": "string" },
+                  "metadata": { "type": "object" }
+                }
+              }
+            ]
+          }
+        },
+        "trustBundle": {
+          "oneOf": [
+            { "type": "string", "description": "Path to a ProductionTrustBundle JSON document." },
+            { "type": "object", "properties": { "path": { "type": "string" }, "data": { "type": "object" } } }
+          ]
+        },
+        "runtimeProfile": {
+          "oneOf": [
+            { "type": "string", "description": "Path to a PlatformRuntimeProfile JSON document." },
+            { "type": "object", "properties": { "path": { "type": "string" }, "data": { "type": "object" } } }
+          ]
+        },
+        "metadata": { "type": "object" }
+      }
+    }
+  }
+}

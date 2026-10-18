@@ -124,6 +124,36 @@ jobs:
       - name: Test (maven, incl. shared vectors + Redis backend, F-CACHE-04)
         run: mvn -B test
 
+  # F-DX-13: examples must stay in parity across SDKs and must run against the
+  # code in THIS repository, not the last published packages, so a feature can
+  # ship with its example before the release is cut.
+  examples:
+    name: Examples (parity + in-repo SDKs)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: packages/gavio-js/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Example matrix (paths, gaps, README tables)
+        run: |
+          node --test scripts/check-example-matrix.test.mjs
+          node scripts/check-example-matrix.mjs --check
+      - name: Run every example against the in-repo SDKs
+        # pip install -e packages/gavio-py, npm pack of packages/gavio-js, and a
+        # reactor `mvn install` into an isolated local repository; see
+        # examples/README.md "Run against the in-repo SDKs".
+        run: node scripts/run-examples.mjs
+
   benchmarks:
     name: Inspector overhead benchmarks
     runs-on: ubuntu-latest
