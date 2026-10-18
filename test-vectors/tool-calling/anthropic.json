@@ -1,0 +1,1277 @@
+{
+  "feature": "F-ADP-03",
+  "provider": "anthropic",
+  "description": "Anthropic Messages API tool calling: tool_use / tool_result content blocks. Consecutive tool-role messages merge into one user turn.",
+  "requestCases": [
+    {
+      "id": "declares-tools-auto",
+      "request": {
+        "model": "claude-sonnet-4-5",
+        "provider": "anthropic",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          },
+          {
+            "name": "ping",
+            "description": "Check connectivity"
+          }
+        ],
+        "toolChoice": "auto"
+      },
+      "expectedPayload": {
+        "model": "claude-sonnet-4-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "max_tokens": 256,
+        "temperature": 0.2,
+        "system": "You are a travel assistant.",
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          },
+          {
+            "name": "ping",
+            "description": "Check connectivity",
+            "input_schema": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "auto"
+        }
+      }
+    },
+    {
+      "id": "choice-none",
+      "request": {
+        "model": "claude-sonnet-4-5",
+        "provider": "anthropic",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "toolChoice": "none"
+      },
+      "expectedPayload": {
+        "model": "claude-sonnet-4-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "max_tokens": 256,
+        "temperature": 0.2,
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "none"
+        }
+      }
+    },
+    {
+      "id": "choice-required-is-any",
+      "request": {
+        "model": "claude-sonnet-4-5",
+        "provider": "anthropic",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "toolChoice": "required"
+      },
+      "expectedPayload": {
+        "model": "claude-sonnet-4-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "max_tokens": 256,
+        "temperature": 0.2,
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "any"
+        }
+      }
+    },
+    {
+      "id": "choice-named",
+      "request": {
+        "model": "claude-sonnet-4-5",
+        "provider": "anthropic",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "toolChoice": {
+          "name": "get_weather"
+        }
+      },
+      "expectedPayload": {
+        "model": "claude-sonnet-4-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "max_tokens": 256,
+        "temperature": 0.2,
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "tool",
+          "name": "get_weather"
+        }
+      }
+    },
+    {
+      "id": "tools-without-choice",
+      "request": {
+        "model": "claude-sonnet-4-5",
+        "provider": "anthropic",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "model": "claude-sonnet-4-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "max_tokens": 256,
+        "temperature": 0.2,
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "choice-ignored-without-tools",
+      "request": {
+        "model": "claude-sonnet-4-5",
+        "provider": "anthropic",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "toolChoice": "required"
+      },
+      "expectedPayload": {
+        "model": "claude-sonnet-4-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "max_tokens": 256,
+        "temperature": 0.2
+      }
+    },
+    {
+      "id": "no-tools-payload-unchanged",
+      "request": {
+        "model": "claude-sonnet-4-5",
+        "provider": "anthropic",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        }
+      },
+      "expectedPayload": {
+        "model": "claude-sonnet-4-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "max_tokens": 256,
+        "temperature": 0.2,
+        "system": "You are a travel assistant."
+      }
+    },
+    {
+      "id": "history-single-call",
+      "request": {
+        "model": "claude-sonnet-4-5",
+        "provider": "anthropic",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "toolCalls": [
+              {
+                "id": "toolu_01A",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "toolCallId": "toolu_01A",
+            "name": "get_weather",
+            "content": "{\"temp_c\":18}"
+          },
+          {
+            "role": "assistant",
+            "content": "It is 18 degrees in Paris."
+          },
+          {
+            "role": "user",
+            "content": "And Rome?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "toolChoice": "auto"
+      },
+      "expectedPayload": {
+        "model": "claude-sonnet-4-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "tool_use",
+                "id": "toolu_01A",
+                "name": "get_weather",
+                "input": {
+                  "city": "Paris"
+                }
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01A",
+                "content": "{\"temp_c\":18}"
+              }
+            ]
+          },
+          {
+            "role": "assistant",
+            "content": "It is 18 degrees in Paris."
+          },
+          {
+            "role": "user",
+            "content": "And Rome?"
+          }
+        ],
+        "max_tokens": 256,
+        "temperature": 0.2,
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "auto"
+        }
+      }
+    },
+    {
+      "id": "history-parallel-calls-merge-into-one-user-turn",
+      "request": {
+        "model": "claude-sonnet-4-5",
+        "provider": "anthropic",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "Checking both.",
+            "toolCalls": [
+              {
+                "id": "toolu_01A",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris"
+                }
+              },
+              {
+                "id": "toolu_01B",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Rome"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "toolCallId": "toolu_01A",
+            "content": "{\"temp_c\":18}"
+          },
+          {
+            "role": "tool",
+            "toolCallId": "toolu_01B",
+            "content": "{\"temp_c\":24}"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "model": "claude-sonnet-4-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "text",
+                "text": "Checking both."
+              },
+              {
+                "type": "tool_use",
+                "id": "toolu_01A",
+                "name": "get_weather",
+                "input": {
+                  "city": "Paris"
+                }
+              },
+              {
+                "type": "tool_use",
+                "id": "toolu_01B",
+                "name": "get_weather",
+                "input": {
+                  "city": "Rome"
+                }
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01A",
+                "content": "{\"temp_c\":18}"
+              },
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01B",
+                "content": "{\"temp_c\":24}"
+              }
+            ]
+          }
+        ],
+        "max_tokens": 256,
+        "temperature": 0.2,
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "history-tool-error-sets-is-error",
+      "request": {
+        "model": "claude-sonnet-4-5",
+        "provider": "anthropic",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "toolCalls": [
+              {
+                "id": "toolu_01A",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "toolCallId": "toolu_01A",
+            "isError": true,
+            "content": "upstream timeout"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "model": "claude-sonnet-4-5",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": [
+              {
+                "type": "tool_use",
+                "id": "toolu_01A",
+                "name": "get_weather",
+                "input": {
+                  "city": "Paris"
+                }
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "tool_result",
+                "tool_use_id": "toolu_01A",
+                "content": "upstream timeout",
+                "is_error": true
+              }
+            ]
+          }
+        ],
+        "max_tokens": 256,
+        "temperature": 0.2,
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "responseCases": [
+    {
+      "id": "text-only",
+      "providerResponse": {
+        "id": "msg_01",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-5-20250929",
+        "content": [
+          {
+            "type": "text",
+            "text": "It is sunny."
+          }
+        ],
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 20,
+          "output_tokens": 5
+        }
+      },
+      "expected": {
+        "content": "It is sunny.",
+        "toolCalls": [],
+        "finishReason": "stop",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 5,
+          "totalTokens": 25
+        },
+        "modelVersion": "claude-sonnet-4-5-20250929"
+      }
+    },
+    {
+      "id": "single-call",
+      "providerResponse": {
+        "id": "msg_01",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-5-20250929",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "toolu_01A",
+            "name": "get_weather",
+            "input": {
+              "city": "Paris"
+            }
+          }
+        ],
+        "stop_reason": "tool_use",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 30,
+          "output_tokens": 12
+        }
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [
+          {
+            "id": "toolu_01A",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Paris"
+            }
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 30,
+          "completionTokens": 12,
+          "totalTokens": 42
+        },
+        "modelVersion": "claude-sonnet-4-5-20250929"
+      }
+    },
+    {
+      "id": "text-and-parallel-calls",
+      "providerResponse": {
+        "id": "msg_01",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-5-20250929",
+        "content": [
+          {
+            "type": "text",
+            "text": "Checking both."
+          },
+          {
+            "type": "tool_use",
+            "id": "toolu_01A",
+            "name": "get_weather",
+            "input": {
+              "city": "Paris"
+            }
+          },
+          {
+            "type": "tool_use",
+            "id": "toolu_01B",
+            "name": "get_time",
+            "input": {
+              "city": "Rome"
+            }
+          }
+        ],
+        "stop_reason": "tool_use",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 41,
+          "output_tokens": 25
+        }
+      },
+      "expected": {
+        "content": "Checking both.",
+        "toolCalls": [
+          {
+            "id": "toolu_01A",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Paris"
+            }
+          },
+          {
+            "id": "toolu_01B",
+            "name": "get_time",
+            "arguments": {
+              "city": "Rome"
+            }
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 41,
+          "completionTokens": 25,
+          "totalTokens": 66
+        },
+        "modelVersion": "claude-sonnet-4-5-20250929"
+      }
+    },
+    {
+      "id": "call-without-arguments",
+      "providerResponse": {
+        "id": "msg_01",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-5-20250929",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "toolu_01P",
+            "name": "ping",
+            "input": {}
+          }
+        ],
+        "stop_reason": "tool_use",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 10,
+          "output_tokens": 6
+        }
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [
+          {
+            "id": "toolu_01P",
+            "name": "ping",
+            "arguments": {}
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 10,
+          "completionTokens": 6,
+          "totalTokens": 16
+        },
+        "modelVersion": "claude-sonnet-4-5-20250929"
+      }
+    },
+    {
+      "id": "multiple-text-blocks-concatenate",
+      "providerResponse": {
+        "id": "msg_01",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-5-20250929",
+        "content": [
+          {
+            "type": "text",
+            "text": "It is "
+          },
+          {
+            "type": "text",
+            "text": "sunny."
+          }
+        ],
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 20,
+          "output_tokens": 5
+        }
+      },
+      "expected": {
+        "content": "It is sunny.",
+        "toolCalls": [],
+        "finishReason": "stop",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 5,
+          "totalTokens": 25
+        },
+        "modelVersion": "claude-sonnet-4-5-20250929"
+      }
+    },
+    {
+      "id": "stop-sequence",
+      "providerResponse": {
+        "id": "msg_01",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-5-20250929",
+        "content": [
+          {
+            "type": "text",
+            "text": "done"
+          }
+        ],
+        "stop_reason": "stop_sequence",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 4,
+          "output_tokens": 2
+        }
+      },
+      "expected": {
+        "content": "done",
+        "toolCalls": [],
+        "finishReason": "stop",
+        "usage": {
+          "promptTokens": 4,
+          "completionTokens": 2,
+          "totalTokens": 6
+        },
+        "modelVersion": "claude-sonnet-4-5-20250929"
+      }
+    },
+    {
+      "id": "max-tokens-is-length",
+      "providerResponse": {
+        "id": "msg_01",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-5-20250929",
+        "content": [
+          {
+            "type": "text",
+            "text": "It is su"
+          }
+        ],
+        "stop_reason": "max_tokens",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 20,
+          "output_tokens": 256
+        }
+      },
+      "expected": {
+        "content": "It is su",
+        "toolCalls": [],
+        "finishReason": "length",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 256,
+          "totalTokens": 276
+        },
+        "modelVersion": "claude-sonnet-4-5-20250929"
+      }
+    },
+    {
+      "id": "refusal-is-content-filter",
+      "providerResponse": {
+        "id": "msg_01",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-5-20250929",
+        "content": [],
+        "stop_reason": "refusal",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 20,
+          "output_tokens": 0
+        }
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [],
+        "finishReason": "content_filter",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 0,
+          "totalTokens": 20
+        },
+        "modelVersion": "claude-sonnet-4-5-20250929"
+      }
+    },
+    {
+      "id": "pause-turn-is-other",
+      "providerResponse": {
+        "id": "msg_01",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-5-20250929",
+        "content": [
+          {
+            "type": "text",
+            "text": "working"
+          }
+        ],
+        "stop_reason": "pause_turn",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 20,
+          "output_tokens": 3
+        }
+      },
+      "expected": {
+        "content": "working",
+        "toolCalls": [],
+        "finishReason": "other",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 3,
+          "totalTokens": 23
+        },
+        "modelVersion": "claude-sonnet-4-5-20250929"
+      }
+    }
+  ],
+  "errorCases": [
+    {
+      "id": "tool-use-without-id",
+      "providerResponse": {
+        "id": "msg_01",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-5-20250929",
+        "content": [
+          {
+            "type": "tool_use",
+            "name": "get_weather",
+            "input": {}
+          }
+        ],
+        "stop_reason": "tool_use",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 1,
+          "output_tokens": 1
+        }
+      },
+      "expectedError": "MalformedToolCall"
+    },
+    {
+      "id": "tool-use-with-non-object-input",
+      "providerResponse": {
+        "id": "msg_01",
+        "type": "message",
+        "role": "assistant",
+        "model": "claude-sonnet-4-5-20250929",
+        "content": [
+          {
+            "type": "tool_use",
+            "id": "toolu_01A",
+            "name": "get_weather",
+            "input": "Paris"
+          }
+        ],
+        "stop_reason": "tool_use",
+        "stop_sequence": null,
+        "usage": {
+          "input_tokens": 1,
+          "output_tokens": 1
+        }
+      },
+      "expectedError": "MalformedToolCall"
+    }
+  ]
+}

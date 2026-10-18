@@ -16,6 +16,7 @@ from typing import Any
 from ...context import InterceptorContext
 from ...exceptions import ToolRuntimeError
 from ...request import GavioRequest
+from ...types import ToolCall
 from ..base import Interceptor
 
 UTC = timezone.utc
@@ -243,6 +244,70 @@ def analyze_tool_runtime(
     }
 
 
+def tool_calls_to_runtime_calls(
+    tool_calls: Iterable[ToolCall],
+    *,
+    results: dict[str, dict[str, Any]] | None = None,
+    source: str | None = None,
+) -> list[dict[str, Any]]:
+    """Map normalised provider :class:`ToolCall` objects to Tool Runtime call dicts.
+
+    The result is what ``tools["calls"]`` takes: ``id``, ``name`` and ``arguments`` (read as
+    ``input``), plus ``result`` when ``results`` has an object for the call id and
+    ``source`` (provenance) when given — e.g. the provider name.
+    """
+
+    calls: list[dict[str, Any]] = []
+    for tool_call in tool_calls:
+        call: dict[str, Any] = {
+            "id": tool_call.id,
+            "name": tool_call.name,
+            "arguments": dict(tool_call.arguments),
+        }
+        if source is not None:
+            call["source"] = source
+        if results is not None and tool_call.id in results:
+            call["result"] = dict(results[tool_call.id])
+        calls.append(call)
+    return calls
+
+
+def analyze_provider_tool_calls(
+    tool_calls: Iterable[ToolCall],
+    tools: dict[str, Any] | None = None,
+    *,
+    definitions: list[dict[str, Any]] | None = None,
+    results: dict[str, dict[str, Any]] | None = None,
+    source: str | None = None,
+    max_age_seconds: float | None = None,
+    conflict_keys: Iterable[str] | None = None,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Validate real provider tool calls with Tool Runtime v2.
+
+    ``tools`` is the usual tool context (granted permissions, approvals, definitions).
+    The bridged calls are added to any calls it already holds; ``definitions`` (typically
+    ``request.tools``) fills in the registry when ``tools`` has none.
+    """
+
+    context = {
+        key: value
+        for key, value in dict(tools or {}).items()
+        if key not in _CALL_KEYS
+    }
+    context["calls"] = _calls(dict(tools or {})) + tool_calls_to_runtime_calls(
+        tool_calls, results=results, source=source
+    )
+    if definitions is not None and not _definitions(context):
+        context["definitions"] = definitions
+    return analyze_tool_runtime(
+        context,
+        max_age_seconds=max_age_seconds,
+        conflict_keys=conflict_keys,
+        now=now,
+    )
+
+
 def replay_tool_runtime(
     record: dict[str, Any] | None,
     *,
@@ -260,8 +325,11 @@ def replay_tool_runtime(
     )
 
 
+_CALL_KEYS = ("calls", "tool_calls", "toolCalls", "results", "records")
+
+
 def _calls(tools: dict[str, Any]) -> list[dict[str, Any]]:
-    raw = _first(tools, "calls", "tool_calls", "toolCalls", "results", "records")
+    raw = _first(tools, *_CALL_KEYS)
     if not isinstance(raw, list):
         return []
     return [dict(item) for item in raw if isinstance(item, dict)]

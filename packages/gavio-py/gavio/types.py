@@ -2,13 +2,19 @@
 
 from __future__ import annotations
 
+import copy
+import hashlib
+import json
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
 # A provider-agnostic chat message. Kept as a plain dict for ergonomics and
-# zero-dependency JSON serialisation.
-Message = dict[str, str]
+# zero-dependency JSON serialisation. Values are strings except for the tool
+# calling keys (F-ADP-03): an assistant message may carry ``tool_calls`` (a list
+# of :meth:`ToolCall.to_dict` dicts) and a tool message ``tool_call_id`` /
+# ``is_error``.
+Message = dict[str, Any]
 
 
 class Provider(str, Enum):
@@ -56,6 +62,81 @@ class GuardrailOutcome(str, Enum):
     PASS = "PASS"
     FAIL = "FAIL"
     HITL = "HITL"
+
+
+class FinishReason(str, Enum):
+    """Provider-agnostic stop reason (F-ADP-03). Mapped from each provider's native value."""
+
+    STOP = "stop"
+    LENGTH = "length"
+    TOOL_CALLS = "tool_calls"
+    CONTENT_FILTER = "content_filter"
+    OTHER = "other"
+
+
+def canonical_json(value: Any) -> str:
+    """Canonical JSON used for hashing: sorted keys, no whitespace, UTF-8 not escaped."""
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+@dataclass(frozen=True)
+class ToolCall:
+    """A model-requested tool invocation, normalised across providers (F-ADP-03).
+
+    ``arguments`` is always a parsed JSON object. ``id`` is the provider's call id,
+    or a deterministic synthetic id for providers that send none (Gemini, Ollama).
+    """
+
+    id: str
+    name: str
+    arguments: dict[str, Any] = field(default_factory=dict)
+
+    def arguments_hash(self) -> str:
+        """SHA-256 hex of the canonical JSON of ``arguments`` — what audit records keep."""
+        return hashlib.sha256(canonical_json(self.arguments).encode("utf-8")).hexdigest()
+
+    def result(self, content: str, *, is_error: bool = False) -> ToolResult:
+        """Build the :class:`ToolResult` answering this call."""
+        return ToolResult(
+            tool_call_id=self.id, content=content, name=self.name, is_error=is_error
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"id": self.id, "name": self.name, "arguments": copy.deepcopy(self.arguments)}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> ToolCall:
+        if not isinstance(data, dict):
+            raise TypeError(f"tool call must be a dict, got {type(data).__name__}")
+        arguments = data.get("arguments")
+        if arguments is None:
+            arguments = {}
+        if not isinstance(arguments, dict):
+            raise TypeError("tool call arguments must be a JSON object")
+        return cls(id=str(data["id"]), name=str(data["name"]), arguments=arguments)
+
+
+@dataclass(frozen=True)
+class ToolResult:
+    """The outcome of executing a :class:`ToolCall` (F-ADP-03)."""
+
+    tool_call_id: str
+    content: str
+    name: str | None = None
+    is_error: bool = False
+
+    def to_message(self) -> Message:
+        """The ``role: "tool"`` message to append to the conversation."""
+        message: Message = {
+            "role": "tool",
+            "tool_call_id": self.tool_call_id,
+            "content": self.content,
+        }
+        if self.name:
+            message["name"] = self.name
+        if self.is_error:
+            message["is_error"] = True
+        return message
 
 
 @dataclass(frozen=True)

@@ -11,7 +11,29 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+- **Normalised tool calling — spec, shared vectors and Python reference (F-ADP-03).**
+  New `ToolCall` and `ToolResult` schemas; optional `tools`, `toolChoice` on `GavioRequest`,
+  `toolCalls`, `finishReason` on `GavioResponse`, and `toolCalls` (name + arguments hash only)
+  on `AuditRecord` — all additive, so existing documents stay valid. Python: `ToolCall`,
+  `ToolResult`, `FinishReason`; `Message` widened to `dict[str, Any]`; `GavioRequest.tools` /
+  `tool_choice`; `GavioResponse.tool_calls` / `finish_reason` / `to_assistant_message()`;
+  `Gateway.complete(tools=, tool_choice=)`. The OpenAI, Azure OpenAI, OpenRouter, Anthropic,
+  Gemini and Ollama adapters translate tool declarations, calls and results (parallel calls
+  included) through pure `to_provider_payload` / `from_provider_response` functions, covered by
+  `test-vectors/tool-calling/`. `PiiGuard` scans tool-call arguments and tool-role messages and
+  restores placeholders in response tool calls; audit records keep the tool name and an
+  arguments hash, never the arguments. `analyze_provider_tool_calls` lets Tool Runtime v2
+  validate real provider calls. JS and Java adapters follow; streaming tool-call deltas are not
+  yet supported.
+- `spec/GavioRequest.schema.json` lists `openrouter` in the provider enum (the Python SDK already
+  had it).
+
+### Changed
+- `GavioRequest.copy_with_messages` and `GavioResponse.copy_with_content` now use
+  `dataclasses.replace`, so a field added later is carried automatically.
+- The semantic cache keys exact entries on `tools` / `tool_choice`, never replays a response that
+  carries tool calls, and skips semantic matching for requests that declare tools.
 
 ---
 

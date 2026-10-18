@@ -105,6 +105,8 @@ class Gateway:
         metadata: dict[str, Any] | None = None,
         images: list[bytes] | None = None,
         lineage: PromptLineage | None = None,
+        tools: list[dict[str, Any]] | None = None,
+        tool_choice: str | dict[str, Any] | None = None,
         **options: Any,
     ) -> GavioResponse:
         request = GavioRequest(
@@ -118,6 +120,8 @@ class Gateway:
             metadata=metadata or {},
             images=images or [],
             lineage=lineage,
+            tools=tools,
+            tool_choice=tool_choice,
         )
         ctx = InterceptorContext.from_request(request, dry_run=self._dry_run)
         emitter = self._inspector.emitter(request) if self._inspector else None

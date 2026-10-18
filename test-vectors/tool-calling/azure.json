@@ -1,0 +1,584 @@
+{
+  "feature": "F-ADP-03",
+  "provider": "azure_openai",
+  "description": "Azure OpenAI tool calling. Same Chat Completions shape as OpenAI, but the request body has no `model` (the deployment in the URL selects it) and responses carry extra content-filter members that must be ignored.",
+  "requestCases": [
+    {
+      "id": "declares-tools-auto",
+      "request": {
+        "model": "gpt-4o",
+        "provider": "azure_openai",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          },
+          {
+            "name": "ping",
+            "description": "Check connectivity"
+          }
+        ],
+        "toolChoice": "auto"
+      },
+      "expectedPayload": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "temperature": 0.2,
+        "max_tokens": 256,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Get the current weather for a city",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "celsius",
+                      "fahrenheit"
+                    ]
+                  }
+                },
+                "required": [
+                  "city"
+                ]
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "ping",
+              "description": "Check connectivity",
+              "parameters": {
+                "type": "object",
+                "properties": {}
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto"
+      }
+    },
+    {
+      "id": "choice-named",
+      "request": {
+        "model": "gpt-4o",
+        "provider": "azure_openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "toolChoice": {
+          "name": "get_weather"
+        }
+      },
+      "expectedPayload": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "temperature": 0.2,
+        "max_tokens": 256,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Get the current weather for a city",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "celsius",
+                      "fahrenheit"
+                    ]
+                  }
+                },
+                "required": [
+                  "city"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "function",
+          "function": {
+            "name": "get_weather"
+          }
+        }
+      }
+    },
+    {
+      "id": "no-tools-payload-unchanged",
+      "request": {
+        "model": "gpt-4o",
+        "provider": "azure_openai",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        }
+      },
+      "expectedPayload": {
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "temperature": 0.2,
+        "max_tokens": 256
+      }
+    },
+    {
+      "id": "history-parallel-calls",
+      "request": {
+        "model": "gpt-4o",
+        "provider": "azure_openai",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "toolCalls": [
+              {
+                "id": "call_abc123",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris",
+                  "unit": "celsius"
+                }
+              },
+              {
+                "id": "call_def456",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Rome"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_abc123",
+            "name": "get_weather",
+            "content": "{\"temp_c\":18}"
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_def456",
+            "content": "{\"temp_c\":24}"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": null,
+            "tool_calls": [
+              {
+                "id": "call_abc123",
+                "type": "function",
+                "function": {
+                  "name": "get_weather",
+                  "arguments": "{\"city\":\"Paris\",\"unit\":\"celsius\"}"
+                }
+              },
+              {
+                "id": "call_def456",
+                "type": "function",
+                "function": {
+                  "name": "get_weather",
+                  "arguments": "{\"city\":\"Rome\"}"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_abc123",
+            "content": "{\"temp_c\":18}"
+          },
+          {
+            "role": "tool",
+            "tool_call_id": "call_def456",
+            "content": "{\"temp_c\":24}"
+          }
+        ],
+        "temperature": 0.2,
+        "max_tokens": 256,
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_weather",
+              "description": "Get the current weather for a city",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "unit": {
+                    "type": "string",
+                    "enum": [
+                      "celsius",
+                      "fahrenheit"
+                    ]
+                  }
+                },
+                "required": [
+                  "city"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "responseCases": [
+    {
+      "id": "single-call-ignores-azure-extras",
+      "providerResponse": {
+        "id": "chatcmpl-9",
+        "object": "chat.completion",
+        "model": "gpt-4o-2024-08-06",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": null,
+              "tool_calls": [
+                {
+                  "id": "call_abc123",
+                  "type": "function",
+                  "function": {
+                    "name": "get_weather",
+                    "arguments": "{\"city\":\"Paris\"}"
+                  }
+                }
+              ]
+            },
+            "finish_reason": "tool_calls",
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 30,
+          "completion_tokens": 12,
+          "total_tokens": 42
+        },
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": "fp_44709d6fcb"
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [
+          {
+            "id": "call_abc123",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Paris"
+            }
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 30,
+          "completionTokens": 12,
+          "totalTokens": 42
+        },
+        "modelVersion": "gpt-4o-2024-08-06"
+      }
+    },
+    {
+      "id": "parallel-calls",
+      "providerResponse": {
+        "id": "chatcmpl-9",
+        "object": "chat.completion",
+        "model": "gpt-4o-2024-08-06",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": null,
+              "tool_calls": [
+                {
+                  "id": "call_abc123",
+                  "type": "function",
+                  "function": {
+                    "name": "get_weather",
+                    "arguments": "{\"city\":\"Paris\"}"
+                  }
+                },
+                {
+                  "id": "call_def456",
+                  "type": "function",
+                  "function": {
+                    "name": "get_weather",
+                    "arguments": "{\"city\":\"Rome\"}"
+                  }
+                }
+              ]
+            },
+            "finish_reason": "tool_calls",
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 41,
+          "completion_tokens": 25,
+          "total_tokens": 66
+        },
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": "fp_44709d6fcb"
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [
+          {
+            "id": "call_abc123",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Paris"
+            }
+          },
+          {
+            "id": "call_def456",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Rome"
+            }
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 41,
+          "completionTokens": 25,
+          "totalTokens": 66
+        },
+        "modelVersion": "gpt-4o-2024-08-06"
+      }
+    },
+    {
+      "id": "content-filter",
+      "providerResponse": {
+        "id": "chatcmpl-9",
+        "object": "chat.completion",
+        "model": "gpt-4o-2024-08-06",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": null
+            },
+            "finish_reason": "content_filter",
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 20,
+          "completion_tokens": 0,
+          "total_tokens": 20
+        },
+        "prompt_filter_results": [
+          {
+            "prompt_index": 0,
+            "content_filter_results": {
+              "hate": {
+                "filtered": false,
+                "severity": "safe"
+              }
+            }
+          }
+        ],
+        "system_fingerprint": "fp_44709d6fcb"
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [],
+        "finishReason": "content_filter",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 0,
+          "totalTokens": 20
+        },
+        "modelVersion": "gpt-4o-2024-08-06"
+      }
+    }
+  ],
+  "errorCases": []
+}

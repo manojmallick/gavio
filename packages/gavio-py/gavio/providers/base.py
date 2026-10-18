@@ -9,6 +9,7 @@ from collections.abc import AsyncIterator
 from ..pricing import PricingProvider, estimate_tokens
 from ..request import GavioRequest
 from ..response import GavioResponse
+from ..tool_calling import ProviderCompletion
 from ..types import TokenUsage
 
 
@@ -68,6 +69,24 @@ class ProviderAdapter(ABC):
         """Build an embedding response — empty content, one vector per input."""
         response = self._build_response(request, "", usage, model_version, started_at)
         response.embeddings = vectors
+        return response
+
+    def _build_completion_response(
+        self,
+        request: GavioRequest,
+        completion: ProviderCompletion,
+        started_at: float,
+    ) -> GavioResponse:
+        """Build a response from a parsed provider completion, tool calls included."""
+        response = self._build_response(
+            request,
+            completion.content,
+            completion.usage,
+            completion.model_version or request.model,
+            started_at,
+        )
+        response.tool_calls = list(completion.tool_calls)
+        response.finish_reason = completion.finish_reason
         return response
 
     def _build_response(

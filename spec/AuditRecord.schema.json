@@ -42,6 +42,23 @@
       "anyOf": [{ "$ref": "#/$defs/promptLineage" }, { "type": "null" }],
       "description": "Prompt provenance (F-OBS-04, v0.3.0): template, variable bindings, and RAG chunk sources. Null when not supplied."
     },
+    "toolCalls": {
+      "type": "array",
+      "description": "Tool calls the model requested in this response (F-ADP-03): tool name and arguments hash only — never the arguments. Omitted from the record (and from the hash-chain input) when the response had no tool calls, so existing chains keep verifying. Python binds this key as tool_calls.",
+      "items": {
+        "type": "object",
+        "required": ["name", "argumentsHash"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "argumentsHash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$",
+            "description": "SHA-256 of the canonical JSON of the call arguments (see ToolCall). Python binds this key as arguments_hash."
+          }
+        },
+        "additionalProperties": false
+      }
+    },
     "previousHash": { "type": "string", "description": "SHA-256 of the previous record (hash-chain, F-OBS-02, v0.2.0). Empty in v0.1.0." },
     "schemaVersion": { "type": "string", "const": "1.0" }
   },

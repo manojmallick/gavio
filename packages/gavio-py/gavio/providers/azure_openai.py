@@ -4,16 +4,25 @@ from __future__ import annotations
 
 import os
 import time
+from typing import Any
 
 from ..exceptions import ConfigurationError
 from ..pricing import PricingProvider
 from ..request import GavioRequest
 from ..response import GavioResponse
-from ..types import TokenUsage
 from ._http import post_json
 from .base import ProviderAdapter
+from .openai import from_provider_response
+from .openai import to_provider_payload as _openai_payload
+
+__all__ = ["AzureOpenAIAdapter", "from_provider_response", "to_provider_payload"]
 
 _DEFAULT_API_VERSION = "2024-06-01"
+
+
+def to_provider_payload(request: GavioRequest) -> dict[str, Any]:
+    """Chat Completions body without ``model`` — Azure routes by deployment."""
+    return _openai_payload(request, include_model=False)
 
 
 class AzureOpenAIAdapter(ProviderAdapter):
@@ -56,27 +65,13 @@ class AzureOpenAIAdapter(ProviderAdapter):
                 "AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT must be set"
             )
         started = time.monotonic()
-        payload = {
-            "messages": request.messages,
-            "temperature": request.temperature,
-            "max_tokens": request.max_tokens,
-        }
         data = await post_json(
             self._url(request),
-            payload,
+            to_provider_payload(request),
             {"api-key": self._api_key},
             timeout=self.timeout_seconds,
         )
-        choice = data["choices"][0]
-        content = choice["message"]["content"] or ""
-        usage_data = data.get("usage", {})
-        usage = TokenUsage(
-            prompt_tokens=usage_data.get("prompt_tokens", 0),
-            completion_tokens=usage_data.get("completion_tokens", 0),
-        )
-        return self._build_response(
-            request, content, usage, data.get("model", request.model), started
-        )
+        return self._build_completion_response(request, from_provider_response(data), started)
 
     async def health_check(self) -> bool:
         return bool(self._api_key and self.endpoint)

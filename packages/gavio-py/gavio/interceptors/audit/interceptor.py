@@ -81,6 +81,10 @@ class AuditInterceptor(Interceptor):
             guardrail_outcome=ctx.guardrail_outcome,
             risk_score=ctx.risk_score,
             lineage=ctx.state.get(_LINEAGE_KEY),
+            tool_calls=[
+                {"name": call.name, "arguments_hash": call.arguments_hash()}
+                for call in response.tool_calls
+            ],
         )
         if self.hash_chain:
             async with self._chain_lock:
