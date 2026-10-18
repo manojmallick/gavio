@@ -66,6 +66,9 @@ class SemanticCache(ExecutorPolicy):
             "messages": request.messages,
             "options": {k: request.options[k] for k in sorted(request.options)},
         }
+        if request.tools:
+            payload["tools"] = request.tools
+            payload["tool_choice"] = request.tool_choice
         blob = json.dumps(payload, sort_keys=True, ensure_ascii=False)
         return "gavio:exact:" + hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
@@ -86,7 +89,14 @@ class SemanticCache(ExecutorPolicy):
 
         # 2. Semantic match.
         embedding: list[float] | None = None
-        if self._semantic and self._vector is not None and self._embedder is not None:
+        # Similar prompt text says nothing about which tools were declared, so requests
+        # with tools only ever hit the exact cache.
+        if (
+            self._semantic
+            and self._vector is not None
+            and self._embedder is not None
+            and not request.tools
+        ):
             embedding = self._embedder.embed(request.prompt_text())
             hit = await self._vector.query(embedding, self.similarity_threshold)
             if hit is not None:
@@ -94,6 +104,9 @@ class SemanticCache(ExecutorPolicy):
 
         # 3. Miss — call the provider, then store.
         response = await call_next(request)
+        if response.tool_calls:
+            # A cached tool call would replay the model's side-effecting decision.
+            return response
         entry = {
             "content": response.content,
             "model_version": response.model_version,

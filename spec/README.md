@@ -18,6 +18,8 @@ serialise to shapes valid against these schemas.
 | [`ToolPermission.schema.json`](./ToolPermission.schema.json) | Tool Runtime v2 permission scope |
 | [`ToolCallRecord.schema.json`](./ToolCallRecord.schema.json) | Tool Runtime v2 observed tool-call input/output record |
 | [`ToolApproval.schema.json`](./ToolApproval.schema.json) | Tool Runtime v2 approval record |
+| [`ToolCall.schema.json`](./ToolCall.schema.json) | Normalised model-requested tool call (F-ADP-03): `id`, `name`, parsed `arguments`; the unit behind `GavioResponse.toolCalls` and assistant `message.toolCalls` |
+| [`ToolResult.schema.json`](./ToolResult.schema.json) | Normalised tool outcome (F-ADP-03): `toolCallId`, `content`, optional `isError`; carried as a `role: "tool"` message |
 | [`PolicyPackManifest.schema.json`](./PolicyPackManifest.schema.json) | Signed domain Policy Pack catalog manifest |
 | [`PolicyRule.schema.json`](./PolicyRule.schema.json) | One detector/rule entry inside a Policy Pack manifest |
 | [`PolicyPackSignature.schema.json`](./PolicyPackSignature.schema.json) | Deterministic Policy Pack manifest signature metadata |
@@ -39,6 +41,35 @@ The wire format is **camelCase** (`agentId`, `parentTraceId`, `costUsd`), which
 the Java and JavaScript SDKs use natively. The Python SDK exposes the same
 fields in **snake_case** (`agent_id`, `parent_trace_id`, `cost_usd`) per PEP 8;
 they map 1:1.
+
+## Tool calling (F-ADP-03)
+
+`GavioRequest` gains optional `tools` (an array of [`ToolDefinition`](./ToolDefinition.schema.json))
+and `toolChoice`; `GavioResponse` gains optional `toolCalls` and `finishReason`;
+`AuditRecord` gains optional `toolCalls`. Every member is optional, so documents
+written before F-ADP-03 stay valid.
+
+- **Messages.** An assistant turn that calls tools is
+  `{"role": "assistant", "content": "", "toolCalls": [ToolCall, ...]}` — `content` stays a
+  string (empty when the model only called tools). A tool result is
+  `{"role": "tool", "toolCallId": "...", "content": "..."}` with optional `name` and
+  `isError`. Python spells these keys `tool_calls`, `tool_call_id`, `is_error`.
+- **`toolChoice`.** `"auto" | "none" | "required" | {"name": "<tool>"}`. Ignored when
+  `tools` is empty. Ollama's `/api/chat` has no tool-choice parameter, so its adapter
+  rejects anything other than `auto`.
+- **Call ids.** Provider ids are kept verbatim. Gemini and Ollama send none, so the adapter
+  synthesises `call_<index>_<name>` (zero-based position in the response), which is stable
+  across SDKs and replays.
+- **Arguments.** `ToolCall.arguments` is always a JSON object. OpenAI sends a JSON string:
+  adapters parse it on the way in and re-serialise it compactly (insertion order, no
+  whitespace) on the way out. Unparseable or non-object arguments are a provider error.
+- **Arguments hash.** Lowercase hex SHA-256 of the canonical JSON of `arguments` (keys
+  sorted at every depth, no whitespace, UTF-8, non-ASCII not escaped). Audit records store
+  this hash and the tool name — never the arguments. Use integers and strings in
+  arguments that you intend to hash: float formatting differs across languages.
+- **Privacy.** PII and secret scanning covers tool-call argument string values and
+  tool-role message content, before the provider payload is built. In `REDACT` mode,
+  placeholders are restored in `GavioResponse.toolCalls[*].arguments` like in `content`.
 
 ## Cross-SDK conformance
 

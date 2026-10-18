@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/ToolResult.v1.json",
+  "title": "ToolResult",
+  "description": "The outcome of executing a ToolCall (F-ADP-03). In a conversation a ToolResult travels as a message `{\"role\": \"tool\", \"toolCallId\": ..., \"content\": ...}` (see GavioRequest message). Consecutive tool-role messages answering parallel calls are merged into one provider turn by the adapter where the provider requires it (Anthropic, Gemini). PiiGuard and the secret scanner scan `content` like any other message content.",
+  "type": "object",
+  "required": ["toolCallId", "content"],
+  "properties": {
+    "toolCallId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The ToolCall.id this result answers."
+    },
+    "content": {
+      "type": "string",
+      "description": "Tool output as text. Structured output is JSON-encoded by the caller."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional tool name. Used by providers that match results by name when the originating call is not in the supplied history (Gemini, Ollama)."
+    },
+    "isError": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when the tool failed. Anthropic receives is_error; Gemini wraps content as {\"error\": ...} instead of {\"output\": ...}; OpenAI and Ollama have no flag, so the error text travels in content."
+    }
+  },
+  "additionalProperties": false
+}

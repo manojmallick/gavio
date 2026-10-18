@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Any
 
-from .types import CacheType, TokenUsage
+from .types import CacheType, FinishReason, Message, TokenUsage, ToolCall
 
 if TYPE_CHECKING:
     from .interceptors.audit.record import AuditRecord
@@ -30,23 +30,31 @@ class GavioResponse:
     metadata: dict[str, Any] = field(default_factory=dict)
     # Set on embedding calls (F-SEC-10): one vector per input text.
     embeddings: list[list[float]] | None = None
+    # Tool calls the model requested, in provider order (F-ADP-03). ``content`` is
+    # empty when the model only called tools.
+    tool_calls: list[ToolCall] = field(default_factory=list)
+    finish_reason: FinishReason | None = None
+
+    def copy_with(self, **changes: Any) -> GavioResponse:
+        """Return a copy with ``changes`` applied (used by PII restore, guardrails).
+
+        Built with :func:`dataclasses.replace`, so a field added to the response later is
+        carried automatically rather than silently dropped.
+        """
+        base: dict[str, Any] = {
+            "interceptors_fired": list(self.interceptors_fired),
+            "metadata": dict(self.metadata),
+            "tool_calls": list(self.tool_calls),
+        }
+        return replace(self, **{**base, **changes})
 
     def copy_with_content(self, content: str) -> GavioResponse:
         """Return a copy with replaced content (used by PII restore, guardrails)."""
-        clone = GavioResponse(
-            trace_id=self.trace_id,
-            content=content,
-            model=self.model,
-            provider=self.provider,
-            model_version=self.model_version,
-            usage=self.usage,
-            cost_usd=self.cost_usd,
-            latency_ms=self.latency_ms,
-            cache_hit=self.cache_hit,
-            cache_type=self.cache_type,
-            interceptors_fired=list(self.interceptors_fired),
-            audit=self.audit,
-            metadata=dict(self.metadata),
-            embeddings=self.embeddings,
-        )
-        return clone
+        return self.copy_with(content=content)
+
+    def to_assistant_message(self) -> Message:
+        """The assistant message to append to the conversation before tool results."""
+        message: Message = {"role": "assistant", "content": self.content}
+        if self.tool_calls:
+            message["tool_calls"] = [call.to_dict() for call in self.tool_calls]
+        return message

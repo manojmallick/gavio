@@ -32,6 +32,15 @@
       "additionalProperties": true
     },
     "metadata": { "type": "object", "additionalProperties": true },
+    "tools": {
+      "type": "array",
+      "items": { "$ref": "https://gavio.io/schema/ToolDefinition.v1.json" },
+      "description": "Tool declarations the model may call (F-ADP-03). Optional; omitted means no tools. Each entry's `name`, `description`, and `inputSchema` are translated into the provider's native declaration; governance fields (permissions, risk, ...) are not sent to the provider."
+    },
+    "toolChoice": {
+      "anyOf": [{ "$ref": "#/$defs/toolChoice" }, { "type": "null" }],
+      "description": "How the model may use `tools` (F-ADP-03). Ignored when `tools` is empty. Null or omitted means the provider default (auto)."
+    },
     "images": {
       "type": "array",
       "description": "Binary image inputs (raw bytes), scanned for PII by the modality guard before any provider call (F-SEC-09). Not serialized onto the provider wire.",
@@ -70,13 +79,47 @@
       "required": ["role", "content"],
       "properties": {
         "role": { "type": "string", "enum": ["system", "user", "assistant", "tool"] },
-        "content": { "type": "string" }
+        "content": {
+          "type": "string",
+          "description": "Message text. For an assistant message that carries only toolCalls this is the empty string. For a tool message it is the tool output."
+        },
+        "toolCalls": {
+          "type": "array",
+          "items": { "$ref": "https://gavio.io/schema/ToolCall.v1.json" },
+          "description": "Assistant messages only (F-ADP-03): the tool calls the model made in this turn, in order. Python binds this key as tool_calls."
+        },
+        "toolCallId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Tool messages only (F-ADP-03): the ToolCall.id this message answers. Python binds this key as tool_call_id."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Tool messages only (F-ADP-03): optional tool name, see ToolResult.name."
+        },
+        "isError": {
+          "type": "boolean",
+          "description": "Tool messages only (F-ADP-03): true when the tool failed, see ToolResult.isError. Python binds this key as is_error."
+        }
       },
       "additionalProperties": true
     },
+    "toolChoice": {
+      "description": "\"auto\" lets the model decide, \"none\" forbids tool calls, \"required\" forces some tool call, and {\"name\": ...} forces that specific tool.",
+      "oneOf": [
+        { "type": "string", "enum": ["auto", "none", "required"] },
+        {
+          "type": "object",
+          "required": ["name"],
+          "properties": { "name": { "type": "string", "minLength": 1 } },
+          "additionalProperties": false
+        }
+      ]
+    },
     "provider": {
       "type": "string",
-      "enum": ["openai", "anthropic", "gemini", "azure_openai", "ollama", "bedrock", "cohere", "mock"]
+      "enum": ["openai", "anthropic", "gemini", "azure_openai", "openrouter", "ollama", "bedrock", "cohere", "mock"]
     }
   }
 }

@@ -16,6 +16,7 @@ from .exceptions import (
     ConfigurationError,
     GavioError,
     GuardrailViolationError,
+    MalformedToolCallError,
     PiiBlockedError,
     ProviderError,
     ProviderUnavailableError,
@@ -72,6 +73,7 @@ from .trust import (
 )
 from .types import (
     CacheType,
+    FinishReason,
     GuardrailOutcome,
     Message,
     PiiMode,
@@ -80,6 +82,8 @@ from .types import (
     RagChunk,
     Sensitivity,
     TokenUsage,
+    ToolCall,
+    ToolResult,
 )
 from .workflow import (
     PlatformWorkflowReleaseResult,
@@ -114,6 +118,9 @@ __all__ = [
     "Provider",
     "Message",
     "TokenUsage",
+    "ToolCall",
+    "ToolResult",
+    "FinishReason",
     "PromptLineage",
     "RagChunk",
     "CacheType",
@@ -159,6 +166,7 @@ __all__ = [
     "RateLimitError",
     "ServerError",
     "ToolRuntimeError",
+    "MalformedToolCallError",
     "PiiBlockedError",
     "BudgetExceededError",
     "GuardrailViolationError",

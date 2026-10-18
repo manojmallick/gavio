@@ -49,6 +49,9 @@ class AuditRecord:
     lineage: PromptLineage | None = None
     previous_hash: str = ""
     schema_version: str = SCHEMA_VERSION
+    # Tool calls the model requested (F-ADP-03): name + arguments hash only, never the
+    # arguments. Omitted from to_dict() when empty so existing hash chains still verify.
+    tool_calls: list[dict[str, str]] = field(default_factory=list)
 
     @staticmethod
     def now_utc() -> str:
@@ -61,6 +64,8 @@ class AuditRecord:
     def to_dict(self) -> dict:
         data = asdict(self)
         data["token_usage"] = self.token_usage.to_dict()
+        if not data["tool_calls"]:
+            del data["tool_calls"]
         return data
 
     def to_json(self) -> str:

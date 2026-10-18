@@ -1,0 +1,1733 @@
+{
+  "feature": "F-ADP-03",
+  "provider": "gemini",
+  "description": "Gemini generateContent tool calling: functionCall / functionResponse parts. Gemini sends no call ids, so the adapter synthesises call_<index>_<name>; results are matched back by name and consecutive tool-role messages merge into one user turn.",
+  "requestCases": [
+    {
+      "id": "declares-tools-auto",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          },
+          {
+            "name": "ping",
+            "description": "Check connectivity"
+          }
+        ],
+        "toolChoice": "auto"
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        },
+        "systemInstruction": {
+          "parts": [
+            {
+              "text": "You are a travel assistant."
+            }
+          ]
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "get_weather",
+                "description": "Get the current weather for a city",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "celsius",
+                        "fahrenheit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              },
+              {
+                "name": "ping",
+                "description": "Check connectivity"
+              }
+            ]
+          }
+        ],
+        "toolConfig": {
+          "functionCallingConfig": {
+            "mode": "AUTO"
+          }
+        }
+      }
+    },
+    {
+      "id": "choice-none",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "toolChoice": "none"
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "get_weather",
+                "description": "Get the current weather for a city",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "celsius",
+                        "fahrenheit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "toolConfig": {
+          "functionCallingConfig": {
+            "mode": "NONE"
+          }
+        }
+      }
+    },
+    {
+      "id": "choice-required-is-any",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "toolChoice": "required"
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "get_weather",
+                "description": "Get the current weather for a city",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "celsius",
+                        "fahrenheit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "toolConfig": {
+          "functionCallingConfig": {
+            "mode": "ANY"
+          }
+        }
+      }
+    },
+    {
+      "id": "choice-named-restricts-allowed-names",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          },
+          {
+            "name": "get_time",
+            "description": "Get the local time for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "toolChoice": {
+          "name": "get_weather"
+        }
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "get_weather",
+                "description": "Get the current weather for a city",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "celsius",
+                        "fahrenheit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              },
+              {
+                "name": "get_time",
+                "description": "Get the local time for a city",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "toolConfig": {
+          "functionCallingConfig": {
+            "mode": "ANY",
+            "allowedFunctionNames": [
+              "get_weather"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "tools-without-choice",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "get_weather",
+                "description": "Get the current weather for a city",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "celsius",
+                        "fahrenheit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "choice-ignored-without-tools",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "toolChoice": "required"
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        }
+      }
+    },
+    {
+      "id": "no-tools-payload-unchanged",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are a travel assistant."
+          },
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "Sunny."
+          },
+          {
+            "role": "user",
+            "content": "Thanks"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        }
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          },
+          {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Sunny."
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Thanks"
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        },
+        "systemInstruction": {
+          "parts": [
+            {
+              "text": "You are a travel assistant."
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "history-single-call-synthetic-id",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "toolCalls": [
+              {
+                "id": "call_0_get_weather",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_0_get_weather",
+            "content": "{\"temp_c\":18}"
+          },
+          {
+            "role": "assistant",
+            "content": "It is 18 degrees in Paris."
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ],
+        "toolChoice": "auto"
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          },
+          {
+            "role": "model",
+            "parts": [
+              {
+                "functionCall": {
+                  "name": "get_weather",
+                  "args": {
+                    "city": "Paris"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "parts": [
+              {
+                "functionResponse": {
+                  "name": "get_weather",
+                  "response": {
+                    "output": "{\"temp_c\":18}"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "model",
+            "parts": [
+              {
+                "text": "It is 18 degrees in Paris."
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "get_weather",
+                "description": "Get the current weather for a city",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "celsius",
+                        "fahrenheit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "toolConfig": {
+          "functionCallingConfig": {
+            "mode": "AUTO"
+          }
+        }
+      }
+    },
+    {
+      "id": "history-parallel-calls-merge-into-one-user-turn",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "Checking both.",
+            "toolCalls": [
+              {
+                "id": "call_0_get_weather",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris"
+                }
+              },
+              {
+                "id": "call_1_get_weather",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Rome"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_0_get_weather",
+            "content": "{\"temp_c\":18}"
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_1_get_weather",
+            "content": "{\"temp_c\":24}"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          },
+          {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Checking both."
+              },
+              {
+                "functionCall": {
+                  "name": "get_weather",
+                  "args": {
+                    "city": "Paris"
+                  }
+                }
+              },
+              {
+                "functionCall": {
+                  "name": "get_weather",
+                  "args": {
+                    "city": "Rome"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "parts": [
+              {
+                "functionResponse": {
+                  "name": "get_weather",
+                  "response": {
+                    "output": "{\"temp_c\":18}"
+                  }
+                }
+              },
+              {
+                "functionResponse": {
+                  "name": "get_weather",
+                  "response": {
+                    "output": "{\"temp_c\":24}"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "get_weather",
+                "description": "Get the current weather for a city",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "celsius",
+                        "fahrenheit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "history-provider-supplied-ids-are-echoed",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "toolCalls": [
+              {
+                "id": "fc-77",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "toolCallId": "fc-77",
+            "content": "{\"temp_c\":18}"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          },
+          {
+            "role": "model",
+            "parts": [
+              {
+                "functionCall": {
+                  "name": "get_weather",
+                  "args": {
+                    "city": "Paris"
+                  },
+                  "id": "fc-77"
+                }
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "parts": [
+              {
+                "functionResponse": {
+                  "name": "get_weather",
+                  "response": {
+                    "output": "{\"temp_c\":18}"
+                  },
+                  "id": "fc-77"
+                }
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "get_weather",
+                "description": "Get the current weather for a city",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "celsius",
+                        "fahrenheit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "history-tool-error-uses-error-key",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "assistant",
+            "content": "",
+            "toolCalls": [
+              {
+                "id": "call_0_get_weather",
+                "name": "get_weather",
+                "arguments": {
+                  "city": "Paris"
+                }
+              }
+            ]
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_0_get_weather",
+            "isError": true,
+            "content": "upstream timeout"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          },
+          {
+            "role": "model",
+            "parts": [
+              {
+                "functionCall": {
+                  "name": "get_weather",
+                  "args": {
+                    "city": "Paris"
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "parts": [
+              {
+                "functionResponse": {
+                  "name": "get_weather",
+                  "response": {
+                    "error": "upstream timeout"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "get_weather",
+                "description": "Get the current weather for a city",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "celsius",
+                        "fahrenheit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "history-result-name-from-message-when-call-not-in-history",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_0_get_weather",
+            "name": "get_weather",
+            "content": "{\"temp_c\":18}"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedPayload": {
+        "contents": [
+          {
+            "role": "user",
+            "parts": [
+              {
+                "text": "What's the weather in Paris?"
+              }
+            ]
+          },
+          {
+            "role": "user",
+            "parts": [
+              {
+                "functionResponse": {
+                  "name": "get_weather",
+                  "response": {
+                    "output": "{\"temp_c\":18}"
+                  }
+                }
+              }
+            ]
+          }
+        ],
+        "generationConfig": {
+          "temperature": 0.2,
+          "maxOutputTokens": 256
+        },
+        "tools": [
+          {
+            "functionDeclarations": [
+              {
+                "name": "get_weather",
+                "description": "Get the current weather for a city",
+                "parameters": {
+                  "type": "object",
+                  "properties": {
+                    "city": {
+                      "type": "string"
+                    },
+                    "unit": {
+                      "type": "string",
+                      "enum": [
+                        "celsius",
+                        "fahrenheit"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "city"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "requestErrorCases": [
+    {
+      "id": "tool-result-matches-no-call-and-has-no-name",
+      "request": {
+        "model": "gemini-2.0-flash",
+        "provider": "gemini",
+        "messages": [
+          {
+            "role": "user",
+            "content": "What's the weather in Paris?"
+          },
+          {
+            "role": "tool",
+            "toolCallId": "call_0_get_weather",
+            "content": "x"
+          }
+        ],
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 256
+        },
+        "tools": [
+          {
+            "name": "get_weather",
+            "description": "Get the current weather for a city",
+            "inputSchema": {
+              "type": "object",
+              "properties": {
+                "city": {
+                  "type": "string"
+                },
+                "unit": {
+                  "type": "string",
+                  "enum": [
+                    "celsius",
+                    "fahrenheit"
+                  ]
+                }
+              },
+              "required": [
+                "city"
+              ]
+            }
+          }
+        ]
+      },
+      "expectedError": "Configuration"
+    }
+  ],
+  "responseCases": [
+    {
+      "id": "text-only",
+      "providerResponse": {
+        "candidates": [
+          {
+            "index": 0,
+            "content": {
+              "role": "model",
+              "parts": [
+                {
+                  "text": "It is sunny."
+                }
+              ]
+            },
+            "finishReason": "STOP"
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 20,
+          "candidatesTokenCount": 5,
+          "totalTokenCount": 25
+        }
+      },
+      "expected": {
+        "content": "It is sunny.",
+        "toolCalls": [],
+        "finishReason": "stop",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 5,
+          "totalTokens": 25
+        },
+        "modelVersion": null
+      }
+    },
+    {
+      "id": "single-call-gets-synthetic-id",
+      "providerResponse": {
+        "candidates": [
+          {
+            "index": 0,
+            "content": {
+              "role": "model",
+              "parts": [
+                {
+                  "functionCall": {
+                    "name": "get_weather",
+                    "args": {
+                      "city": "Paris"
+                    }
+                  }
+                }
+              ]
+            },
+            "finishReason": "STOP"
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 30,
+          "candidatesTokenCount": 12,
+          "totalTokenCount": 42
+        }
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [
+          {
+            "id": "call_0_get_weather",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Paris"
+            }
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 30,
+          "completionTokens": 12,
+          "totalTokens": 42
+        },
+        "modelVersion": null
+      }
+    },
+    {
+      "id": "parallel-calls-index-in-id",
+      "providerResponse": {
+        "candidates": [
+          {
+            "index": 0,
+            "content": {
+              "role": "model",
+              "parts": [
+                {
+                  "functionCall": {
+                    "name": "get_weather",
+                    "args": {
+                      "city": "Paris"
+                    }
+                  }
+                },
+                {
+                  "functionCall": {
+                    "name": "get_weather",
+                    "args": {
+                      "city": "Rome"
+                    }
+                  }
+                },
+                {
+                  "functionCall": {
+                    "name": "get_time",
+                    "args": {
+                      "city": "Rome"
+                    }
+                  }
+                }
+              ]
+            },
+            "finishReason": "STOP"
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 41,
+          "candidatesTokenCount": 25,
+          "totalTokenCount": 66
+        }
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [
+          {
+            "id": "call_0_get_weather",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Paris"
+            }
+          },
+          {
+            "id": "call_1_get_weather",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Rome"
+            }
+          },
+          {
+            "id": "call_2_get_time",
+            "name": "get_time",
+            "arguments": {
+              "city": "Rome"
+            }
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 41,
+          "completionTokens": 25,
+          "totalTokens": 66
+        },
+        "modelVersion": null
+      }
+    },
+    {
+      "id": "text-and-call-index-counts-calls-only",
+      "providerResponse": {
+        "candidates": [
+          {
+            "index": 0,
+            "content": {
+              "role": "model",
+              "parts": [
+                {
+                  "text": "Let me check."
+                },
+                {
+                  "functionCall": {
+                    "name": "get_weather",
+                    "args": {
+                      "city": "Paris"
+                    }
+                  }
+                }
+              ]
+            },
+            "finishReason": "STOP"
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 30,
+          "candidatesTokenCount": 14,
+          "totalTokenCount": 44
+        }
+      },
+      "expected": {
+        "content": "Let me check.",
+        "toolCalls": [
+          {
+            "id": "call_0_get_weather",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Paris"
+            }
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 30,
+          "completionTokens": 14,
+          "totalTokens": 44
+        },
+        "modelVersion": null
+      }
+    },
+    {
+      "id": "provider-supplied-id-is-kept",
+      "providerResponse": {
+        "candidates": [
+          {
+            "index": 0,
+            "content": {
+              "role": "model",
+              "parts": [
+                {
+                  "functionCall": {
+                    "name": "get_weather",
+                    "args": {
+                      "city": "Paris"
+                    },
+                    "id": "fc-77"
+                  }
+                }
+              ]
+            },
+            "finishReason": "STOP"
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 30,
+          "candidatesTokenCount": 12,
+          "totalTokenCount": 42
+        }
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [
+          {
+            "id": "fc-77",
+            "name": "get_weather",
+            "arguments": {
+              "city": "Paris"
+            }
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 30,
+          "completionTokens": 12,
+          "totalTokens": 42
+        },
+        "modelVersion": null
+      }
+    },
+    {
+      "id": "call-without-args",
+      "providerResponse": {
+        "candidates": [
+          {
+            "index": 0,
+            "content": {
+              "role": "model",
+              "parts": [
+                {
+                  "functionCall": {
+                    "name": "ping"
+                  }
+                }
+              ]
+            },
+            "finishReason": "STOP"
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 10,
+          "candidatesTokenCount": 4,
+          "totalTokenCount": 14
+        }
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [
+          {
+            "id": "call_0_ping",
+            "name": "ping",
+            "arguments": {}
+          }
+        ],
+        "finishReason": "tool_calls",
+        "usage": {
+          "promptTokens": 10,
+          "completionTokens": 4,
+          "totalTokens": 14
+        },
+        "modelVersion": null
+      }
+    },
+    {
+      "id": "max-tokens-is-length",
+      "providerResponse": {
+        "candidates": [
+          {
+            "index": 0,
+            "content": {
+              "role": "model",
+              "parts": [
+                {
+                  "text": "It is su"
+                }
+              ]
+            },
+            "finishReason": "MAX_TOKENS"
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 20,
+          "candidatesTokenCount": 256,
+          "totalTokenCount": 276
+        }
+      },
+      "expected": {
+        "content": "It is su",
+        "toolCalls": [],
+        "finishReason": "length",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 256,
+          "totalTokens": 276
+        },
+        "modelVersion": null
+      }
+    },
+    {
+      "id": "safety-without-content-is-content-filter",
+      "providerResponse": {
+        "candidates": [
+          {
+            "index": 0,
+            "finishReason": "SAFETY"
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 20,
+          "candidatesTokenCount": 0,
+          "totalTokenCount": 20
+        }
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [],
+        "finishReason": "content_filter",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 0,
+          "totalTokens": 20
+        },
+        "modelVersion": null
+      }
+    },
+    {
+      "id": "malformed-function-call-is-other",
+      "providerResponse": {
+        "candidates": [
+          {
+            "index": 0,
+            "content": {
+              "role": "model",
+              "parts": []
+            },
+            "finishReason": "MALFORMED_FUNCTION_CALL"
+          }
+        ],
+        "usageMetadata": {
+          "promptTokenCount": 20,
+          "candidatesTokenCount": 0,
+          "totalTokenCount": 20
+        }
+      },
+      "expected": {
+        "content": "",
+        "toolCalls": [],
+        "finishReason": "other",
+        "usage": {
+          "promptTokens": 20,
+          "completionTokens": 0,
+          "totalTokens": 20
+        },
+        "modelVersion": null
+      }
+    }
+  ],
+  "errorCases": []
+}

@@ -7,7 +7,20 @@
   "required": ["traceId", "content", "model", "provider", "usage"],
   "properties": {
     "traceId": { "type": "string", "description": "Same UUID v7 as the request." },
-    "content": { "type": "string", "description": "Final response text (PII restored)." },
+    "content": {
+      "type": "string",
+      "description": "Final response text (PII restored). The empty string when the model responded only with toolCalls."
+    },
+    "toolCalls": {
+      "type": "array",
+      "items": { "$ref": "https://gavio.io/schema/ToolCall.v1.json" },
+      "description": "Tool calls the model requested, in provider order (F-ADP-03). Absent or empty when none. Arguments have PII placeholders restored, like content. Python binds this key as tool_calls."
+    },
+    "finishReason": {
+      "type": ["string", "null"],
+      "enum": ["stop", "length", "tool_calls", "content_filter", "other", null],
+      "description": "Normalised stop reason (F-ADP-03). OpenAI/Azure/OpenRouter: stop->stop, length->length, tool_calls->tool_calls, content_filter->content_filter. Anthropic: end_turn and stop_sequence->stop, max_tokens->length, tool_use->tool_calls, refusal->content_filter. Gemini: STOP->stop, MAX_TOKENS->length, SAFETY/RECITATION/BLOCKLIST/PROHIBITED_CONTENT/SPII->content_filter. Ollama: stop->stop, length->length. Any other native value maps to other. When the response carries toolCalls and the native reason is a plain stop (Gemini, Ollama), the value is tool_calls. Null when the provider reports none. Python binds this key as finish_reason."
+    },
     "model": { "type": "string" },
     "provider": { "type": "string" },
     "modelVersion": { "type": "string" },
