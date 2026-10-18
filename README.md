@@ -483,6 +483,8 @@ the [interceptors guide](./docs/interceptors.md) for every built-in interceptor.
 | [spec/](./spec/) | Canonical JSON Schema data model |
 | [test-vectors/](./test-vectors/) | Shared cross-SDK conformance cases |
 | [STABILITY.md](./STABILITY.md) | API stability, LTS policy, and stable release gate |
+| [docs/roadmap.md](./docs/roadmap.md) | Roadmap v3.2 → v5.0: proof, semantic eval, agents, EU compliance, ecosystem |
+| [DEPRECATIONS.md](./DEPRECATIONS.md) | Ledger of deprecated APIs and their removal targets |
 | [RELEASING.md](./RELEASING.md) | How releases are cut (PyPI + Maven Central + npm) |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Contribution guide + PR requirements |
 
