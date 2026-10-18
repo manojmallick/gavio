@@ -121,6 +121,10 @@ and uploads `latest.json` as an artifact.
 - Java runs with only 20 warm-up iterations (the shared methodology), so its
   figures include a largely cold JIT. They are a worst-case-ish view of a fresh
   process, not steady-state throughput.
+- The simulated delay is a timer wake-up, and its jitter (hundreds of µs on a
+  busy laptop, more in Java) is larger than the cost of the lighter stacks. A
+  small or even slightly negative overhead for `gateway` or `audit` is noise, not
+  a free lunch — rerun, or look at the heavier stacks where the signal is.
 - This measures the in-process chain only. Network latency, TLS, provider time
   and token streaming are out of scope by construction — that is what the
   simulated delay stands in for.

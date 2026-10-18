@@ -231,7 +231,8 @@ def check_run(problems: Problems, where: str, run: dict) -> None:
     if len(problems) > before or not isinstance(configs[0], dict):
         return
     baseline = configs[0].get("p50Us")
-    for config, spec_config in zip(configs, expected, strict=True):
+    # Lengths already match (ids compared above); no `strict=` so this runs on Python 3.9 too.
+    for config, spec_config in zip(configs, expected):  # noqa: B905
         cwhere = f"{where}.{config.get('configuration')}"
         if config.get("interceptors") != spec_config["interceptors"]:
             problems.add(
