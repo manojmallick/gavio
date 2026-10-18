@@ -12,6 +12,29 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 ## [Unreleased]
 
 ### Added
+- **Example parity matrix (F-DX-13)** — `examples/matrix.json` lists, per example
+  and SDK, the implementing directory or an explicit `planned` / `n/a` gap with a
+  reason (Python-only CLI steps are marked `cliOnly`).
+  `node scripts/check-example-matrix.mjs --check` fails on missing paths,
+  unlisted example directories or gaps, and drift in the `README.md` /
+  `examples/README.md` example tables.
+- **Examples run against the in-repo SDKs** — `scripts/run-examples.mjs`
+  installs `packages/gavio-py` (editable), a `npm pack` tarball of
+  `packages/gavio-js`, and the `packages/gavio-java` reactor (isolated local
+  Maven repository), then runs every example from a throwaway copy. A new
+  `examples` CI job runs the matrix check and the examples; see
+  `examples/README.md`.
+- **Platform workflow release in JavaScript and Java (F-DX-13)** — the Python-only
+  3.0.0 release workflow now exists as `gavio/workflow`
+  (`runPlatformWorkflowReleaseFile`, `buildPlatformWorkflowRelease`,
+  `platformWorkflowReleaseHash`) and `io.gavio.platform.PlatformWorkflow`, backed
+  by new library eval runners (`gavio/prompts/runner`, `io.gavio.prompts.EvalRunner`).
+  Java reads Policy Pack evidence through the new `PlatformWorkflowPolicyResolver`
+  SPI, which `gavio-interceptor-pii` registers. CLIs and YAML manifests stay
+  Python-only.
+- **Shared contract** — `spec/PlatformWorkflowRelease.schema.json` and
+  `test-vectors/workflow/release.json` (canonical JSON, hash, and five end-to-end
+  release cases) are loaded by the Python, JavaScript, and Java suites.
 - **Normalised tool calling — spec, shared vectors and Python reference (F-ADP-03).**
   New `ToolCall` and `ToolResult` schemas; optional `tools`, `toolChoice` on `GavioRequest`,
   `toolCalls`, `finishReason` on `GavioResponse`, and `toolCalls` (name + arguments hash only)
@@ -30,6 +53,15 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   had it).
 
 ### Changed
+- **Workflow release hashing is now cross-SDK canonical JSON (Python)** —
+  `platform_workflow_release_hash` and the digests inside a workflow artifact
+  write integral floats as integers (`1.0` -> `1`), sort keys by code point, and
+  exclude `workflowHash`, `evals[*].runner`, and `evals[*].source` (machine
+  details) from the hash, so the same release hashes identically in every SDK.
+  Workflow artifacts produced by earlier releases re-hash differently; rebuild
+  them. Nothing in Gavio verifies a stored `workflowHash`.
+- `spec/EvalReport.schema.json` now documents the optional `triage` object on case
+  results, which every SDK already emitted.
 - `GavioRequest.copy_with_messages` and `GavioResponse.copy_with_content` now use
   `dataclasses.replace`, so a field added later is carried automatically.
 - The semantic cache keys exact entries on `tools` / `tool_choice`, never replays a response that

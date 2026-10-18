@@ -1,0 +1,3237 @@
+{
+  "schemaVersion": "gavio.platform-workflow-release.vectors.v1",
+  "featureId": "F-DX-13",
+  "since": "3.2.0",
+  "description": "Cross-SDK platform workflow release cases. canonicalJsonCases pin the canonical JSON form; hashCases pin platformWorkflowReleaseHash; releaseCases write `files` next to `manifest` (as workflow.json) in a temp directory, run the file-based release builder, drop evals[*].runner and evals[*].source from the result, and compare the artifact (by canonical JSON), passed, and reasons.",
+  "canonicalJsonCases": [
+    {
+      "id": "key-order-and-literals",
+      "value": {
+        "b": 1,
+        "a": [
+          true,
+          false,
+          null
+        ],
+        "B": "x"
+      },
+      "expected": "{\"B\":\"x\",\"a\":[true,false,null],\"b\":1}"
+    },
+    {
+      "id": "integral-floats-are-integers",
+      "value": [
+        1.0,
+        -0.0,
+        2.5,
+        100.0,
+        0.0
+      ],
+      "expected": "[1,0,2.5,100,0]"
+    },
+    {
+      "id": "fractions-have-no-exponent",
+      "value": [
+        0.1,
+        1e-07,
+        123456789.125,
+        0.33333333
+      ],
+      "expected": "[0.1,0.0000001,123456789.125,0.33333333]"
+    },
+    {
+      "id": "large-integral-values",
+      "value": [
+        1e+21,
+        9007199254740992
+      ],
+      "expected": "[1000000000000000000000,9007199254740992]"
+    },
+    {
+      "id": "string-escapes",
+      "value": "q\"b\\ \n\r\t\b\f\u0001\u001f/",
+      "expected": "\"q\\\"b\\\\ \\n\\r\\t\\b\\f\\u0001\\u001f/\""
+    },
+    {
+      "id": "non-ascii-is-verbatim",
+      "value": "Zoë Ångström 😀 ～",
+      "expected": "\"Zoë Ångström 😀 ～\""
+    },
+    {
+      "id": "keys-sort-by-code-point",
+      "value": {
+        "😀": 1,
+        "～": 2,
+        "é": 3,
+        "z": 4,
+        "Z": 5
+      },
+      "expected": "{\"Z\":5,\"z\":4,\"é\":3,\"～\":2,\"😀\":1}"
+    },
+    {
+      "id": "nested-empty-containers",
+      "value": {
+        "o": {},
+        "a": [],
+        "n": [
+          {
+            "y": 2,
+            "x": 1
+          }
+        ]
+      },
+      "expected": "{\"a\":[],\"n\":[{\"x\":1,\"y\":2}],\"o\":{}}"
+    }
+  ],
+  "hashCases": [
+    {
+      "id": "environment-fields-are-excluded",
+      "description": "runner, source, and workflowHash do not affect the hash; floats and unicode canonicalise.",
+      "artifact": {
+        "schemaVersion": "gavio.platform-workflow-release.v1",
+        "workflowId": "hash-fixture",
+        "generatedAt": "2026-07-12T12:00:00Z",
+        "release": {
+          "version": "3.2.0",
+          "scores": [
+            1.0,
+            0.5,
+            1e-07
+          ]
+        },
+        "passed": true,
+        "reasons": [],
+        "prompts": {
+          "manifest": null,
+          "releaseBundles": []
+        },
+        "evals": [
+          {
+            "suiteId": "s",
+            "score": 1.0,
+            "runner": {
+              "name": "gavio-eval-runner",
+              "version": "9.9.9",
+              "python": "3.12.0"
+            },
+            "source": "/tmp/anywhere/suite.json",
+            "gate": {
+              "passed": true,
+              "reasons": [],
+              "failUnder": 1.0,
+              "baselineScore": null,
+              "maxRegression": 0.0,
+              "scoreDelta": null
+            }
+          }
+        ],
+        "policies": [],
+        "trust": null,
+        "runtimeProfile": null,
+        "metadata": {
+          "team": "Zoë Ångström 😀",
+          "😀": "astral key",
+          "～": "bmp key",
+          "Z": 1
+        }
+      },
+      "expectedHash": "sha256:b76401da57b049eab3b4a126aae1540891b422d4beb0d7f290c7cc1329b8f7b1"
+    },
+    {
+      "id": "same-hash-with-other-environment",
+      "description": "The same artifact on another machine and with a stale workflowHash hashes identically.",
+      "artifact": {
+        "schemaVersion": "gavio.platform-workflow-release.v1",
+        "workflowId": "hash-fixture",
+        "generatedAt": "2026-07-12T12:00:00Z",
+        "release": {
+          "version": "3.2.0",
+          "scores": [
+            1.0,
+            0.5,
+            1e-07
+          ]
+        },
+        "passed": true,
+        "reasons": [],
+        "prompts": {
+          "manifest": null,
+          "releaseBundles": []
+        },
+        "evals": [
+          {
+            "suiteId": "s",
+            "score": 1.0,
+            "runner": {
+              "name": "gavio-eval-runner",
+              "version": "1.2.3",
+              "node": "v22.0.0"
+            },
+            "source": "C:\\other\\suite.json",
+            "gate": {
+              "passed": true,
+              "reasons": [],
+              "failUnder": 1.0,
+              "baselineScore": null,
+              "maxRegression": 0.0,
+              "scoreDelta": null
+            }
+          }
+        ],
+        "policies": [],
+        "trust": null,
+        "runtimeProfile": null,
+        "metadata": {
+          "team": "Zoë Ångström 😀",
+          "😀": "astral key",
+          "～": "bmp key",
+          "Z": 1
+        },
+        "workflowHash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
+      "expectedHash": "sha256:b76401da57b049eab3b4a126aae1540891b422d4beb0d7f290c7cc1329b8f7b1"
+    },
+    {
+      "id": "content-changes-the-hash",
+      "description": "Any portable field change produces a different hash.",
+      "artifact": {
+        "schemaVersion": "gavio.platform-workflow-release.v1",
+        "workflowId": "hash-fixture",
+        "generatedAt": "2026-07-12T12:00:00Z",
+        "release": {
+          "version": "3.2.0",
+          "scores": [
+            1.0,
+            0.5,
+            1e-07
+          ]
+        },
+        "passed": false,
+        "reasons": [],
+        "prompts": {
+          "manifest": null,
+          "releaseBundles": []
+        },
+        "evals": [
+          {
+            "suiteId": "s",
+            "score": 1.0,
+            "runner": {
+              "name": "gavio-eval-runner",
+              "version": "9.9.9",
+              "python": "3.12.0"
+            },
+            "source": "/tmp/anywhere/suite.json",
+            "gate": {
+              "passed": true,
+              "reasons": [],
+              "failUnder": 1.0,
+              "baselineScore": null,
+              "maxRegression": 0.0,
+              "scoreDelta": null
+            }
+          }
+        ],
+        "policies": [],
+        "trust": null,
+        "runtimeProfile": null,
+        "metadata": {
+          "team": "Zoë Ångström 😀",
+          "😀": "astral key",
+          "～": "bmp key",
+          "Z": 1
+        }
+      },
+      "expectedHash": "sha256:13d13ea8b72254f24424a1f6d1fe26da7ae24042b8679f85bef391f308867dc6"
+    }
+  ],
+  "releaseCases": [
+    {
+      "id": "ready-release",
+      "description": "Prompt, eval, two policy packs, trust bundle, and runtime profile all pass.",
+      "files": {
+        "prompts.json": {
+          "schemaVersion": "gavio.prompt-registry.v2",
+          "registryId": "support-prompts",
+          "templates": [
+            {
+              "id": "support.reply",
+              "version": "1.0.0",
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are concise."
+                },
+                {
+                  "role": "user",
+                  "content": "Write a reply about {{ topic }}."
+                }
+              ],
+              "requiredVariables": [
+                "topic"
+              ]
+            },
+            {
+              "id": "support.reply",
+              "version": "1.1.0",
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are concise and policy aware."
+                },
+                {
+                  "role": "user",
+                  "content": "Write a reply to {{ customer }} about {{ topic }}."
+                }
+              ],
+              "requiredVariables": [
+                "customer",
+                "topic"
+              ],
+              "metadata": {
+                "promptEvalLinks": [
+                  {
+                    "suiteId": "support-release",
+                    "baselineScore": 1,
+                    "failUnder": 1,
+                    "maxRegression": 0,
+                    "metadata": {
+                      "output": "raw metadata output"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "suite.json": {
+          "id": "support-release",
+          "cases": [
+            {
+              "id": "refund-safe",
+              "templateId": "support.reply",
+              "templateVersion": "1.1.0",
+              "variables": {
+                "customer": "Avery",
+                "topic": "refund status"
+              },
+              "mockOutput": "Avery refund status approved",
+              "assertions": [
+                {
+                  "type": "contains",
+                  "value": "refund status"
+                },
+                {
+                  "type": "not_contains",
+                  "value": "card number"
+                }
+              ],
+              "triage": {
+                "category": "safety",
+                "severity": "high",
+                "owner": "support-quality",
+                "action": "revise_prompt",
+                "metadata": {
+                  "output": "Avery refund status approved"
+                }
+              }
+            }
+          ]
+        },
+        "baseline.json": {
+          "score": 1
+        },
+        "policy-pack/manifest.json": {
+          "id": "acme.workflow-demo",
+          "name": "Acme workflow demo",
+          "version": "1.0.0",
+          "domain": "custom",
+          "description": "Employee identifier pack for workflow release vectors.",
+          "defaultAction": "redact",
+          "redactionStrategy": "tokenize",
+          "auditLabels": [
+            "PII"
+          ],
+          "detectors": [
+            {
+              "name": "employee_id",
+              "entityType": "EMPLOYEE_ID",
+              "type": "regex",
+              "action": "redact",
+              "confidence": 0.9,
+              "redactionStrategy": "tokenize",
+              "label": "PII",
+              "pattern": "\\bEMP-[0-9]{6}\\b",
+              "replacementPrefix": "EMPLOYEE_ID"
+            },
+            {
+              "name": "email",
+              "entityType": "EMAIL",
+              "type": "scanner",
+              "action": "redact",
+              "confidence": 1.0,
+              "redactionStrategy": "tokenize",
+              "label": "PII"
+            }
+          ],
+          "signature": {
+            "algorithm": "sha256",
+            "value": "f7db7810fab21fcf4dddab27e84abf1754b091dd4039483ad37a8efc60c65bec",
+            "keyId": "acme-release",
+            "signedAt": "2026-07-12T10:00:00Z"
+          }
+        },
+        "trust.json": {
+          "schemaVersion": "1.0",
+          "bundleId": "trust-platform-workflow",
+          "generatedAt": "2026-07-12T12:00:00Z",
+          "sdk": {
+            "name": "gavio-python",
+            "version": "3.1.0"
+          },
+          "release": {
+            "version": "3.2.0",
+            "tag": "v3.2.0",
+            "commit": "abc1234"
+          },
+          "runtime": {
+            "environment": "production",
+            "eventExportMode": "metadata_only",
+            "policySource": "project:prod-support"
+          },
+          "privacy": {
+            "contentMode": "metadata_only",
+            "containsRawContent": false,
+            "redactedFields": [
+              "messages",
+              "content",
+              "diff"
+            ]
+          },
+          "evidence": {
+            "auditChain": {
+              "recordCount": 0,
+              "verified": true,
+              "headHash": "",
+              "tailHash": ""
+            },
+            "runtimeEvents": {
+              "eventCount": 0,
+              "contentFree": true,
+              "eventTypes": []
+            },
+            "controls": [
+              {
+                "id": "release-gate",
+                "type": "release_gate",
+                "status": "pass",
+                "source": "scripts/stable_release_gate.py"
+              }
+            ]
+          },
+          "documents": [],
+          "bundleHash": "sha256:aab1443723682242ee51f2fb4ed998f84a4550ddd2c9f63e470fb66bf57d6ec0"
+        },
+        "profile.json": {
+          "schemaVersion": "2.0",
+          "profileId": "platform-prod-support",
+          "generatedAt": "2026-07-12T12:00:00Z",
+          "sdk": {
+            "name": "gavio",
+            "version": "3.2.0"
+          },
+          "runtime": {
+            "environment": "production",
+            "eventExportMode": "metadata_only",
+            "controlPlaneEnabled": true,
+            "policySource": "project:prod-support"
+          },
+          "surfaces": [
+            "audit_hashes",
+            "cost_governance",
+            "policy_packs",
+            "runtime_events",
+            "tool_runtime",
+            "trust_evidence"
+          ],
+          "exporters": [],
+          "integrations": [],
+          "controls": [
+            {
+              "id": "support-policy",
+              "type": "policy_pack",
+              "status": "pass",
+              "source": "policy-packs/support/manifest.json"
+            }
+          ],
+          "evidence": {
+            "auditChain": {
+              "recordCount": 1,
+              "verified": true
+            },
+            "runtimeEvents": {
+              "eventCount": 2,
+              "contentFree": true
+            }
+          },
+          "requirements": {
+            "requiredSurfaces": [
+              "audit_hashes",
+              "cost_governance",
+              "policy_packs",
+              "runtime_events",
+              "tool_runtime",
+              "trust_evidence"
+            ]
+          },
+          "readiness": {
+            "ready": true,
+            "score": 100,
+            "requiredSurfaces": [
+              "audit_hashes",
+              "cost_governance",
+              "policy_packs",
+              "runtime_events",
+              "tool_runtime",
+              "trust_evidence"
+            ],
+            "gaps": []
+          },
+          "profileHash": "sha256:28f75ed8224015ead7a7ba50c07fb3f139ff69d0ee8f36653e88e32f65b76acc"
+        }
+      },
+      "manifest": {
+        "schemaVersion": "gavio.platform-workflow.v1",
+        "workflowId": "support-platform-release",
+        "generatedAt": "2026-07-12T12:00:00Z",
+        "release": {
+          "version": "3.2.0",
+          "tag": "v3.2.0",
+          "commit": "abc1234"
+        },
+        "prompts": {
+          "manifest": "prompts.json",
+          "promptId": "support.reply",
+          "promptVersion": "1.1.0",
+          "fromVersion": "1.0.0"
+        },
+        "evals": [
+          {
+            "suite": "suite.json",
+            "failUnder": 1,
+            "baseline": "baseline.json",
+            "maxRegression": 0
+          }
+        ],
+        "policies": [
+          {
+            "id": "acme-policy",
+            "pathOrName": "policy-pack",
+            "metadata": {
+              "owner": "security"
+            }
+          },
+          {
+            "id": "core-policy",
+            "pathOrName": "core"
+          }
+        ],
+        "trustBundle": {
+          "path": "trust.json"
+        },
+        "runtimeProfile": {
+          "path": "profile.json"
+        },
+        "metadata": {
+          "owner": "platform",
+          "team": "Zoë Ångström 😀",
+          "content": "raw release notes must not persist"
+        }
+      },
+      "forbiddenStrings": [
+        "Write a reply to {{ customer }} about {{ topic }}",
+        "raw release notes must not persist",
+        "raw metadata output",
+        "Avery refund status approved"
+      ],
+      "expected": {
+        "passed": true,
+        "reasons": [],
+        "artifact": {
+          "schemaVersion": "gavio.platform-workflow-release.v1",
+          "workflowId": "support-platform-release",
+          "generatedAt": "2026-07-12T12:00:00Z",
+          "release": {
+            "version": "3.2.0",
+            "tag": "v3.2.0",
+            "commit": "abc1234"
+          },
+          "passed": true,
+          "reasons": [],
+          "prompts": {
+            "manifest": {
+              "schemaVersion": "gavio.prompt-registry.v2",
+              "registryId": "support-prompts",
+              "digest": "466c55a593c1c907c688c2ede3e4c32561128f8afac3775901059593e9386057"
+            },
+            "releaseBundles": [
+              {
+                "schemaVersion": "gavio.prompt-release-bundle.v1",
+                "bundleId": "support.reply@1.1.0",
+                "prompt": {
+                  "id": "support.reply",
+                  "version": "1.1.0"
+                },
+                "generatedAt": "2026-07-12T12:00:00Z",
+                "manifest": {
+                  "schemaVersion": "gavio.prompt-registry.v2",
+                  "registryId": "support-prompts",
+                  "digest": "466c55a593c1c907c688c2ede3e4c32561128f8afac3775901059593e9386057"
+                },
+                "passed": true,
+                "gates": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "passed": true,
+                    "score": 1.0,
+                    "totalCases": 1,
+                    "passedCases": 1,
+                    "failedCases": [],
+                    "reasons": [],
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "maxRegression": 0.0,
+                    "scoreDelta": 0.0
+                  }
+                ],
+                "evalReports": [
+                  {
+                    "suiteId": "support-release",
+                    "totalCases": 1,
+                    "passedCases": 1,
+                    "failedCases": 0,
+                    "score": 1.0,
+                    "cases": [
+                      {
+                        "id": "refund-safe",
+                        "templateId": "support.reply",
+                        "templateVersion": "1.1.0",
+                        "passed": true,
+                        "score": 1.0,
+                        "outputHash": "a14ba73309ac4ca90e951664ff8af7625f2d36b5f58e4d2c82144f5303bd5281",
+                        "assertions": [
+                          {
+                            "type": "contains",
+                            "passed": true,
+                            "expected": "refund status",
+                            "reason": "passed"
+                          },
+                          {
+                            "type": "not_contains",
+                            "passed": true,
+                            "expected": "card number",
+                            "reason": "passed"
+                          }
+                        ],
+                        "lineage": {
+                          "templateId": "support.reply",
+                          "templateVersion": "1.1.0",
+                          "variables": {
+                            "customer": "Avery",
+                            "topic": "refund status"
+                          },
+                          "ragChunks": []
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "promptDiff": {
+                  "from": {
+                    "id": "support.reply",
+                    "version": "1.0.0"
+                  },
+                  "to": {
+                    "id": "support.reply",
+                    "version": "1.1.0"
+                  },
+                  "hasChanges": true,
+                  "changes": [
+                    {
+                      "path": "messages[0].content",
+                      "type": "changed",
+                      "beforeHash": "22169535f0159f2633716abb0ff47517afda2797b130837a899a4ba598d2f5e7",
+                      "afterHash": "19763fbadbbfb379a1675464519718c6d7f9462dd842119bdd9979a0dbb4b9ae"
+                    },
+                    {
+                      "path": "messages[1].content",
+                      "type": "changed",
+                      "beforeHash": "ff401be38d725bc1ee1e8f1521fc6acf0be0f043898da37612d12552c9e57c8c",
+                      "afterHash": "c194b797af69b07f3f42285f19ea82fc3fcb9a38364177c4d0d39ad6bd304c13"
+                    },
+                    {
+                      "path": "requiredVariables",
+                      "type": "changed",
+                      "before": [],
+                      "after": [
+                        "customer"
+                      ]
+                    },
+                    {
+                      "path": "metadata.promptEvalLinks",
+                      "type": "added",
+                      "after": [
+                        {
+                          "suiteId": "support-release",
+                          "baselineScore": 1,
+                          "failUnder": 1,
+                          "maxRegression": 0,
+                          "metadata": {
+                            "outputHash": "ab4713f2b95d38937895dab1f17902c46821a6f40f3dde5355fbdeaf5d1ba3f0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "evals": [
+            {
+              "suiteId": "support-release",
+              "totalCases": 1,
+              "passedCases": 1,
+              "failedCases": 0,
+              "score": 1.0,
+              "cases": [
+                {
+                  "id": "refund-safe",
+                  "templateId": "support.reply",
+                  "templateVersion": "1.1.0",
+                  "passed": true,
+                  "score": 1.0,
+                  "outputHash": "a14ba73309ac4ca90e951664ff8af7625f2d36b5f58e4d2c82144f5303bd5281",
+                  "assertions": [
+                    {
+                      "type": "contains",
+                      "passed": true,
+                      "expected": "refund status",
+                      "reason": "passed"
+                    },
+                    {
+                      "type": "not_contains",
+                      "passed": true,
+                      "expected": "card number",
+                      "reason": "passed"
+                    }
+                  ],
+                  "lineage": {
+                    "templateId": "support.reply",
+                    "templateVersion": "1.1.0",
+                    "variables": {
+                      "customer": "Avery",
+                      "topic": "refund status"
+                    },
+                    "ragChunks": []
+                  }
+                }
+              ],
+              "schemaVersion": "1.0",
+              "gate": {
+                "passed": true,
+                "reasons": [],
+                "failUnder": 1.0,
+                "baselineScore": 1.0,
+                "maxRegression": 0.0,
+                "scoreDelta": 0.0
+              },
+              "workflow": {
+                "passed": true,
+                "links": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "maxRegression": 0.0,
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "metadata": {
+                      "outputHash": "ab4713f2b95d38937895dab1f17902c46821a6f40f3dde5355fbdeaf5d1ba3f0"
+                    }
+                  }
+                ],
+                "gates": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "passed": true,
+                    "score": 1.0,
+                    "totalCases": 1,
+                    "passedCases": 1,
+                    "failedCases": [],
+                    "reasons": [],
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "maxRegression": 0.0,
+                    "scoreDelta": 0.0
+                  }
+                ]
+              }
+            }
+          ],
+          "policies": [
+            {
+              "id": "acme-policy",
+              "name": "Acme workflow demo",
+              "version": "1.0.0",
+              "domain": "custom",
+              "source": "policy-pack",
+              "signatureValid": true,
+              "manifestDigest": "b0a41f2c7072c5ecff3457b94dcdd558a870dd04cbc6e251f34ad28eb1803aef",
+              "detectorCount": 2,
+              "metadata": {
+                "owner": "security"
+              }
+            },
+            {
+              "id": "core-policy",
+              "name": "Core PII",
+              "version": "1.0.0",
+              "domain": "core",
+              "source": "core",
+              "signatureValid": true,
+              "manifestDigest": "8c01a2ab9b1e3135d7ddc58bd7ec898f7bef183a022f434f4bd8efac58ed482c",
+              "detectorCount": 8,
+              "metadata": {}
+            }
+          ],
+          "trust": {
+            "valid": true,
+            "errors": [],
+            "computedHash": "sha256:aab1443723682242ee51f2fb4ed998f84a4550ddd2c9f63e470fb66bf57d6ec0",
+            "bundle": {
+              "schemaVersion": "1.0",
+              "bundleId": "trust-platform-workflow",
+              "generatedAt": "2026-07-12T12:00:00Z",
+              "sdk": {
+                "name": "gavio-python",
+                "version": "3.1.0"
+              },
+              "release": {
+                "version": "3.2.0",
+                "tag": "v3.2.0",
+                "commit": "abc1234"
+              },
+              "runtime": {
+                "environment": "production",
+                "eventExportMode": "metadata_only",
+                "policySource": "project:prod-support"
+              },
+              "privacy": {
+                "contentMode": "metadata_only",
+                "containsRawContent": false,
+                "redactedFields": [
+                  "messages",
+                  "content",
+                  "diff"
+                ]
+              },
+              "evidence": {
+                "auditChain": {
+                  "recordCount": 0,
+                  "verified": true,
+                  "headHash": "",
+                  "tailHash": ""
+                },
+                "runtimeEvents": {
+                  "eventCount": 0,
+                  "contentFree": true,
+                  "eventTypes": []
+                },
+                "controls": [
+                  {
+                    "id": "release-gate",
+                    "type": "release_gate",
+                    "status": "pass",
+                    "source": "scripts/stable_release_gate.py"
+                  }
+                ]
+              },
+              "documents": [],
+              "bundleHash": "sha256:aab1443723682242ee51f2fb4ed998f84a4550ddd2c9f63e470fb66bf57d6ec0"
+            }
+          },
+          "runtimeProfile": {
+            "valid": true,
+            "errors": [],
+            "computedHash": "sha256:28f75ed8224015ead7a7ba50c07fb3f139ff69d0ee8f36653e88e32f65b76acc",
+            "readiness": {
+              "ready": true,
+              "score": 100,
+              "requiredSurfaces": [
+                "audit_hashes",
+                "cost_governance",
+                "policy_packs",
+                "runtime_events",
+                "tool_runtime",
+                "trust_evidence"
+              ],
+              "gaps": []
+            },
+            "profile": {
+              "schemaVersion": "2.0",
+              "profileId": "platform-prod-support",
+              "generatedAt": "2026-07-12T12:00:00Z",
+              "sdk": {
+                "name": "gavio",
+                "version": "3.2.0"
+              },
+              "runtime": {
+                "environment": "production",
+                "eventExportMode": "metadata_only",
+                "controlPlaneEnabled": true,
+                "policySource": "project:prod-support"
+              },
+              "surfaces": [
+                "audit_hashes",
+                "cost_governance",
+                "policy_packs",
+                "runtime_events",
+                "tool_runtime",
+                "trust_evidence"
+              ],
+              "exporters": [],
+              "integrations": [],
+              "controls": [
+                {
+                  "id": "support-policy",
+                  "type": "policy_pack",
+                  "status": "pass",
+                  "source": "policy-packs/support/manifest.json"
+                }
+              ],
+              "evidence": {
+                "auditChain": {
+                  "recordCount": 1,
+                  "verified": true
+                },
+                "runtimeEvents": {
+                  "eventCount": 2,
+                  "contentFree": true
+                }
+              },
+              "requirements": {
+                "requiredSurfaces": [
+                  "audit_hashes",
+                  "cost_governance",
+                  "policy_packs",
+                  "runtime_events",
+                  "tool_runtime",
+                  "trust_evidence"
+                ]
+              },
+              "readiness": {
+                "ready": true,
+                "score": 100,
+                "requiredSurfaces": [
+                  "audit_hashes",
+                  "cost_governance",
+                  "policy_packs",
+                  "runtime_events",
+                  "tool_runtime",
+                  "trust_evidence"
+                ],
+                "gaps": []
+              },
+              "profileHash": "sha256:28f75ed8224015ead7a7ba50c07fb3f139ff69d0ee8f36653e88e32f65b76acc"
+            }
+          },
+          "metadata": {
+            "owner": "platform",
+            "team": "Zoë Ångström 😀",
+            "contentHash": "03eaf42688ebb3defe708893115ca9d76f2abb3d2d767eb52ee30667ea94a803"
+          },
+          "workflowHash": "sha256:1d3a8188d52002ae0298eb40863aa6e93d70213cb32992fc43976428a9f8d635"
+        }
+      }
+    },
+    {
+      "id": "failing-eval-gate",
+      "description": "A failing eval case blocks the prompt release bundle and regresses the baseline.",
+      "files": {
+        "prompts.json": {
+          "schemaVersion": "gavio.prompt-registry.v2",
+          "registryId": "support-prompts",
+          "templates": [
+            {
+              "id": "support.reply",
+              "version": "1.0.0",
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are concise."
+                },
+                {
+                  "role": "user",
+                  "content": "Write a reply about {{ topic }}."
+                }
+              ],
+              "requiredVariables": [
+                "topic"
+              ]
+            },
+            {
+              "id": "support.reply",
+              "version": "1.1.0",
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are concise and policy aware."
+                },
+                {
+                  "role": "user",
+                  "content": "Write a reply to {{ customer }} about {{ topic }}."
+                }
+              ],
+              "requiredVariables": [
+                "customer",
+                "topic"
+              ],
+              "metadata": {
+                "promptEvalLinks": [
+                  {
+                    "suiteId": "support-release",
+                    "baselineScore": 1,
+                    "failUnder": 1,
+                    "maxRegression": 0,
+                    "metadata": {
+                      "output": "raw metadata output"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "suite.json": {
+          "id": "support-release",
+          "cases": [
+            {
+              "id": "refund-safe",
+              "templateId": "support.reply",
+              "templateVersion": "1.1.0",
+              "variables": {
+                "customer": "Avery",
+                "topic": "refund status"
+              },
+              "mockOutput": "Avery needs a card number",
+              "assertions": [
+                {
+                  "type": "contains",
+                  "value": "refund status"
+                },
+                {
+                  "type": "not_contains",
+                  "value": "card number"
+                }
+              ],
+              "triage": {
+                "category": "safety",
+                "severity": "high",
+                "owner": "support-quality",
+                "action": "revise_prompt",
+                "metadata": {
+                  "output": "Avery needs a card number"
+                }
+              }
+            }
+          ]
+        },
+        "baseline.json": {
+          "score": 1
+        },
+        "policy-pack/manifest.json": {
+          "id": "acme.workflow-demo",
+          "name": "Acme workflow demo",
+          "version": "1.0.0",
+          "domain": "custom",
+          "description": "Employee identifier pack for workflow release vectors.",
+          "defaultAction": "redact",
+          "redactionStrategy": "tokenize",
+          "auditLabels": [
+            "PII"
+          ],
+          "detectors": [
+            {
+              "name": "employee_id",
+              "entityType": "EMPLOYEE_ID",
+              "type": "regex",
+              "action": "redact",
+              "confidence": 0.9,
+              "redactionStrategy": "tokenize",
+              "label": "PII",
+              "pattern": "\\bEMP-[0-9]{6}\\b",
+              "replacementPrefix": "EMPLOYEE_ID"
+            },
+            {
+              "name": "email",
+              "entityType": "EMAIL",
+              "type": "scanner",
+              "action": "redact",
+              "confidence": 1.0,
+              "redactionStrategy": "tokenize",
+              "label": "PII"
+            }
+          ],
+          "signature": {
+            "algorithm": "sha256",
+            "value": "f7db7810fab21fcf4dddab27e84abf1754b091dd4039483ad37a8efc60c65bec",
+            "keyId": "acme-release",
+            "signedAt": "2026-07-12T10:00:00Z"
+          }
+        },
+        "trust.json": {
+          "schemaVersion": "1.0",
+          "bundleId": "trust-platform-workflow",
+          "generatedAt": "2026-07-12T12:00:00Z",
+          "sdk": {
+            "name": "gavio-python",
+            "version": "3.1.0"
+          },
+          "release": {
+            "version": "3.2.0",
+            "tag": "v3.2.0",
+            "commit": "abc1234"
+          },
+          "runtime": {
+            "environment": "production",
+            "eventExportMode": "metadata_only",
+            "policySource": "project:prod-support"
+          },
+          "privacy": {
+            "contentMode": "metadata_only",
+            "containsRawContent": false,
+            "redactedFields": [
+              "messages",
+              "content",
+              "diff"
+            ]
+          },
+          "evidence": {
+            "auditChain": {
+              "recordCount": 0,
+              "verified": true,
+              "headHash": "",
+              "tailHash": ""
+            },
+            "runtimeEvents": {
+              "eventCount": 0,
+              "contentFree": true,
+              "eventTypes": []
+            },
+            "controls": [
+              {
+                "id": "release-gate",
+                "type": "release_gate",
+                "status": "pass",
+                "source": "scripts/stable_release_gate.py"
+              }
+            ]
+          },
+          "documents": [],
+          "bundleHash": "sha256:aab1443723682242ee51f2fb4ed998f84a4550ddd2c9f63e470fb66bf57d6ec0"
+        },
+        "profile.json": {
+          "schemaVersion": "2.0",
+          "profileId": "platform-prod-support",
+          "generatedAt": "2026-07-12T12:00:00Z",
+          "sdk": {
+            "name": "gavio",
+            "version": "3.2.0"
+          },
+          "runtime": {
+            "environment": "production",
+            "eventExportMode": "metadata_only",
+            "controlPlaneEnabled": true,
+            "policySource": "project:prod-support"
+          },
+          "surfaces": [
+            "audit_hashes",
+            "cost_governance",
+            "policy_packs",
+            "runtime_events",
+            "tool_runtime",
+            "trust_evidence"
+          ],
+          "exporters": [],
+          "integrations": [],
+          "controls": [
+            {
+              "id": "support-policy",
+              "type": "policy_pack",
+              "status": "pass",
+              "source": "policy-packs/support/manifest.json"
+            }
+          ],
+          "evidence": {
+            "auditChain": {
+              "recordCount": 1,
+              "verified": true
+            },
+            "runtimeEvents": {
+              "eventCount": 2,
+              "contentFree": true
+            }
+          },
+          "requirements": {
+            "requiredSurfaces": [
+              "audit_hashes",
+              "cost_governance",
+              "policy_packs",
+              "runtime_events",
+              "tool_runtime",
+              "trust_evidence"
+            ]
+          },
+          "readiness": {
+            "ready": true,
+            "score": 100,
+            "requiredSurfaces": [
+              "audit_hashes",
+              "cost_governance",
+              "policy_packs",
+              "runtime_events",
+              "tool_runtime",
+              "trust_evidence"
+            ],
+            "gaps": []
+          },
+          "profileHash": "sha256:28f75ed8224015ead7a7ba50c07fb3f139ff69d0ee8f36653e88e32f65b76acc"
+        }
+      },
+      "manifest": {
+        "schemaVersion": "gavio.platform-workflow.v1",
+        "workflowId": "support-platform-release",
+        "generatedAt": "2026-07-12T12:00:00Z",
+        "release": {
+          "version": "3.2.0",
+          "tag": "v3.2.0",
+          "commit": "abc1234"
+        },
+        "prompts": {
+          "manifest": "prompts.json",
+          "promptId": "support.reply",
+          "promptVersion": "1.1.0",
+          "fromVersion": "1.0.0"
+        },
+        "evals": [
+          {
+            "suite": "suite.json",
+            "failUnder": 1,
+            "baseline": "baseline.json",
+            "maxRegression": 0
+          }
+        ],
+        "policies": [
+          {
+            "id": "acme-policy",
+            "pathOrName": "policy-pack",
+            "metadata": {
+              "owner": "security"
+            }
+          },
+          {
+            "id": "core-policy",
+            "pathOrName": "core"
+          }
+        ],
+        "trustBundle": {
+          "path": "trust.json"
+        },
+        "runtimeProfile": {
+          "path": "profile.json"
+        },
+        "metadata": {
+          "owner": "platform",
+          "team": "Zoë Ångström 😀",
+          "content": "raw release notes must not persist"
+        }
+      },
+      "forbiddenStrings": [
+        "Write a reply to {{ customer }} about {{ topic }}",
+        "raw release notes must not persist",
+        "raw metadata output",
+        "Avery needs a card number"
+      ],
+      "expected": {
+        "passed": false,
+        "reasons": [
+          "eval:1 eval case(s) failed",
+          "eval:score 0.00000000 is below fail-under 1.00000000",
+          "eval:score regression -1.00000000 exceeds allowed 0.00000000",
+          "prompt:1 linked eval case(s) failed",
+          "prompt:score 0.00000000 is below fail-under 1.00000000",
+          "prompt:score regression -1.00000000 exceeds allowed 0.00000000",
+          "prompt release bundle support.reply@1.1.0 did not pass"
+        ],
+        "artifact": {
+          "schemaVersion": "gavio.platform-workflow-release.v1",
+          "workflowId": "support-platform-release",
+          "generatedAt": "2026-07-12T12:00:00Z",
+          "release": {
+            "version": "3.2.0",
+            "tag": "v3.2.0",
+            "commit": "abc1234"
+          },
+          "passed": false,
+          "reasons": [
+            "eval:1 eval case(s) failed",
+            "eval:score 0.00000000 is below fail-under 1.00000000",
+            "eval:score regression -1.00000000 exceeds allowed 0.00000000",
+            "prompt:1 linked eval case(s) failed",
+            "prompt:score 0.00000000 is below fail-under 1.00000000",
+            "prompt:score regression -1.00000000 exceeds allowed 0.00000000",
+            "prompt release bundle support.reply@1.1.0 did not pass"
+          ],
+          "prompts": {
+            "manifest": {
+              "schemaVersion": "gavio.prompt-registry.v2",
+              "registryId": "support-prompts",
+              "digest": "466c55a593c1c907c688c2ede3e4c32561128f8afac3775901059593e9386057"
+            },
+            "releaseBundles": [
+              {
+                "schemaVersion": "gavio.prompt-release-bundle.v1",
+                "bundleId": "support.reply@1.1.0",
+                "prompt": {
+                  "id": "support.reply",
+                  "version": "1.1.0"
+                },
+                "generatedAt": "2026-07-12T12:00:00Z",
+                "manifest": {
+                  "schemaVersion": "gavio.prompt-registry.v2",
+                  "registryId": "support-prompts",
+                  "digest": "466c55a593c1c907c688c2ede3e4c32561128f8afac3775901059593e9386057"
+                },
+                "passed": false,
+                "gates": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "passed": false,
+                    "score": 0.0,
+                    "totalCases": 1,
+                    "passedCases": 0,
+                    "failedCases": [
+                      "refund-safe"
+                    ],
+                    "reasons": [
+                      "1 linked eval case(s) failed",
+                      "score 0.00000000 is below fail-under 1.00000000",
+                      "score regression -1.00000000 exceeds allowed 0.00000000"
+                    ],
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "maxRegression": 0.0,
+                    "scoreDelta": -1.0
+                  }
+                ],
+                "evalReports": [
+                  {
+                    "suiteId": "support-release",
+                    "totalCases": 1,
+                    "passedCases": 0,
+                    "failedCases": 1,
+                    "score": 0.0,
+                    "cases": [
+                      {
+                        "id": "refund-safe",
+                        "templateId": "support.reply",
+                        "templateVersion": "1.1.0",
+                        "passed": false,
+                        "score": 0.0,
+                        "outputHash": "b4920f72b02bffc88d9da91b2c9f5555dcde6b848f17aeeea06d3f577fcd58c3",
+                        "assertions": [
+                          {
+                            "type": "contains",
+                            "passed": false,
+                            "expected": "refund status",
+                            "reason": "contains assertion failed"
+                          },
+                          {
+                            "type": "not_contains",
+                            "passed": false,
+                            "expected": "card number",
+                            "reason": "not_contains assertion failed"
+                          }
+                        ],
+                        "lineage": {
+                          "templateId": "support.reply",
+                          "templateVersion": "1.1.0",
+                          "variables": {
+                            "customer": "Avery",
+                            "topic": "refund status"
+                          },
+                          "ragChunks": []
+                        },
+                        "triage": {
+                          "category": "safety",
+                          "severity": "high",
+                          "owner": "support-quality",
+                          "action": "revise_prompt",
+                          "metadata": {
+                            "outputHash": "ce276203494006a0d818c7c6823b7eeaa50bf05f18c991b026cb4776330fd44d"
+                          }
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "promptDiff": {
+                  "from": {
+                    "id": "support.reply",
+                    "version": "1.0.0"
+                  },
+                  "to": {
+                    "id": "support.reply",
+                    "version": "1.1.0"
+                  },
+                  "hasChanges": true,
+                  "changes": [
+                    {
+                      "path": "messages[0].content",
+                      "type": "changed",
+                      "beforeHash": "22169535f0159f2633716abb0ff47517afda2797b130837a899a4ba598d2f5e7",
+                      "afterHash": "19763fbadbbfb379a1675464519718c6d7f9462dd842119bdd9979a0dbb4b9ae"
+                    },
+                    {
+                      "path": "messages[1].content",
+                      "type": "changed",
+                      "beforeHash": "ff401be38d725bc1ee1e8f1521fc6acf0be0f043898da37612d12552c9e57c8c",
+                      "afterHash": "c194b797af69b07f3f42285f19ea82fc3fcb9a38364177c4d0d39ad6bd304c13"
+                    },
+                    {
+                      "path": "requiredVariables",
+                      "type": "changed",
+                      "before": [],
+                      "after": [
+                        "customer"
+                      ]
+                    },
+                    {
+                      "path": "metadata.promptEvalLinks",
+                      "type": "added",
+                      "after": [
+                        {
+                          "suiteId": "support-release",
+                          "baselineScore": 1,
+                          "failUnder": 1,
+                          "maxRegression": 0,
+                          "metadata": {
+                            "outputHash": "ab4713f2b95d38937895dab1f17902c46821a6f40f3dde5355fbdeaf5d1ba3f0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "evals": [
+            {
+              "suiteId": "support-release",
+              "totalCases": 1,
+              "passedCases": 0,
+              "failedCases": 1,
+              "score": 0.0,
+              "cases": [
+                {
+                  "id": "refund-safe",
+                  "templateId": "support.reply",
+                  "templateVersion": "1.1.0",
+                  "passed": false,
+                  "score": 0.0,
+                  "outputHash": "b4920f72b02bffc88d9da91b2c9f5555dcde6b848f17aeeea06d3f577fcd58c3",
+                  "assertions": [
+                    {
+                      "type": "contains",
+                      "passed": false,
+                      "expected": "refund status",
+                      "reason": "contains assertion failed"
+                    },
+                    {
+                      "type": "not_contains",
+                      "passed": false,
+                      "expected": "card number",
+                      "reason": "not_contains assertion failed"
+                    }
+                  ],
+                  "lineage": {
+                    "templateId": "support.reply",
+                    "templateVersion": "1.1.0",
+                    "variables": {
+                      "customer": "Avery",
+                      "topic": "refund status"
+                    },
+                    "ragChunks": []
+                  },
+                  "triage": {
+                    "category": "safety",
+                    "severity": "high",
+                    "owner": "support-quality",
+                    "action": "revise_prompt",
+                    "metadata": {
+                      "outputHash": "ce276203494006a0d818c7c6823b7eeaa50bf05f18c991b026cb4776330fd44d"
+                    }
+                  }
+                }
+              ],
+              "schemaVersion": "1.0",
+              "gate": {
+                "passed": false,
+                "reasons": [
+                  "1 eval case(s) failed",
+                  "score 0.00000000 is below fail-under 1.00000000",
+                  "score regression -1.00000000 exceeds allowed 0.00000000"
+                ],
+                "failUnder": 1.0,
+                "baselineScore": 1.0,
+                "maxRegression": 0.0,
+                "scoreDelta": -1.0
+              },
+              "workflow": {
+                "passed": false,
+                "links": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "maxRegression": 0.0,
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "metadata": {
+                      "outputHash": "ab4713f2b95d38937895dab1f17902c46821a6f40f3dde5355fbdeaf5d1ba3f0"
+                    }
+                  }
+                ],
+                "gates": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "passed": false,
+                    "score": 0.0,
+                    "totalCases": 1,
+                    "passedCases": 0,
+                    "failedCases": [
+                      "refund-safe"
+                    ],
+                    "reasons": [
+                      "1 linked eval case(s) failed",
+                      "score 0.00000000 is below fail-under 1.00000000",
+                      "score regression -1.00000000 exceeds allowed 0.00000000"
+                    ],
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "maxRegression": 0.0,
+                    "scoreDelta": -1.0
+                  }
+                ]
+              }
+            }
+          ],
+          "policies": [
+            {
+              "id": "acme-policy",
+              "name": "Acme workflow demo",
+              "version": "1.0.0",
+              "domain": "custom",
+              "source": "policy-pack",
+              "signatureValid": true,
+              "manifestDigest": "b0a41f2c7072c5ecff3457b94dcdd558a870dd04cbc6e251f34ad28eb1803aef",
+              "detectorCount": 2,
+              "metadata": {
+                "owner": "security"
+              }
+            },
+            {
+              "id": "core-policy",
+              "name": "Core PII",
+              "version": "1.0.0",
+              "domain": "core",
+              "source": "core",
+              "signatureValid": true,
+              "manifestDigest": "8c01a2ab9b1e3135d7ddc58bd7ec898f7bef183a022f434f4bd8efac58ed482c",
+              "detectorCount": 8,
+              "metadata": {}
+            }
+          ],
+          "trust": {
+            "valid": true,
+            "errors": [],
+            "computedHash": "sha256:aab1443723682242ee51f2fb4ed998f84a4550ddd2c9f63e470fb66bf57d6ec0",
+            "bundle": {
+              "schemaVersion": "1.0",
+              "bundleId": "trust-platform-workflow",
+              "generatedAt": "2026-07-12T12:00:00Z",
+              "sdk": {
+                "name": "gavio-python",
+                "version": "3.1.0"
+              },
+              "release": {
+                "version": "3.2.0",
+                "tag": "v3.2.0",
+                "commit": "abc1234"
+              },
+              "runtime": {
+                "environment": "production",
+                "eventExportMode": "metadata_only",
+                "policySource": "project:prod-support"
+              },
+              "privacy": {
+                "contentMode": "metadata_only",
+                "containsRawContent": false,
+                "redactedFields": [
+                  "messages",
+                  "content",
+                  "diff"
+                ]
+              },
+              "evidence": {
+                "auditChain": {
+                  "recordCount": 0,
+                  "verified": true,
+                  "headHash": "",
+                  "tailHash": ""
+                },
+                "runtimeEvents": {
+                  "eventCount": 0,
+                  "contentFree": true,
+                  "eventTypes": []
+                },
+                "controls": [
+                  {
+                    "id": "release-gate",
+                    "type": "release_gate",
+                    "status": "pass",
+                    "source": "scripts/stable_release_gate.py"
+                  }
+                ]
+              },
+              "documents": [],
+              "bundleHash": "sha256:aab1443723682242ee51f2fb4ed998f84a4550ddd2c9f63e470fb66bf57d6ec0"
+            }
+          },
+          "runtimeProfile": {
+            "valid": true,
+            "errors": [],
+            "computedHash": "sha256:28f75ed8224015ead7a7ba50c07fb3f139ff69d0ee8f36653e88e32f65b76acc",
+            "readiness": {
+              "ready": true,
+              "score": 100,
+              "requiredSurfaces": [
+                "audit_hashes",
+                "cost_governance",
+                "policy_packs",
+                "runtime_events",
+                "tool_runtime",
+                "trust_evidence"
+              ],
+              "gaps": []
+            },
+            "profile": {
+              "schemaVersion": "2.0",
+              "profileId": "platform-prod-support",
+              "generatedAt": "2026-07-12T12:00:00Z",
+              "sdk": {
+                "name": "gavio",
+                "version": "3.2.0"
+              },
+              "runtime": {
+                "environment": "production",
+                "eventExportMode": "metadata_only",
+                "controlPlaneEnabled": true,
+                "policySource": "project:prod-support"
+              },
+              "surfaces": [
+                "audit_hashes",
+                "cost_governance",
+                "policy_packs",
+                "runtime_events",
+                "tool_runtime",
+                "trust_evidence"
+              ],
+              "exporters": [],
+              "integrations": [],
+              "controls": [
+                {
+                  "id": "support-policy",
+                  "type": "policy_pack",
+                  "status": "pass",
+                  "source": "policy-packs/support/manifest.json"
+                }
+              ],
+              "evidence": {
+                "auditChain": {
+                  "recordCount": 1,
+                  "verified": true
+                },
+                "runtimeEvents": {
+                  "eventCount": 2,
+                  "contentFree": true
+                }
+              },
+              "requirements": {
+                "requiredSurfaces": [
+                  "audit_hashes",
+                  "cost_governance",
+                  "policy_packs",
+                  "runtime_events",
+                  "tool_runtime",
+                  "trust_evidence"
+                ]
+              },
+              "readiness": {
+                "ready": true,
+                "score": 100,
+                "requiredSurfaces": [
+                  "audit_hashes",
+                  "cost_governance",
+                  "policy_packs",
+                  "runtime_events",
+                  "tool_runtime",
+                  "trust_evidence"
+                ],
+                "gaps": []
+              },
+              "profileHash": "sha256:28f75ed8224015ead7a7ba50c07fb3f139ff69d0ee8f36653e88e32f65b76acc"
+            }
+          },
+          "metadata": {
+            "owner": "platform",
+            "team": "Zoë Ångström 😀",
+            "contentHash": "03eaf42688ebb3defe708893115ca9d76f2abb3d2d767eb52ee30667ea94a803"
+          },
+          "workflowHash": "sha256:744b4e6b3837d3678c499961ee26125f873a3d0d2786e3539bc2c845e8c1c337"
+        }
+      }
+    },
+    {
+      "id": "blocked-evidence",
+      "description": "Invalid policy signature, tampered trust bundle, and an unready runtime profile each add a reason.",
+      "files": {
+        "prompts.json": {
+          "schemaVersion": "gavio.prompt-registry.v2",
+          "registryId": "support-prompts",
+          "templates": [
+            {
+              "id": "support.reply",
+              "version": "1.0.0",
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are concise."
+                },
+                {
+                  "role": "user",
+                  "content": "Write a reply about {{ topic }}."
+                }
+              ],
+              "requiredVariables": [
+                "topic"
+              ]
+            },
+            {
+              "id": "support.reply",
+              "version": "1.1.0",
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are concise and policy aware."
+                },
+                {
+                  "role": "user",
+                  "content": "Write a reply to {{ customer }} about {{ topic }}."
+                }
+              ],
+              "requiredVariables": [
+                "customer",
+                "topic"
+              ],
+              "metadata": {
+                "promptEvalLinks": [
+                  {
+                    "suiteId": "support-release",
+                    "baselineScore": 1,
+                    "failUnder": 1,
+                    "maxRegression": 0,
+                    "metadata": {
+                      "output": "raw metadata output"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "suite.json": {
+          "id": "support-release",
+          "cases": [
+            {
+              "id": "refund-safe",
+              "templateId": "support.reply",
+              "templateVersion": "1.1.0",
+              "variables": {
+                "customer": "Avery",
+                "topic": "refund status"
+              },
+              "mockOutput": "Avery refund status approved",
+              "assertions": [
+                {
+                  "type": "contains",
+                  "value": "refund status"
+                },
+                {
+                  "type": "not_contains",
+                  "value": "card number"
+                }
+              ],
+              "triage": {
+                "category": "safety",
+                "severity": "high",
+                "owner": "support-quality",
+                "action": "revise_prompt",
+                "metadata": {
+                  "output": "Avery refund status approved"
+                }
+              }
+            }
+          ]
+        },
+        "baseline.json": {
+          "score": 1
+        },
+        "policy-pack/manifest.json": {
+          "id": "acme.workflow-demo",
+          "name": "Acme workflow demo",
+          "version": "1.0.0",
+          "domain": "custom",
+          "description": "Tampered after signing.",
+          "defaultAction": "redact",
+          "redactionStrategy": "tokenize",
+          "auditLabels": [
+            "PII"
+          ],
+          "detectors": [
+            {
+              "name": "employee_id",
+              "entityType": "EMPLOYEE_ID",
+              "type": "regex",
+              "action": "redact",
+              "confidence": 0.9,
+              "redactionStrategy": "tokenize",
+              "label": "PII",
+              "pattern": "\\bEMP-[0-9]{6}\\b",
+              "replacementPrefix": "EMPLOYEE_ID"
+            },
+            {
+              "name": "email",
+              "entityType": "EMAIL",
+              "type": "scanner",
+              "action": "redact",
+              "confidence": 1.0,
+              "redactionStrategy": "tokenize",
+              "label": "PII"
+            }
+          ],
+          "signature": {
+            "algorithm": "sha256",
+            "value": "f7db7810fab21fcf4dddab27e84abf1754b091dd4039483ad37a8efc60c65bec",
+            "keyId": "acme-release",
+            "signedAt": "2026-07-12T10:00:00Z"
+          }
+        },
+        "trust.json": {
+          "schemaVersion": "1.0",
+          "bundleId": "trust-platform-workflow",
+          "generatedAt": "2026-07-12T12:00:00Z",
+          "sdk": {
+            "name": "gavio-python",
+            "version": "3.1.0"
+          },
+          "release": {
+            "version": "3.2.0",
+            "tag": "v3.2.0",
+            "commit": "abc1234"
+          },
+          "runtime": {
+            "environment": "production",
+            "eventExportMode": "metadata_only",
+            "policySource": "project:prod-support"
+          },
+          "privacy": {
+            "contentMode": "metadata_only",
+            "containsRawContent": false,
+            "redactedFields": [
+              "messages",
+              "content",
+              "diff"
+            ]
+          },
+          "evidence": {
+            "auditChain": {
+              "recordCount": 0,
+              "verified": true,
+              "headHash": "",
+              "tailHash": ""
+            },
+            "runtimeEvents": {
+              "eventCount": 0,
+              "contentFree": true,
+              "eventTypes": []
+            },
+            "controls": [
+              {
+                "id": "release-gate",
+                "type": "release_gate",
+                "status": "pass",
+                "source": "scripts/stable_release_gate.py"
+              }
+            ]
+          },
+          "documents": [],
+          "bundleHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "profile.json": {
+          "schemaVersion": "2.0",
+          "profileId": "platform-prod-support",
+          "generatedAt": "2026-07-12T12:00:00Z",
+          "sdk": {
+            "name": "gavio",
+            "version": "3.2.0"
+          },
+          "runtime": {
+            "environment": "production",
+            "eventExportMode": "metadata_only",
+            "controlPlaneEnabled": true,
+            "policySource": "project:prod-support"
+          },
+          "surfaces": [
+            "audit_hashes",
+            "policy_packs",
+            "runtime_events"
+          ],
+          "exporters": [],
+          "integrations": [],
+          "controls": [
+            {
+              "id": "support-policy",
+              "type": "policy_pack",
+              "status": "pass",
+              "source": "policy-packs/support/manifest.json"
+            }
+          ],
+          "evidence": {
+            "auditChain": {
+              "recordCount": 1,
+              "verified": true
+            },
+            "runtimeEvents": {
+              "eventCount": 2,
+              "contentFree": true
+            }
+          },
+          "requirements": {
+            "requiredSurfaces": [
+              "audit_hashes",
+              "cost_governance",
+              "policy_packs",
+              "runtime_events",
+              "tool_runtime",
+              "trust_evidence"
+            ]
+          },
+          "readiness": {
+            "ready": false,
+            "score": 70,
+            "requiredSurfaces": [
+              "audit_hashes",
+              "cost_governance",
+              "policy_packs",
+              "runtime_events",
+              "tool_runtime",
+              "trust_evidence"
+            ],
+            "gaps": [
+              {
+                "code": "missing_surface:cost_governance",
+                "severity": "error",
+                "message": "required surface cost_governance is not enabled"
+              },
+              {
+                "code": "missing_surface:tool_runtime",
+                "severity": "error",
+                "message": "required surface tool_runtime is not enabled"
+              },
+              {
+                "code": "missing_surface:trust_evidence",
+                "severity": "error",
+                "message": "required surface trust_evidence is not enabled"
+              }
+            ]
+          },
+          "profileHash": "sha256:8bcdf5f25841fa53d904f086860b421c5115c0ced161a8c02c30fb10c5c5e474"
+        }
+      },
+      "manifest": {
+        "schemaVersion": "gavio.platform-workflow.v1",
+        "workflowId": "support-platform-release",
+        "generatedAt": "2026-07-12T12:00:00Z",
+        "release": {
+          "version": "3.2.0",
+          "tag": "v3.2.0",
+          "commit": "abc1234"
+        },
+        "prompts": {
+          "manifest": "prompts.json",
+          "promptId": "support.reply",
+          "promptVersion": "1.1.0",
+          "fromVersion": "1.0.0"
+        },
+        "evals": [
+          {
+            "suite": "suite.json",
+            "failUnder": 1,
+            "baseline": "baseline.json",
+            "maxRegression": 0
+          }
+        ],
+        "policies": [
+          {
+            "id": "acme-policy",
+            "pathOrName": "policy-pack",
+            "metadata": {
+              "owner": "security"
+            }
+          },
+          {
+            "id": "core-policy",
+            "pathOrName": "core"
+          }
+        ],
+        "trustBundle": {
+          "path": "trust.json"
+        },
+        "runtimeProfile": {
+          "path": "profile.json"
+        },
+        "metadata": {
+          "owner": "platform",
+          "team": "Zoë Ångström 😀",
+          "content": "raw release notes must not persist"
+        }
+      },
+      "forbiddenStrings": [
+        "Write a reply to {{ customer }} about {{ topic }}",
+        "raw release notes must not persist",
+        "raw metadata output"
+      ],
+      "expected": {
+        "passed": false,
+        "reasons": [
+          "policy acme-policy signature is invalid",
+          "trust:bundleHash does not match bundle content",
+          "profile:missing_surface:cost_governance",
+          "profile:missing_surface:tool_runtime",
+          "profile:missing_surface:trust_evidence"
+        ],
+        "artifact": {
+          "schemaVersion": "gavio.platform-workflow-release.v1",
+          "workflowId": "support-platform-release",
+          "generatedAt": "2026-07-12T12:00:00Z",
+          "release": {
+            "version": "3.2.0",
+            "tag": "v3.2.0",
+            "commit": "abc1234"
+          },
+          "passed": false,
+          "reasons": [
+            "policy acme-policy signature is invalid",
+            "trust:bundleHash does not match bundle content",
+            "profile:missing_surface:cost_governance",
+            "profile:missing_surface:tool_runtime",
+            "profile:missing_surface:trust_evidence"
+          ],
+          "prompts": {
+            "manifest": {
+              "schemaVersion": "gavio.prompt-registry.v2",
+              "registryId": "support-prompts",
+              "digest": "466c55a593c1c907c688c2ede3e4c32561128f8afac3775901059593e9386057"
+            },
+            "releaseBundles": [
+              {
+                "schemaVersion": "gavio.prompt-release-bundle.v1",
+                "bundleId": "support.reply@1.1.0",
+                "prompt": {
+                  "id": "support.reply",
+                  "version": "1.1.0"
+                },
+                "generatedAt": "2026-07-12T12:00:00Z",
+                "manifest": {
+                  "schemaVersion": "gavio.prompt-registry.v2",
+                  "registryId": "support-prompts",
+                  "digest": "466c55a593c1c907c688c2ede3e4c32561128f8afac3775901059593e9386057"
+                },
+                "passed": true,
+                "gates": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "passed": true,
+                    "score": 1.0,
+                    "totalCases": 1,
+                    "passedCases": 1,
+                    "failedCases": [],
+                    "reasons": [],
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "maxRegression": 0.0,
+                    "scoreDelta": 0.0
+                  }
+                ],
+                "evalReports": [
+                  {
+                    "suiteId": "support-release",
+                    "totalCases": 1,
+                    "passedCases": 1,
+                    "failedCases": 0,
+                    "score": 1.0,
+                    "cases": [
+                      {
+                        "id": "refund-safe",
+                        "templateId": "support.reply",
+                        "templateVersion": "1.1.0",
+                        "passed": true,
+                        "score": 1.0,
+                        "outputHash": "a14ba73309ac4ca90e951664ff8af7625f2d36b5f58e4d2c82144f5303bd5281",
+                        "assertions": [
+                          {
+                            "type": "contains",
+                            "passed": true,
+                            "expected": "refund status",
+                            "reason": "passed"
+                          },
+                          {
+                            "type": "not_contains",
+                            "passed": true,
+                            "expected": "card number",
+                            "reason": "passed"
+                          }
+                        ],
+                        "lineage": {
+                          "templateId": "support.reply",
+                          "templateVersion": "1.1.0",
+                          "variables": {
+                            "customer": "Avery",
+                            "topic": "refund status"
+                          },
+                          "ragChunks": []
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "promptDiff": {
+                  "from": {
+                    "id": "support.reply",
+                    "version": "1.0.0"
+                  },
+                  "to": {
+                    "id": "support.reply",
+                    "version": "1.1.0"
+                  },
+                  "hasChanges": true,
+                  "changes": [
+                    {
+                      "path": "messages[0].content",
+                      "type": "changed",
+                      "beforeHash": "22169535f0159f2633716abb0ff47517afda2797b130837a899a4ba598d2f5e7",
+                      "afterHash": "19763fbadbbfb379a1675464519718c6d7f9462dd842119bdd9979a0dbb4b9ae"
+                    },
+                    {
+                      "path": "messages[1].content",
+                      "type": "changed",
+                      "beforeHash": "ff401be38d725bc1ee1e8f1521fc6acf0be0f043898da37612d12552c9e57c8c",
+                      "afterHash": "c194b797af69b07f3f42285f19ea82fc3fcb9a38364177c4d0d39ad6bd304c13"
+                    },
+                    {
+                      "path": "requiredVariables",
+                      "type": "changed",
+                      "before": [],
+                      "after": [
+                        "customer"
+                      ]
+                    },
+                    {
+                      "path": "metadata.promptEvalLinks",
+                      "type": "added",
+                      "after": [
+                        {
+                          "suiteId": "support-release",
+                          "baselineScore": 1,
+                          "failUnder": 1,
+                          "maxRegression": 0,
+                          "metadata": {
+                            "outputHash": "ab4713f2b95d38937895dab1f17902c46821a6f40f3dde5355fbdeaf5d1ba3f0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "evals": [
+            {
+              "suiteId": "support-release",
+              "totalCases": 1,
+              "passedCases": 1,
+              "failedCases": 0,
+              "score": 1.0,
+              "cases": [
+                {
+                  "id": "refund-safe",
+                  "templateId": "support.reply",
+                  "templateVersion": "1.1.0",
+                  "passed": true,
+                  "score": 1.0,
+                  "outputHash": "a14ba73309ac4ca90e951664ff8af7625f2d36b5f58e4d2c82144f5303bd5281",
+                  "assertions": [
+                    {
+                      "type": "contains",
+                      "passed": true,
+                      "expected": "refund status",
+                      "reason": "passed"
+                    },
+                    {
+                      "type": "not_contains",
+                      "passed": true,
+                      "expected": "card number",
+                      "reason": "passed"
+                    }
+                  ],
+                  "lineage": {
+                    "templateId": "support.reply",
+                    "templateVersion": "1.1.0",
+                    "variables": {
+                      "customer": "Avery",
+                      "topic": "refund status"
+                    },
+                    "ragChunks": []
+                  }
+                }
+              ],
+              "schemaVersion": "1.0",
+              "gate": {
+                "passed": true,
+                "reasons": [],
+                "failUnder": 1.0,
+                "baselineScore": 1.0,
+                "maxRegression": 0.0,
+                "scoreDelta": 0.0
+              },
+              "workflow": {
+                "passed": true,
+                "links": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "maxRegression": 0.0,
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "metadata": {
+                      "outputHash": "ab4713f2b95d38937895dab1f17902c46821a6f40f3dde5355fbdeaf5d1ba3f0"
+                    }
+                  }
+                ],
+                "gates": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "passed": true,
+                    "score": 1.0,
+                    "totalCases": 1,
+                    "passedCases": 1,
+                    "failedCases": [],
+                    "reasons": [],
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "maxRegression": 0.0,
+                    "scoreDelta": 0.0
+                  }
+                ]
+              }
+            }
+          ],
+          "policies": [
+            {
+              "id": "acme-policy",
+              "name": "Acme workflow demo",
+              "version": "1.0.0",
+              "domain": "custom",
+              "source": "policy-pack",
+              "signatureValid": false,
+              "manifestDigest": "83db65b1658a73d32152f978feee522eb98e8c95d93b7ee25a0008b457967b08",
+              "detectorCount": 2,
+              "metadata": {
+                "owner": "security"
+              }
+            },
+            {
+              "id": "core-policy",
+              "name": "Core PII",
+              "version": "1.0.0",
+              "domain": "core",
+              "source": "core",
+              "signatureValid": true,
+              "manifestDigest": "8c01a2ab9b1e3135d7ddc58bd7ec898f7bef183a022f434f4bd8efac58ed482c",
+              "detectorCount": 8,
+              "metadata": {}
+            }
+          ],
+          "trust": {
+            "valid": false,
+            "errors": [
+              "bundleHash does not match bundle content"
+            ],
+            "computedHash": "sha256:aab1443723682242ee51f2fb4ed998f84a4550ddd2c9f63e470fb66bf57d6ec0",
+            "bundle": {
+              "schemaVersion": "1.0",
+              "bundleId": "trust-platform-workflow",
+              "generatedAt": "2026-07-12T12:00:00Z",
+              "sdk": {
+                "name": "gavio-python",
+                "version": "3.1.0"
+              },
+              "release": {
+                "version": "3.2.0",
+                "tag": "v3.2.0",
+                "commit": "abc1234"
+              },
+              "runtime": {
+                "environment": "production",
+                "eventExportMode": "metadata_only",
+                "policySource": "project:prod-support"
+              },
+              "privacy": {
+                "contentMode": "metadata_only",
+                "containsRawContent": false,
+                "redactedFields": [
+                  "messages",
+                  "content",
+                  "diff"
+                ]
+              },
+              "evidence": {
+                "auditChain": {
+                  "recordCount": 0,
+                  "verified": true,
+                  "headHash": "",
+                  "tailHash": ""
+                },
+                "runtimeEvents": {
+                  "eventCount": 0,
+                  "contentFree": true,
+                  "eventTypes": []
+                },
+                "controls": [
+                  {
+                    "id": "release-gate",
+                    "type": "release_gate",
+                    "status": "pass",
+                    "source": "scripts/stable_release_gate.py"
+                  }
+                ]
+              },
+              "documents": [],
+              "bundleHash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+            }
+          },
+          "runtimeProfile": {
+            "valid": true,
+            "errors": [],
+            "computedHash": "sha256:8bcdf5f25841fa53d904f086860b421c5115c0ced161a8c02c30fb10c5c5e474",
+            "readiness": {
+              "ready": false,
+              "score": 70,
+              "requiredSurfaces": [
+                "audit_hashes",
+                "cost_governance",
+                "policy_packs",
+                "runtime_events",
+                "tool_runtime",
+                "trust_evidence"
+              ],
+              "gaps": [
+                {
+                  "code": "missing_surface:cost_governance",
+                  "severity": "error",
+                  "message": "required surface cost_governance is not enabled"
+                },
+                {
+                  "code": "missing_surface:tool_runtime",
+                  "severity": "error",
+                  "message": "required surface tool_runtime is not enabled"
+                },
+                {
+                  "code": "missing_surface:trust_evidence",
+                  "severity": "error",
+                  "message": "required surface trust_evidence is not enabled"
+                }
+              ]
+            },
+            "profile": {
+              "schemaVersion": "2.0",
+              "profileId": "platform-prod-support",
+              "generatedAt": "2026-07-12T12:00:00Z",
+              "sdk": {
+                "name": "gavio",
+                "version": "3.2.0"
+              },
+              "runtime": {
+                "environment": "production",
+                "eventExportMode": "metadata_only",
+                "controlPlaneEnabled": true,
+                "policySource": "project:prod-support"
+              },
+              "surfaces": [
+                "audit_hashes",
+                "policy_packs",
+                "runtime_events"
+              ],
+              "exporters": [],
+              "integrations": [],
+              "controls": [
+                {
+                  "id": "support-policy",
+                  "type": "policy_pack",
+                  "status": "pass",
+                  "source": "policy-packs/support/manifest.json"
+                }
+              ],
+              "evidence": {
+                "auditChain": {
+                  "recordCount": 1,
+                  "verified": true
+                },
+                "runtimeEvents": {
+                  "eventCount": 2,
+                  "contentFree": true
+                }
+              },
+              "requirements": {
+                "requiredSurfaces": [
+                  "audit_hashes",
+                  "cost_governance",
+                  "policy_packs",
+                  "runtime_events",
+                  "tool_runtime",
+                  "trust_evidence"
+                ]
+              },
+              "readiness": {
+                "ready": false,
+                "score": 70,
+                "requiredSurfaces": [
+                  "audit_hashes",
+                  "cost_governance",
+                  "policy_packs",
+                  "runtime_events",
+                  "tool_runtime",
+                  "trust_evidence"
+                ],
+                "gaps": [
+                  {
+                    "code": "missing_surface:cost_governance",
+                    "severity": "error",
+                    "message": "required surface cost_governance is not enabled"
+                  },
+                  {
+                    "code": "missing_surface:tool_runtime",
+                    "severity": "error",
+                    "message": "required surface tool_runtime is not enabled"
+                  },
+                  {
+                    "code": "missing_surface:trust_evidence",
+                    "severity": "error",
+                    "message": "required surface trust_evidence is not enabled"
+                  }
+                ]
+              },
+              "profileHash": "sha256:8bcdf5f25841fa53d904f086860b421c5115c0ced161a8c02c30fb10c5c5e474"
+            }
+          },
+          "metadata": {
+            "owner": "platform",
+            "team": "Zoë Ångström 😀",
+            "contentHash": "03eaf42688ebb3defe708893115ca9d76f2abb3d2d767eb52ee30667ea94a803"
+          },
+          "workflowHash": "sha256:d81107ffa7393f58e760a2eb0aa0367206dfaa4c65280df76e7d76fbb5af23e4"
+        }
+      }
+    },
+    {
+      "id": "minimal-release",
+      "description": "A manifest with no sections still builds a passing, hash-stable artifact.",
+      "files": {},
+      "manifest": {
+        "workflowId": "minimal",
+        "generatedAt": "2026-07-12T12:00:00Z",
+        "metadata": {
+          "prompt": "raw prompt text",
+          "nested": {
+            "rawOutput": "raw output text"
+          }
+        }
+      },
+      "forbiddenStrings": [
+        "raw prompt text",
+        "raw output text"
+      ],
+      "expected": {
+        "passed": true,
+        "reasons": [],
+        "artifact": {
+          "schemaVersion": "gavio.platform-workflow-release.v1",
+          "workflowId": "minimal",
+          "generatedAt": "2026-07-12T12:00:00Z",
+          "release": {},
+          "passed": true,
+          "reasons": [],
+          "prompts": {
+            "manifest": null,
+            "releaseBundles": []
+          },
+          "evals": [],
+          "policies": [],
+          "trust": null,
+          "runtimeProfile": null,
+          "metadata": {
+            "promptHash": "5420b4d66c488a9bf250bce3ddc4aef1f034cc255c6575cdd6b9f7f6b17be122",
+            "nested": {
+              "rawOutputHash": "06e6ab52bbdaf9277e5d18f3ef9d4fbaad96fc773daee75deee6d8fb8b803aa0"
+            }
+          },
+          "workflowHash": "sha256:7e993dafc29903f9db61558340f1f7e635ab692a26e027240fe1f6a2bb7d4aa5"
+        }
+      }
+    },
+    {
+      "id": "alias-spellings",
+      "description": "snake_case keys, a single eval object, string policy entries, inline trust/profile data, and a defaulted fromVersion.",
+      "files": {
+        "prompts.json": {
+          "schemaVersion": "gavio.prompt-registry.v2",
+          "registryId": "support-prompts",
+          "templates": [
+            {
+              "id": "support.reply",
+              "version": "1.0.0",
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are concise."
+                },
+                {
+                  "role": "user",
+                  "content": "Write a reply about {{ topic }}."
+                }
+              ],
+              "requiredVariables": [
+                "topic"
+              ]
+            },
+            {
+              "id": "support.reply",
+              "version": "1.1.0",
+              "messages": [
+                {
+                  "role": "system",
+                  "content": "You are concise and policy aware."
+                },
+                {
+                  "role": "user",
+                  "content": "Write a reply to {{ customer }} about {{ topic }}."
+                }
+              ],
+              "requiredVariables": [
+                "customer",
+                "topic"
+              ],
+              "metadata": {
+                "promptEvalLinks": [
+                  {
+                    "suiteId": "support-release",
+                    "baselineScore": 1,
+                    "failUnder": 1,
+                    "maxRegression": 0,
+                    "metadata": {
+                      "output": "raw metadata output"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "suite.json": {
+          "id": "support-release",
+          "cases": [
+            {
+              "id": "refund-safe",
+              "templateId": "support.reply",
+              "templateVersion": "1.1.0",
+              "variables": {
+                "customer": "Avery",
+                "topic": "refund status"
+              },
+              "mockOutput": "Avery refund status approved",
+              "assertions": [
+                {
+                  "type": "contains",
+                  "value": "refund status"
+                },
+                {
+                  "type": "not_contains",
+                  "value": "card number"
+                }
+              ],
+              "triage": {
+                "category": "safety",
+                "severity": "high",
+                "owner": "support-quality",
+                "action": "revise_prompt",
+                "metadata": {
+                  "output": "Avery refund status approved"
+                }
+              }
+            }
+          ]
+        },
+        "baseline.json": {
+          "score": 1
+        },
+        "policy-pack/manifest.json": {
+          "id": "acme.workflow-demo",
+          "name": "Acme workflow demo",
+          "version": "1.0.0",
+          "domain": "custom",
+          "description": "Employee identifier pack for workflow release vectors.",
+          "defaultAction": "redact",
+          "redactionStrategy": "tokenize",
+          "auditLabels": [
+            "PII"
+          ],
+          "detectors": [
+            {
+              "name": "employee_id",
+              "entityType": "EMPLOYEE_ID",
+              "type": "regex",
+              "action": "redact",
+              "confidence": 0.9,
+              "redactionStrategy": "tokenize",
+              "label": "PII",
+              "pattern": "\\bEMP-[0-9]{6}\\b",
+              "replacementPrefix": "EMPLOYEE_ID"
+            },
+            {
+              "name": "email",
+              "entityType": "EMAIL",
+              "type": "scanner",
+              "action": "redact",
+              "confidence": 1.0,
+              "redactionStrategy": "tokenize",
+              "label": "PII"
+            }
+          ],
+          "signature": {
+            "algorithm": "sha256",
+            "value": "f7db7810fab21fcf4dddab27e84abf1754b091dd4039483ad37a8efc60c65bec",
+            "keyId": "acme-release",
+            "signedAt": "2026-07-12T10:00:00Z"
+          }
+        }
+      },
+      "manifest": {
+        "workflow_id": "alias-release",
+        "generated_at": "2026-07-12T12:00:00Z",
+        "release": {
+          "version": "3.2.0"
+        },
+        "prompt": {
+          "manifest": "prompts.json",
+          "releases": [
+            {
+              "prompt_id": "support.reply",
+              "prompt_version": "1.1.0",
+              "bundleId": "support-reply-1.1.0",
+              "generatedAt": "2026-07-12T13:00:00Z",
+              "metadata": {
+                "owner": "support",
+                "output": "raw bundle output"
+              }
+            }
+          ]
+        },
+        "eval": {
+          "suite": "suite.json",
+          "fail_under": 1,
+          "templates": [
+            "prompts.json"
+          ]
+        },
+        "policyPacks": [
+          "policy-pack",
+          {
+            "name": "core"
+          }
+        ],
+        "trust": {
+          "data": {
+            "schemaVersion": "1.0",
+            "bundleId": "trust-platform-workflow",
+            "generatedAt": "2026-07-12T12:00:00Z",
+            "sdk": {
+              "name": "gavio-python",
+              "version": "3.1.0"
+            },
+            "release": {
+              "version": "3.2.0",
+              "tag": "v3.2.0",
+              "commit": "abc1234"
+            },
+            "runtime": {
+              "environment": "production",
+              "eventExportMode": "metadata_only",
+              "policySource": "project:prod-support"
+            },
+            "privacy": {
+              "contentMode": "metadata_only",
+              "containsRawContent": false,
+              "redactedFields": [
+                "messages",
+                "content",
+                "diff"
+              ]
+            },
+            "evidence": {
+              "auditChain": {
+                "recordCount": 0,
+                "verified": true,
+                "headHash": "",
+                "tailHash": ""
+              },
+              "runtimeEvents": {
+                "eventCount": 0,
+                "contentFree": true,
+                "eventTypes": []
+              },
+              "controls": [
+                {
+                  "id": "release-gate",
+                  "type": "release_gate",
+                  "status": "pass",
+                  "source": "scripts/stable_release_gate.py"
+                }
+              ]
+            },
+            "documents": [],
+            "bundleHash": "sha256:aab1443723682242ee51f2fb4ed998f84a4550ddd2c9f63e470fb66bf57d6ec0"
+          }
+        },
+        "platformRuntimeProfile": {
+          "profile": {
+            "schemaVersion": "2.0",
+            "profileId": "platform-prod-support",
+            "generatedAt": "2026-07-12T12:00:00Z",
+            "sdk": {
+              "name": "gavio",
+              "version": "3.2.0"
+            },
+            "runtime": {
+              "environment": "production",
+              "eventExportMode": "metadata_only",
+              "controlPlaneEnabled": true,
+              "policySource": "project:prod-support"
+            },
+            "surfaces": [
+              "audit_hashes",
+              "cost_governance",
+              "policy_packs",
+              "runtime_events",
+              "tool_runtime",
+              "trust_evidence"
+            ],
+            "exporters": [],
+            "integrations": [],
+            "controls": [
+              {
+                "id": "support-policy",
+                "type": "policy_pack",
+                "status": "pass",
+                "source": "policy-packs/support/manifest.json"
+              }
+            ],
+            "evidence": {
+              "auditChain": {
+                "recordCount": 1,
+                "verified": true
+              },
+              "runtimeEvents": {
+                "eventCount": 2,
+                "contentFree": true
+              }
+            },
+            "requirements": {
+              "requiredSurfaces": [
+                "audit_hashes",
+                "cost_governance",
+                "policy_packs",
+                "runtime_events",
+                "tool_runtime",
+                "trust_evidence"
+              ]
+            },
+            "readiness": {
+              "ready": true,
+              "score": 100,
+              "requiredSurfaces": [
+                "audit_hashes",
+                "cost_governance",
+                "policy_packs",
+                "runtime_events",
+                "tool_runtime",
+                "trust_evidence"
+              ],
+              "gaps": []
+            },
+            "profileHash": "sha256:28f75ed8224015ead7a7ba50c07fb3f139ff69d0ee8f36653e88e32f65b76acc"
+          }
+        }
+      },
+      "forbiddenStrings": [
+        "raw bundle output",
+        "Avery refund status approved"
+      ],
+      "expected": {
+        "passed": true,
+        "reasons": [],
+        "artifact": {
+          "schemaVersion": "gavio.platform-workflow-release.v1",
+          "workflowId": "alias-release",
+          "generatedAt": "2026-07-12T12:00:00Z",
+          "release": {
+            "version": "3.2.0"
+          },
+          "passed": true,
+          "reasons": [],
+          "prompts": {
+            "manifest": {
+              "schemaVersion": "gavio.prompt-registry.v2",
+              "registryId": "support-prompts",
+              "digest": "466c55a593c1c907c688c2ede3e4c32561128f8afac3775901059593e9386057"
+            },
+            "releaseBundles": [
+              {
+                "schemaVersion": "gavio.prompt-release-bundle.v1",
+                "bundleId": "support-reply-1.1.0",
+                "prompt": {
+                  "id": "support.reply",
+                  "version": "1.1.0"
+                },
+                "generatedAt": "2026-07-12T13:00:00Z",
+                "manifest": {
+                  "schemaVersion": "gavio.prompt-registry.v2",
+                  "registryId": "support-prompts",
+                  "digest": "466c55a593c1c907c688c2ede3e4c32561128f8afac3775901059593e9386057"
+                },
+                "passed": true,
+                "gates": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "passed": true,
+                    "score": 1.0,
+                    "totalCases": 1,
+                    "passedCases": 1,
+                    "failedCases": [],
+                    "reasons": [],
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "maxRegression": 0.0,
+                    "scoreDelta": 0.0
+                  }
+                ],
+                "evalReports": [
+                  {
+                    "suiteId": "support-release",
+                    "totalCases": 1,
+                    "passedCases": 1,
+                    "failedCases": 0,
+                    "score": 1.0,
+                    "cases": [
+                      {
+                        "id": "refund-safe",
+                        "templateId": "support.reply",
+                        "templateVersion": "1.1.0",
+                        "passed": true,
+                        "score": 1.0,
+                        "outputHash": "a14ba73309ac4ca90e951664ff8af7625f2d36b5f58e4d2c82144f5303bd5281",
+                        "assertions": [
+                          {
+                            "type": "contains",
+                            "passed": true,
+                            "expected": "refund status",
+                            "reason": "passed"
+                          },
+                          {
+                            "type": "not_contains",
+                            "passed": true,
+                            "expected": "card number",
+                            "reason": "passed"
+                          }
+                        ],
+                        "lineage": {
+                          "templateId": "support.reply",
+                          "templateVersion": "1.1.0",
+                          "variables": {
+                            "customer": "Avery",
+                            "topic": "refund status"
+                          },
+                          "ragChunks": []
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "promptDiff": {
+                  "from": {
+                    "id": "support.reply",
+                    "version": "1.0.0"
+                  },
+                  "to": {
+                    "id": "support.reply",
+                    "version": "1.1.0"
+                  },
+                  "hasChanges": true,
+                  "changes": [
+                    {
+                      "path": "messages[0].content",
+                      "type": "changed",
+                      "beforeHash": "22169535f0159f2633716abb0ff47517afda2797b130837a899a4ba598d2f5e7",
+                      "afterHash": "19763fbadbbfb379a1675464519718c6d7f9462dd842119bdd9979a0dbb4b9ae"
+                    },
+                    {
+                      "path": "messages[1].content",
+                      "type": "changed",
+                      "beforeHash": "ff401be38d725bc1ee1e8f1521fc6acf0be0f043898da37612d12552c9e57c8c",
+                      "afterHash": "c194b797af69b07f3f42285f19ea82fc3fcb9a38364177c4d0d39ad6bd304c13"
+                    },
+                    {
+                      "path": "requiredVariables",
+                      "type": "changed",
+                      "before": [],
+                      "after": [
+                        "customer"
+                      ]
+                    },
+                    {
+                      "path": "metadata.promptEvalLinks",
+                      "type": "added",
+                      "after": [
+                        {
+                          "suiteId": "support-release",
+                          "baselineScore": 1,
+                          "failUnder": 1,
+                          "maxRegression": 0,
+                          "metadata": {
+                            "outputHash": "ab4713f2b95d38937895dab1f17902c46821a6f40f3dde5355fbdeaf5d1ba3f0"
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "metadata": {
+                  "owner": "support",
+                  "outputHash": "936bfa4fdd98d07664e81452f3341196150c04393c40078a308dc8d71be1d6f9"
+                }
+              }
+            ]
+          },
+          "evals": [
+            {
+              "suiteId": "support-release",
+              "totalCases": 1,
+              "passedCases": 1,
+              "failedCases": 0,
+              "score": 1.0,
+              "cases": [
+                {
+                  "id": "refund-safe",
+                  "templateId": "support.reply",
+                  "templateVersion": "1.1.0",
+                  "passed": true,
+                  "score": 1.0,
+                  "outputHash": "a14ba73309ac4ca90e951664ff8af7625f2d36b5f58e4d2c82144f5303bd5281",
+                  "assertions": [
+                    {
+                      "type": "contains",
+                      "passed": true,
+                      "expected": "refund status",
+                      "reason": "passed"
+                    },
+                    {
+                      "type": "not_contains",
+                      "passed": true,
+                      "expected": "card number",
+                      "reason": "passed"
+                    }
+                  ],
+                  "lineage": {
+                    "templateId": "support.reply",
+                    "templateVersion": "1.1.0",
+                    "variables": {
+                      "customer": "Avery",
+                      "topic": "refund status"
+                    },
+                    "ragChunks": []
+                  }
+                }
+              ],
+              "schemaVersion": "1.0",
+              "gate": {
+                "passed": true,
+                "reasons": [],
+                "failUnder": 1.0,
+                "baselineScore": null,
+                "maxRegression": 0.0,
+                "scoreDelta": null
+              },
+              "workflow": {
+                "passed": true,
+                "links": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "maxRegression": 0.0,
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "metadata": {
+                      "outputHash": "ab4713f2b95d38937895dab1f17902c46821a6f40f3dde5355fbdeaf5d1ba3f0"
+                    }
+                  }
+                ],
+                "gates": [
+                  {
+                    "promptId": "support.reply",
+                    "promptVersion": "1.1.0",
+                    "suiteId": "support-release",
+                    "passed": true,
+                    "score": 1.0,
+                    "totalCases": 1,
+                    "passedCases": 1,
+                    "failedCases": [],
+                    "reasons": [],
+                    "baselineScore": 1.0,
+                    "failUnder": 1.0,
+                    "maxRegression": 0.0,
+                    "scoreDelta": 0.0
+                  }
+                ]
+              }
+            }
+          ],
+          "policies": [
+            {
+              "id": "acme.workflow-demo",
+              "name": "Acme workflow demo",
+              "version": "1.0.0",
+              "domain": "custom",
+              "source": "policy-pack",
+              "signatureValid": true,
+              "manifestDigest": "b0a41f2c7072c5ecff3457b94dcdd558a870dd04cbc6e251f34ad28eb1803aef",
+              "detectorCount": 2,
+              "metadata": {}
+            },
+            {
+              "id": "gavio.core-pii",
+              "name": "Core PII",
+              "version": "1.0.0",
+              "domain": "core",
+              "source": "core",
+              "signatureValid": true,
+              "manifestDigest": "8c01a2ab9b1e3135d7ddc58bd7ec898f7bef183a022f434f4bd8efac58ed482c",
+              "detectorCount": 8,
+              "metadata": {}
+            }
+          ],
+          "trust": {
+            "valid": true,
+            "errors": [],
+            "computedHash": "sha256:aab1443723682242ee51f2fb4ed998f84a4550ddd2c9f63e470fb66bf57d6ec0",
+            "bundle": {
+              "schemaVersion": "1.0",
+              "bundleId": "trust-platform-workflow",
+              "generatedAt": "2026-07-12T12:00:00Z",
+              "sdk": {
+                "name": "gavio-python",
+                "version": "3.1.0"
+              },
+              "release": {
+                "version": "3.2.0",
+                "tag": "v3.2.0",
+                "commit": "abc1234"
+              },
+              "runtime": {
+                "environment": "production",
+                "eventExportMode": "metadata_only",
+                "policySource": "project:prod-support"
+              },
+              "privacy": {
+                "contentMode": "metadata_only",
+                "containsRawContent": false,
+                "redactedFields": [
+                  "messages",
+                  "content",
+                  "diff"
+                ]
+              },
+              "evidence": {
+                "auditChain": {
+                  "recordCount": 0,
+                  "verified": true,
+                  "headHash": "",
+                  "tailHash": ""
+                },
+                "runtimeEvents": {
+                  "eventCount": 0,
+                  "contentFree": true,
+                  "eventTypes": []
+                },
+                "controls": [
+                  {
+                    "id": "release-gate",
+                    "type": "release_gate",
+                    "status": "pass",
+                    "source": "scripts/stable_release_gate.py"
+                  }
+                ]
+              },
+              "documents": [],
+              "bundleHash": "sha256:aab1443723682242ee51f2fb4ed998f84a4550ddd2c9f63e470fb66bf57d6ec0"
+            }
+          },
+          "runtimeProfile": {
+            "valid": true,
+            "errors": [],
+            "computedHash": "sha256:28f75ed8224015ead7a7ba50c07fb3f139ff69d0ee8f36653e88e32f65b76acc",
+            "readiness": {
+              "ready": true,
+              "score": 100,
+              "requiredSurfaces": [
+                "audit_hashes",
+                "cost_governance",
+                "policy_packs",
+                "runtime_events",
+                "tool_runtime",
+                "trust_evidence"
+              ],
+              "gaps": []
+            },
+            "profile": {
+              "schemaVersion": "2.0",
+              "profileId": "platform-prod-support",
+              "generatedAt": "2026-07-12T12:00:00Z",
+              "sdk": {
+                "name": "gavio",
+                "version": "3.2.0"
+              },
+              "runtime": {
+                "environment": "production",
+                "eventExportMode": "metadata_only",
+                "controlPlaneEnabled": true,
+                "policySource": "project:prod-support"
+              },
+              "surfaces": [
+                "audit_hashes",
+                "cost_governance",
+                "policy_packs",
+                "runtime_events",
+                "tool_runtime",
+                "trust_evidence"
+              ],
+              "exporters": [],
+              "integrations": [],
+              "controls": [
+                {
+                  "id": "support-policy",
+                  "type": "policy_pack",
+                  "status": "pass",
+                  "source": "policy-packs/support/manifest.json"
+                }
+              ],
+              "evidence": {
+                "auditChain": {
+                  "recordCount": 1,
+                  "verified": true
+                },
+                "runtimeEvents": {
+                  "eventCount": 2,
+                  "contentFree": true
+                }
+              },
+              "requirements": {
+                "requiredSurfaces": [
+                  "audit_hashes",
+                  "cost_governance",
+                  "policy_packs",
+                  "runtime_events",
+                  "tool_runtime",
+                  "trust_evidence"
+                ]
+              },
+              "readiness": {
+                "ready": true,
+                "score": 100,
+                "requiredSurfaces": [
+                  "audit_hashes",
+                  "cost_governance",
+                  "policy_packs",
+                  "runtime_events",
+                  "tool_runtime",
+                  "trust_evidence"
+                ],
+                "gaps": []
+              },
+              "profileHash": "sha256:28f75ed8224015ead7a7ba50c07fb3f139ff69d0ee8f36653e88e32f65b76acc"
+            }
+          },
+          "metadata": {},
+          "workflowHash": "sha256:3d52922548c95ea2f16817362e2858737ad431f1392c0633a8266e8c2f83f99c"
+        }
+      }
+    }
+  ]
+}
