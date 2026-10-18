@@ -24,6 +24,7 @@ offending SDK's test-vector run goes red.
 | [`integrations/ecosystem-trust.json`](./integrations/ecosystem-trust.json) | Ecosystem Trust Package cases — verify generated compatibility matrix rows, adapter coverage, metadata-only privacy boundaries, and sample production app coverage across SDKs. |
 | [`platform-runtime/profile.json`](./platform-runtime/profile.json) | Platform Runtime Profile cases — verify deterministic profile hashing, metadata-only posture, required runtime surfaces, readiness score, and gap codes. |
 | [`control-plane/enterprise-admin-v2.json`](./control-plane/enterprise-admin-v2.json) | Enterprise Admin v2 cases — verify OIDC/SAML-lite metadata redaction, scoped admin-key behavior, rollout approval gates, audit export privacy, and retention apply semantics. |
+| [`workflow/release.json`](./workflow/release.json) | Platform Workflow Release cases (`F-DX-13`) — `canonicalJsonCases` pin the cross-SDK canonical JSON form (key order by code point, integral numbers, escapes); `hashCases` pin `platformWorkflowReleaseHash` (environment-specific `evals[*].runner` / `source` excluded); `releaseCases` write `files` plus `manifest` to a temp directory, run the file-based release builder, strip the environment fields, and compare `passed`, `reasons`, and the whole artifact by canonical JSON. |
 | [`runtime-events/export-redaction.json`](./runtime-events/export-redaction.json) | Runtime exporter privacy contract (F-EXP-01) — verify metadata-only export strips content-bearing event fields while preserving trace and decision metadata. |
 | [`otel/spans.json`](./otel/spans.json) | OTel bridge cases (F-OBS-07) — map runtime events into OpenTelemetry-style spans with parent links, status, timestamps, attributes, and metadata-only privacy. |
 | [`prompts/registry-evals.json`](./prompts/registry-evals.json) | Prompt Registry + Evals cases (`F-EVAL-01/02`) — render versioned prompt templates, validate missing variables, attach metadata-only lineage, score eval cases, and keep raw outputs out of reports. |
@@ -181,6 +182,23 @@ node scripts/gen-ecosystem-trust-matrix.mjs --check
 }
 ```
 
+`workflow/release.json`:
+```json
+{
+  "canonicalJsonCases": [{ "id": "integral-floats-are-integers", "value": [1.0, -0.0], "expected": "[1,0]" }],
+  "hashCases": [{ "id": "environment-fields-are-excluded", "artifact": { "...": "..." }, "expectedHash": "sha256:..." }],
+  "releaseCases": [
+    {
+      "id": "ready-release",
+      "files": { "suite.json": { "...": "..." }, "policy-pack/manifest.json": { "...": "..." } },
+      "manifest": { "workflowId": "support-platform-release", "evals": [{ "suite": "suite.json" }] },
+      "forbiddenStrings": ["raw release notes must not persist"],
+      "expected": { "passed": true, "reasons": [], "artifact": { "workflowHash": "sha256:..." } }
+    }
+  ]
+}
+```
+
 `runtime-events/export-redaction.json`:
 ```json
 {
@@ -222,9 +240,9 @@ node scripts/gen-ecosystem-trust-matrix.mjs --check
 
 | SDK | Test that consumes these vectors |
 |---|---|
-| Python | `packages/gavio-py/tests/unit/test_vectors.py` · `packages/gavio-py/tests/unit/test_policy_packs.py` · `packages/gavio-py/tests/unit/test_inspector_agentic.py` · `packages/gavio-py/tests/unit/test_runtime_exporters.py` · `packages/gavio-py/tests/unit/test_otel_exporter.py` · `packages/gavio-py/tests/unit/test_cost_governance_v2.py` · `packages/gavio-py/tests/unit/test_prompt_registry_evals.py` · `packages/gavio-py/tests/unit/test_tool_runtime.py` · `packages/gavio-py/tests/unit/test_control_plane.py` · `packages/gavio-py/tests/unit/test_trust.py` · `packages/gavio-py/tests/unit/test_integrations.py` |
-| JavaScript | `packages/gavio-js/tests/unit/test-vectors.test.ts` · `packages/gavio-js/tests/unit/policy-packs.test.ts` · `packages/gavio-js/tests/unit/inspector-api-vectors.test.ts` · `packages/gavio-js/tests/unit/runtime-exporters.test.ts` · `packages/gavio-js/tests/unit/otel-exporter.test.ts` · `packages/gavio-js/tests/unit/cost-governance-v2.test.ts` · `packages/gavio-js/tests/unit/prompt-registry-evals.test.ts` · `packages/gavio-js/tests/unit/tool-runtime.test.ts` · `packages/gavio-js/tests/unit/control-plane.test.ts` · `packages/gavio-js/tests/unit/trust.test.ts` · `packages/gavio-js/tests/unit/integrations.test.ts` |
-| Java | `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/TestVectorsTest.java` (PII) · `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/interceptors/pii/policy/PolicyPackTest.java` (policy packs) · `packages/gavio-java/gavio-interceptor-guardrails/src/test/java/io/gavio/vectors/LicenseVectorsTest.java` (license) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/ToolRuntimeInterceptorTest.java` (Tool Runtime) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/inspector/InspectorApiVectorsTest.java` (Inspector) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/RuntimeExporterTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/OtelSpanExporterTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/prompts/PromptRegistryEvalTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/trust/ProductionTrustTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/integrations/IntegrationCatalogTest.java` · `packages/gavio-java/gavio-interceptor-governance/src/test/java/io/gavio/interceptors/governance/CostGovernanceV2Test.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/ControlPlaneClientTest.java` |
+| Python | `packages/gavio-py/tests/unit/test_vectors.py` · `packages/gavio-py/tests/unit/test_policy_packs.py` · `packages/gavio-py/tests/unit/test_inspector_agentic.py` · `packages/gavio-py/tests/unit/test_runtime_exporters.py` · `packages/gavio-py/tests/unit/test_otel_exporter.py` · `packages/gavio-py/tests/unit/test_cost_governance_v2.py` · `packages/gavio-py/tests/unit/test_prompt_registry_evals.py` · `packages/gavio-py/tests/unit/test_tool_runtime.py` · `packages/gavio-py/tests/unit/test_control_plane.py` · `packages/gavio-py/tests/unit/test_trust.py` · `packages/gavio-py/tests/unit/test_integrations.py` · `packages/gavio-py/tests/unit/test_platform_workflow.py` |
+| JavaScript | `packages/gavio-js/tests/unit/test-vectors.test.ts` · `packages/gavio-js/tests/unit/policy-packs.test.ts` · `packages/gavio-js/tests/unit/inspector-api-vectors.test.ts` · `packages/gavio-js/tests/unit/runtime-exporters.test.ts` · `packages/gavio-js/tests/unit/otel-exporter.test.ts` · `packages/gavio-js/tests/unit/cost-governance-v2.test.ts` · `packages/gavio-js/tests/unit/prompt-registry-evals.test.ts` · `packages/gavio-js/tests/unit/tool-runtime.test.ts` · `packages/gavio-js/tests/unit/control-plane.test.ts` · `packages/gavio-js/tests/unit/trust.test.ts` · `packages/gavio-js/tests/unit/integrations.test.ts` · `packages/gavio-js/tests/unit/platform-workflow.test.ts` |
+| Java | `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/TestVectorsTest.java` (PII) · `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/interceptors/pii/policy/PolicyPackTest.java` (policy packs) · `packages/gavio-java/gavio-interceptor-guardrails/src/test/java/io/gavio/vectors/LicenseVectorsTest.java` (license) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/ToolRuntimeInterceptorTest.java` (Tool Runtime) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/inspector/InspectorApiVectorsTest.java` (Inspector) · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/RuntimeExporterTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/exporters/OtelSpanExporterTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/prompts/PromptRegistryEvalTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/trust/ProductionTrustTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/integrations/IntegrationCatalogTest.java` · `packages/gavio-java/gavio-interceptor-governance/src/test/java/io/gavio/interceptors/governance/CostGovernanceV2Test.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/ControlPlaneClientTest.java` · `packages/gavio-java/gavio-core/src/test/java/io/gavio/platform/PlatformWorkflowTest.java` (canonical JSON, hash, policy-free release) · `packages/gavio-java/gavio-interceptor-pii/src/test/java/io/gavio/vectors/PlatformWorkflowVectorsTest.java` (full workflow release) |
 
 ## Ground truth
 
