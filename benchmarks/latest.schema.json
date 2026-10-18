@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/manojmallick/gavio/blob/main/benchmarks/latest.schema.json",
+  "title": "Gavio chain-overhead benchmark results",
+  "description": "Schema for benchmarks/latest.json and for the single-SDK runs emitted by benchmarks/chain-overhead/{bench.py,bench.mjs,java/ChainOverheadBench.java}. Semantic cross-checks (overhead arithmetic, cross-SDK payload parity) live in benchmarks/validate_latest.py.",
+  "type": "object",
+  "required": ["schemaVersion", "benchmark", "gavioVersion", "generatedAt", "pass", "runs"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "benchmark": { "const": "chain-overhead" },
+    "gavioVersion": { "$ref": "#/$defs/version" },
+    "generatedAt": { "$ref": "#/$defs/timestamp" },
+    "pass": { "type": "boolean", "description": "True when every run passed its CI thresholds." },
+    "runs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/run" }
+    }
+  },
+  "$defs": {
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+([-+][0-9A-Za-z.-]+)?$" },
+    "timestamp": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$" },
+    "nullableString": { "type": ["string", "null"] },
+    "run": {
+      "description": "One harness run: a single SDK across every configuration.",
+      "type": "object",
+      "required": [
+        "schemaVersion", "benchmark", "sdk", "gavioVersion", "date", "seed",
+        "methodology", "runner", "configurations", "pass"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "benchmark": { "const": "chain-overhead" },
+        "sdk": { "enum": ["python", "js", "java"] },
+        "gavioVersion": { "$ref": "#/$defs/version" },
+        "date": { "$ref": "#/$defs/timestamp" },
+        "seed": { "type": "integer", "description": "Seed of the shared payload generator." },
+        "methodology": {
+          "type": "object",
+          "required": [
+            "simulatedDelayMs", "warmup", "iterations", "percentile",
+            "interleaved", "payloadCount", "payloadDigest"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "simulatedDelayMs": { "type": "number", "exclusiveMinimum": 0 },
+            "warmup": { "type": "integer", "minimum": 0 },
+            "iterations": { "type": "integer", "minimum": 1 },
+            "percentile": { "const": "nearest-rank" },
+            "interleaved": { "type": "boolean" },
+            "payloadCount": { "type": "integer", "minimum": 1 },
+            "payloadDigest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "description": "SHA-256 of the generated prompts joined with \\n; identical across SDKs for one seed."
+            }
+          }
+        },
+        "runner": {
+          "type": "object",
+          "required": [
+            "os", "osRelease", "arch", "cpuModel", "cpuCount", "memoryGb",
+            "runtime", "ci", "ciProvider", "ciImage"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "os": { "enum": ["macos", "linux", "windows"] },
+            "osRelease": { "type": "string" },
+            "arch": { "type": "string", "description": "arm64 or x86_64 where recognised." },
+            "cpuModel": { "type": "string" },
+            "cpuCount": { "type": "integer", "minimum": 1, "description": "Logical CPUs." },
+            "memoryGb": { "type": ["number", "null"], "minimum": 0 },
+            "runtime": {
+              "type": "object",
+              "required": ["name", "version"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "version": { "type": "string" }
+              }
+            },
+            "ci": { "type": "boolean" },
+            "ciProvider": { "$ref": "#/$defs/nullableString" },
+            "ciImage": { "$ref": "#/$defs/nullableString" }
+          }
+        },
+        "configurations": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/configuration" }
+        },
+        "pass": { "type": "boolean" }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "required": [
+        "configuration", "description", "interceptors", "p50Us", "p95Us",
+        "overheadP50Us", "overheadPct", "budgetPct", "checks", "pass"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "configuration": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "description": { "type": "string" },
+        "interceptors": { "type": "array", "items": { "type": "string" } },
+        "p50Us": { "type": "number", "exclusiveMinimum": 0, "description": "Median latency per call, microseconds." },
+        "p95Us": { "type": "number", "exclusiveMinimum": 0 },
+        "overheadP50Us": { "type": "number", "description": "p50(configuration) - p50(baseline). May be slightly negative from noise." },
+        "overheadPct": { "type": "number", "description": "overheadP50Us as a percentage of the simulated provider call." },
+        "budgetPct": { "type": ["number", "null"], "description": "CI threshold on overheadPct; null for the baseline." },
+        "checks": {
+          "type": "object",
+          "description": "Evidence the stack really ran. Present only for configurations that include audit.",
+          "additionalProperties": false,
+          "properties": {
+            "auditRecords": { "type": "integer", "minimum": 0 },
+            "piiEntities": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "pass": { "type": "boolean" }
+      }
+    }
+  }
+}
