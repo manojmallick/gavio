@@ -125,6 +125,16 @@
       "import": "./dist/esm/prompts/index.js",
       "require": "./dist/cjs/prompts/index.js"
     },
+    "./prompts/runner": {
+      "types": "./dist/esm/prompts/runner.d.ts",
+      "import": "./dist/esm/prompts/runner.js",
+      "require": "./dist/cjs/prompts/runner.js"
+    },
+    "./workflow": {
+      "types": "./dist/esm/workflow.d.ts",
+      "import": "./dist/esm/workflow.js",
+      "require": "./dist/cjs/workflow.js"
+    },
     "./shim/openai": {
       "types": "./dist/esm/shim/openai.d.ts",
       "import": "./dist/esm/shim/openai.js",
