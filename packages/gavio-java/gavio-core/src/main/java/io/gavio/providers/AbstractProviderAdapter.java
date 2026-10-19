@@ -3,6 +3,7 @@ package io.gavio.providers;
 import io.gavio.GavioRequest;
 import io.gavio.GavioResponse;
 import io.gavio.PricingProvider;
+import io.gavio.toolcalling.ProviderCompletion;
 import io.gavio.types.TokenUsage;
 import java.util.List;
 
@@ -40,6 +41,18 @@ public abstract class AbstractProviderAdapter implements ProviderAdapter {
             long startedNanos) {
         return buildResponse(request, "", usage, modelVersion, startedNanos)
                 .withEmbeddings(vectors);
+    }
+
+    /**
+     * Build a response from a parsed provider completion, tool calls and finish reason included
+     * (F-ADP-03).
+     */
+    protected GavioResponse buildCompletionResponse(
+            GavioRequest request, ProviderCompletion completion, long startedNanos) {
+        return buildResponse(request, completion.content(), completion.usage(),
+                completion.modelVersion(), startedNanos)
+                .withToolCalls(completion.toolCalls())
+                .withFinishReason(completion.finishReason());
     }
 
     protected GavioResponse buildResponse(

@@ -428,7 +428,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | AI Request Runtime / Inspector positioning | `F-DOC-V4` | 0.13.0 |
 | Tool Runtime — schema validation, freshness, conflict detection, provenance | `F-TOOL-01/02/03/04` | 0.14.0 |
 | Tool Runtime v2 — registry-backed permissions, approval gates, replay, MCP metadata | `F-TOOL-05/06/07/08` | 1.5.0 |
-| Normalised tool calling — one `ToolCall` / `ToolResult` model across OpenAI, Azure OpenAI, OpenRouter, Anthropic, Gemini, and Ollama; tool arguments pass through PII and secret scanning. **Python in 3.2.0, JavaScript on `main`; Java adapters follow** | `F-ADP-03` | 3.2.0 |
+| Normalised tool calling — one `ToolCall` / `ToolResult` model across OpenAI, Azure OpenAI, OpenRouter, Anthropic, Gemini, and Ollama; tool arguments pass through PII and secret scanning. **Python in 3.2.0; JavaScript and Java on `main`, unreleased** | `F-ADP-03` | 3.2.0 |
 | Self-hosted Control Plane — runtime config, policy rollout, budget config, audit search, snapshots | — | 1.7.0 |
 | Control Plane Persistence — SQLite migrations, Postgres adapter path, durable runtime/admin records | `F-CP-01` | 2.3.0 |
 | Enterprise Admin v2 — OIDC/SAML-lite metadata, scoped admin keys, rollout approvals, audit export, retention controls | `F-ADMIN-02` | 2.6.0 |

@@ -5,6 +5,8 @@ import io.gavio.GavioRequest;
 import io.gavio.interceptors.Interceptor;
 import io.gavio.interceptors.InterceptorContext;
 import io.gavio.json.Json;
+import io.gavio.json.JsonValues;
+import io.gavio.types.ToolCall;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -46,6 +48,127 @@ public final class ToolRuntimeInterceptor implements Interceptor {
 
     public static Map<String, Object> analyze(Map<String, Object> tools) {
         return analyze(tools, null, List.of(), null);
+    }
+
+    /** Keys under which a tool context holds its recorded calls. */
+    private static final List<String> CALL_KEYS = List.of("calls", "tool_calls", "toolCalls", "results", "records");
+
+    /**
+     * Optional inputs of {@link #analyzeProviderToolCalls(Iterable, Map, ProviderCallOptions)}.
+     * Every member is optional.
+     */
+    public static final class ProviderCallOptions {
+        private List<Map<String, Object>> definitions;
+        private Map<String, Map<String, Object>> results;
+        private String source;
+        private Double maxAgeSeconds;
+        private Collection<String> conflictKeys = List.of();
+        private Instant now;
+
+        private ProviderCallOptions() {
+        }
+
+        public static ProviderCallOptions builder() {
+            return new ProviderCallOptions();
+        }
+
+        /** Tool definitions (typically {@code request.tools()}); used when the tool context has none. */
+        public ProviderCallOptions definitions(List<Map<String, Object>> definitions) {
+            this.definitions = definitions;
+            return this;
+        }
+
+        /** Tool results by call id; attached to the matching call as {@code result}. */
+        public ProviderCallOptions results(Map<String, Map<String, Object>> results) {
+            this.results = results;
+            return this;
+        }
+
+        /** Provenance for the calls, e.g. the provider name. */
+        public ProviderCallOptions source(String source) {
+            this.source = source;
+            return this;
+        }
+
+        public ProviderCallOptions maxAgeSeconds(Double maxAgeSeconds) {
+            this.maxAgeSeconds = maxAgeSeconds;
+            return this;
+        }
+
+        public ProviderCallOptions conflictKeys(Collection<String> conflictKeys) {
+            this.conflictKeys = conflictKeys == null ? List.of() : conflictKeys;
+            return this;
+        }
+
+        public ProviderCallOptions now(Instant now) {
+            this.now = now;
+            return this;
+        }
+    }
+
+    /**
+     * Map normalised provider {@link ToolCall}s to Tool Runtime call maps (F-ADP-03).
+     *
+     * <p>The result is what {@code tools.calls} takes: {@code id}, {@code name} and
+     * {@code arguments} (read as {@code input}), plus {@code result} when {@code results} has an
+     * object for the call id and {@code source} (provenance) when given — e.g. the provider name.
+     * The arguments are copied.
+     */
+    public static List<Map<String, Object>> toolCallsToRuntimeCalls(
+            Iterable<ToolCall> toolCalls, Map<String, Map<String, Object>> results, String source) {
+        List<Map<String, Object>> calls = new ArrayList<>();
+        for (ToolCall toolCall : toolCalls) {
+            Map<String, Object> call = new LinkedHashMap<>();
+            call.put("id", toolCall.id());
+            call.put("name", toolCall.name());
+            call.put("arguments", JsonValues.mutableMap(toolCall.arguments()));
+            if (source != null) {
+                call.put("source", source);
+            }
+            if (results != null && results.get(toolCall.id()) != null) {
+                call.put("result", new LinkedHashMap<>(results.get(toolCall.id())));
+            }
+            calls.add(call);
+        }
+        return calls;
+    }
+
+    /** {@link #analyzeProviderToolCalls(Iterable, Map, ProviderCallOptions)} with no tool context. */
+    public static Map<String, Object> analyzeProviderToolCalls(Iterable<ToolCall> toolCalls) {
+        return analyzeProviderToolCalls(toolCalls, null, null);
+    }
+
+    /** {@link #analyzeProviderToolCalls(Iterable, Map, ProviderCallOptions)} with default options. */
+    public static Map<String, Object> analyzeProviderToolCalls(
+            Iterable<ToolCall> toolCalls, Map<String, Object> tools) {
+        return analyzeProviderToolCalls(toolCalls, tools, null);
+    }
+
+    /**
+     * Validate real provider tool calls with Tool Runtime v2 (F-ADP-03).
+     *
+     * <p>{@code tools} is the usual tool context (granted permissions, approvals, definitions). The
+     * bridged calls are added to any calls it already holds; {@code options.definitions} (typically
+     * {@code request.tools()}) fills in the registry when {@code tools} has none. {@code tools} is
+     * not modified.
+     */
+    public static Map<String, Object> analyzeProviderToolCalls(
+            Iterable<ToolCall> toolCalls, Map<String, Object> tools, ProviderCallOptions options) {
+        ProviderCallOptions opts = options != null ? options : ProviderCallOptions.builder();
+        Map<String, Object> base = tools == null ? Map.of() : tools;
+        Map<String, Object> context = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : base.entrySet()) {
+            if (!CALL_KEYS.contains(entry.getKey())) {
+                context.put(entry.getKey(), entry.getValue());
+            }
+        }
+        List<Map<String, Object>> calls = new ArrayList<>(calls(base));
+        calls.addAll(toolCallsToRuntimeCalls(toolCalls, opts.results, opts.source));
+        context.put("calls", calls);
+        if (opts.definitions != null && definitions(context).isEmpty()) {
+            context.put("definitions", opts.definitions);
+        }
+        return analyze(context, opts.maxAgeSeconds, opts.conflictKeys, opts.now);
     }
 
     public static Map<String, Object> replay(Map<String, Object> record) {
@@ -260,7 +383,7 @@ public final class ToolRuntimeInterceptor implements Interceptor {
     }
 
     private static List<Map<String, Object>> calls(Map<String, Object> tools) {
-        Object raw = first(tools, "calls", "tool_calls", "toolCalls", "results", "records");
+        Object raw = first(tools, CALL_KEYS.toArray(new String[0]));
         if (!(raw instanceof List<?> list)) {
             return List.of();
         }

@@ -19,6 +19,10 @@ import java.util.Map;
  * <p>{@code promptHash}/{@code responseHash} are SHA-256 digests so the entry is
  * verifiable without storing sensitive text. {@code previousHash} is reserved
  * for the v0.2.0 hash-chain (F-OBS-02); empty in v0.1.0.
+ *
+ * <p>{@code toolCalls} lists the tool calls the model requested (F-ADP-03) as a name and an
+ * arguments hash only — never the arguments, which may hold PII. It is left out of {@link #toMap()}
+ * (and so out of the hash-chain input) when empty, so chains written before F-ADP-03 still verify.
  */
 public record AuditRecord(
         String traceId,
@@ -44,9 +48,24 @@ public record AuditRecord(
         Double riskScore,
         PromptLineage lineage,
         String previousHash,
-        String schemaVersion) {
+        String schemaVersion,
+        List<ToolCallDigest> toolCalls) {
 
     public static final String SCHEMA_VERSION = "1.0";
+
+    /**
+     * One tool call a response requested: its name and the lowercase hex SHA-256 of the canonical
+     * JSON of its arguments ({@code ToolCall.argumentsHash()}).
+     */
+    public record ToolCallDigest(String name, String argumentsHash) {
+
+        public Map<String, Object> toMap() {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("name", name);
+            data.put("arguments_hash", argumentsHash);
+            return data;
+        }
+    }
 
     public AuditRecord {
         if (tokenUsage == null) {
@@ -70,6 +89,39 @@ public record AuditRecord(
         if (schemaVersion == null) {
             schemaVersion = SCHEMA_VERSION;
         }
+        toolCalls = toolCalls == null ? List.of() : List.copyOf(toolCalls);
+    }
+
+    /** A record without tool calls — the shape before F-ADP-03. */
+    public AuditRecord(
+            String traceId,
+            String provider,
+            String model,
+            String timestampUtc,
+            String parentTraceId,
+            String agentId,
+            String sessionId,
+            String subjectId,
+            String modelVersion,
+            String promptHash,
+            String responseHash,
+            TokenUsage tokenUsage,
+            double costUsd,
+            long latencyMs,
+            List<String> piiEntityTypes,
+            Map<String, Integer> piiEntityCounts,
+            List<String> interceptorsFired,
+            boolean cacheHit,
+            String cacheType,
+            String guardrailOutcome,
+            Double riskScore,
+            PromptLineage lineage,
+            String previousHash,
+            String schemaVersion) {
+        this(traceId, provider, model, timestampUtc, parentTraceId, agentId, sessionId, subjectId,
+                modelVersion, promptHash, responseHash, tokenUsage, costUsd, latencyMs, piiEntityTypes,
+                piiEntityCounts, interceptorsFired, cacheHit, cacheType, guardrailOutcome, riskScore,
+                lineage, previousHash, schemaVersion, null);
     }
 
     public static String nowUtc() {
@@ -119,6 +171,13 @@ public record AuditRecord(
         data.put("guardrail_outcome", guardrailOutcome);
         data.put("risk_score", riskScore);
         data.put("lineage", lineage == null ? null : lineage.toMap());
+        if (!toolCalls.isEmpty()) {
+            List<Object> digests = new ArrayList<>();
+            for (ToolCallDigest digest : toolCalls) {
+                digests.add(digest.toMap());
+            }
+            data.put("tool_calls", digests);
+        }
         data.put("previous_hash", previousHash);
         data.put("schema_version", schemaVersion);
         return data;
@@ -162,6 +221,7 @@ public record AuditRecord(
         private Double riskScore;
         private PromptLineage lineage;
         private String previousHash = "";
+        private List<ToolCallDigest> toolCalls = List.of();
 
         public Builder traceId(String v) {
             this.traceId = v;
@@ -278,12 +338,17 @@ public record AuditRecord(
             return this;
         }
 
+        public Builder toolCalls(List<ToolCallDigest> v) {
+            this.toolCalls = v;
+            return this;
+        }
+
         public AuditRecord build() {
             return new AuditRecord(traceId, provider, model, timestampUtc, parentTraceId,
                     agentId, sessionId, subjectId, modelVersion, promptHash, responseHash,
                     tokenUsage, costUsd, latencyMs, piiEntityTypes, piiEntityCounts,
                     interceptorsFired, cacheHit, cacheType, guardrailOutcome, riskScore, lineage,
-                    previousHash, SCHEMA_VERSION);
+                    previousHash, SCHEMA_VERSION, toolCalls);
         }
     }
 }

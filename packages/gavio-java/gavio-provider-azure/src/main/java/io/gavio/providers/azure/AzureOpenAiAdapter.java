@@ -5,11 +5,8 @@ import io.gavio.GavioRequest;
 import io.gavio.GavioResponse;
 import io.gavio.PricingProvider;
 import io.gavio.providers.AbstractProviderAdapter;
-import io.gavio.types.Message;
-import io.gavio.types.TokenUsage;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import io.gavio.providers.ChatCompletionsWire;
+import io.gavio.toolcalling.ProviderCompletion;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -46,56 +43,30 @@ public final class AzureOpenAiAdapter extends AbstractProviderAdapter {
         return endpoint + "/openai/deployments/" + dep + "/chat/completions?api-version=" + apiVersion;
     }
 
+    /**
+     * Build the Chat Completions request body for {@code request} (F-ADP-03): the OpenAI shape
+     * without {@code model}, since Azure routes by deployment. Pure: no network.
+     */
+    public static Map<String, Object> toProviderPayload(GavioRequest request) {
+        return ChatCompletionsWire.toProviderPayload(request, false);
+    }
+
+    /** Parse a Chat Completions response body into normalised parts (F-ADP-03). Pure: no network. */
+    public static ProviderCompletion fromProviderResponse(Map<String, Object> payload) {
+        return ChatCompletionsWire.fromProviderResponse(payload);
+    }
+
     @Override
     public CompletableFuture<GavioResponse> complete(GavioRequest request) {
         if (apiKey == null || apiKey.isEmpty() || endpoint.isEmpty()) {
             throw new ConfigurationException("AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT must be set");
         }
         long started = System.nanoTime();
-        List<Object> messages = new ArrayList<>();
-        for (Message m : request.messages()) {
-            Map<String, Object> msg = new LinkedHashMap<>();
-            msg.put("role", m.role());
-            msg.put("content", m.content());
-            messages.add(msg);
-        }
-        Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("messages", messages);
-        payload.put("temperature", request.temperature());
-        payload.put("max_tokens", request.maxTokens());
+        Map<String, Object> payload = toProviderPayload(request);
 
         return HttpJson.postJson(url(request), payload, Map.of("api-key", apiKey), timeoutSeconds)
-                .thenApply(data -> {
-                    String content = extractContent(data);
-                    TokenUsage usage = extractUsage(data);
-                    String modelVersion = data.get("model") != null
-                            ? String.valueOf(data.get("model")) : request.model();
-                    return buildResponse(request, content, usage, modelVersion, started);
-                });
-    }
-
-    @SuppressWarnings("unchecked")
-    private static String extractContent(Map<String, Object> data) {
-        List<Object> choices = (List<Object>) data.get("choices");
-        if (choices == null || choices.isEmpty()) {
-            return "";
-        }
-        Map<String, Object> message = (Map<String, Object>) ((Map<String, Object>) choices.get(0)).get("message");
-        Object content = message != null ? message.get("content") : null;
-        return content != null ? content.toString() : "";
-    }
-
-    @SuppressWarnings("unchecked")
-    private static TokenUsage extractUsage(Map<String, Object> data) {
-        Map<String, Object> usage = (Map<String, Object>) data.get("usage");
-        if (usage == null) {
-            return new TokenUsage();
-        }
-        return new TokenUsage(asInt(usage.get("prompt_tokens")), asInt(usage.get("completion_tokens")));
-    }
-
-    private static int asInt(Object o) {
-        return o instanceof Number n ? n.intValue() : 0;
+                .thenApply(data -> buildCompletionResponse(
+                        request, fromProviderResponse(data), started));
     }
 
     @Override
