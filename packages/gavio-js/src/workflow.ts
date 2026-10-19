@@ -14,6 +14,7 @@ import { createHash } from 'node:crypto'
 import { existsSync } from 'node:fs'
 import { dirname, isAbsolute, resolve } from 'node:path'
 
+import { canonicalJson } from './canonical-json.js'
 import { loadPolicyPack, loadPolicyPackPath } from './interceptors/pii/policy-pack.js'
 import { verifyPlatformRuntimeProfile } from './platform-runtime.js'
 import { buildPromptReleaseBundle } from './prompts/index.js'
@@ -21,6 +22,8 @@ import type { PromptManifest, PromptReleaseBundle } from './prompts/index.js'
 import { loadEvalDocument, runEvalFile, wireGate } from './prompts/runner.js'
 import type { EvalRunResult } from './prompts/runner.js'
 import { verifyProductionTrustBundle } from './trust.js'
+
+export { canonicalJson }
 
 export const WORKFLOW_MANIFEST_SCHEMA_VERSION = 'gavio.platform-workflow.v1'
 export const WORKFLOW_RELEASE_SCHEMA_VERSION = 'gavio.platform-workflow-release.v1'
@@ -168,58 +171,6 @@ export function platformWorkflowReleaseHash(artifact: Mapping): string {
     )
   }
   return `sha256:${createHash('sha256').update(canonicalJson(data), 'utf8').digest('hex')}`
-}
-
-/**
- * Cross-SDK canonical JSON: compact separators, object keys sorted by Unicode
- * code point, non-ASCII emitted as-is, control characters as lowercase
- * `\u00xx` escapes, integral numbers written as integers (`1.0` -> `1`), and
- * every other number as the shortest round-trip decimal without an exponent.
- * `undefined` object values are omitted, as `JSON.stringify` does.
- */
-export function canonicalJson(value: unknown): string {
-  if (value === null || value === undefined) return 'null'
-  if (typeof value === 'boolean') return value ? 'true' : 'false'
-  if (typeof value === 'string') return JSON.stringify(value)
-  if (typeof value === 'number') return canonicalNumber(value)
-  if (typeof value === 'bigint') return value.toString()
-  if (Array.isArray(value)) return `[${value.map((item) => canonicalJson(item)).join(',')}]`
-  if (typeof value === 'object') {
-    const entries = Object.entries(value as Mapping)
-      .filter(([, item]) => item !== undefined)
-      .sort(([left], [right]) => compareCodePoints(left, right))
-    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(',')}}`
-  }
-  throw new TypeError(`cannot canonicalize ${typeof value}`)
-}
-
-function canonicalNumber(value: number): string {
-  if (!Number.isFinite(value)) throw new RangeError('canonical JSON cannot represent NaN or Infinity')
-  if (Number.isInteger(value)) return BigInt(value).toString()
-  const text = String(value)
-  if (!/e/i.test(text)) return text
-  // Shortest digits come back in exponent form below 1e-6; expand them.
-  const [mantissa, exponent] = text.toLowerCase().split('e') as [string, string]
-  const negative = mantissa.startsWith('-')
-  const [whole, fraction = ''] = (negative ? mantissa.slice(1) : mantissa).split('.') as [string, string?]
-  const digits = whole + fraction
-  const point = whole.length + Number(exponent)
-  let plain: string
-  if (point <= 0) plain = `0.${'0'.repeat(-point)}${digits}`
-  else if (point >= digits.length) plain = digits + '0'.repeat(point - digits.length)
-  else plain = `${digits.slice(0, point)}.${digits.slice(point)}`
-  return negative ? `-${plain}` : plain
-}
-
-function compareCodePoints(left: string, right: string): number {
-  const a = Array.from(left)
-  const b = Array.from(right)
-  const length = Math.min(a.length, b.length)
-  for (let index = 0; index < length; index += 1) {
-    const difference = a[index]!.codePointAt(0)! - b[index]!.codePointAt(0)!
-    if (difference !== 0) return difference
-  }
-  return a.length - b.length
 }
 
 async function runEvalSections(

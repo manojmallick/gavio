@@ -11,6 +11,31 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+### Added
+- **Normalised tool calling in the JavaScript SDK (F-ADP-03).** The JavaScript counterpart of
+  the Python reference shipped in `3.2.0`, passing the same `test-vectors/tool-calling/`
+  files: `ToolCall`, `ToolResult` and `FinishReason`; `GavioRequest.tools` / `toolChoice`;
+  `GavioResponse.toolCalls` / `finishReason` / `toAssistantMessage()` / `copyWith()`;
+  `Gateway.complete({ tools, toolChoice })`. The OpenAI, Azure OpenAI, OpenRouter, Anthropic,
+  Gemini and Ollama adapters translate tool declarations, calls and results (parallel calls
+  included) through pure `toProviderPayload` / `fromProviderResponse` functions, also exported
+  from `gavio/providers` (`openaiToProviderPayload`, ...). `piiGuard` scans tool-call arguments
+  and tool-role messages and restores placeholders in response tool calls; audit records keep
+  the tool name and an arguments hash (`toolCalls[].argumentsHash`, omitted when empty so
+  existing hash chains still verify); the cache never replays a tool-call response and keys on
+  the declared tools. `analyzeProviderToolCalls` / `toolCallsToRuntimeCalls` bridge provider
+  calls into Tool Runtime v2. Messages use the spec's camelCase keys (`toolCalls`,
+  `toolCallId`, `isError`) and accept Python's snake_case spellings on read. The Java adapters
+  follow; streaming tool-call deltas are not yet supported, and `Gateway.stream()` throws a
+  `ConfigurationError` when given `tools` instead of silently dropping them.
+- `MalformedToolCallError` (a `ProviderError`) is raised when a provider returns tool-call
+  arguments that are not a JSON object; its message names the tool, never the arguments.
+
+### Changed
+- `canonicalJson` moved from `workflow.ts` into its own `canonical-json.ts` module so core code
+  can hash tool arguments without importing the workflow machinery. It is still exported from
+  `gavio` and `gavio/workflow`, and its output is unchanged.
+
 ### Fixed
 - **Maven Central publish under Maven 3.10.** GitHub's `ubuntu-latest` image now ships
   Apache Maven 3.10.0, which writes a `maven-metadata-local.xml` into every artifact

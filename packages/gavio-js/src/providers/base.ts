@@ -3,6 +3,7 @@
 import { PricingProvider, estimateTokens } from '../pricing.js'
 import { GavioRequest } from '../request.js'
 import { GavioResponse } from '../response.js'
+import type { ProviderCompletion } from '../tool-calling.js'
 import { TokenUsage } from '../types.js'
 
 /** Adapter to one LLM provider. */
@@ -62,6 +63,24 @@ export abstract class BaseProviderAdapter implements ProviderAdapter {
   ): GavioResponse {
     const response = this.buildResponse(request, '', usage, modelVersion, startedAt)
     response.embeddings = vectors
+    return response
+  }
+
+  /** Build a response from a parsed provider completion, tool calls included (F-ADP-03). */
+  protected buildCompletionResponse(
+    request: GavioRequest,
+    completion: ProviderCompletion,
+    startedAt: number,
+  ): GavioResponse {
+    const response = this.buildResponse(
+      request,
+      completion.content,
+      completion.usage,
+      completion.modelVersion ?? request.model,
+      startedAt,
+    )
+    response.toolCalls = [...completion.toolCalls]
+    response.finishReason = completion.finishReason
     return response
   }
 

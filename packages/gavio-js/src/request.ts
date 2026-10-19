@@ -1,8 +1,16 @@
 /** GavioRequest — the canonical, provider-agnostic request model. */
 
+import { canonicalJson } from './canonical-json.js'
 import { newTraceId } from './ids.js'
+import { messageText, messageToolCalls } from './tool-calling.js'
 import { coerceProvider, PromptLineage } from './types.js'
-import type { Message, PromptLineageInit, Provider } from './types.js'
+import type {
+  Message,
+  PromptLineageInit,
+  Provider,
+  ToolChoice,
+  ToolDefinition,
+} from './types.js'
 
 export interface GavioRequestInit {
   messages: Message[]
@@ -17,6 +25,10 @@ export interface GavioRequestInit {
   /** Binary image inputs, scanned for PII before a provider call (F-SEC-09). */
   images?: Uint8Array[]
   lineage?: PromptLineage | PromptLineageInit | null
+  /** Tools the model may call — `ToolDefinition` objects (F-ADP-03). */
+  tools?: ToolDefinition[] | null
+  /** `auto`, `none`, `required` or `{ name }`. Ignored when `tools` is empty (F-ADP-03). */
+  toolChoice?: ToolChoice | null
 }
 
 /**
@@ -36,6 +48,8 @@ export class GavioRequest {
   metadata: Record<string, unknown>
   images: Uint8Array[]
   lineage: PromptLineage | null
+  tools: ToolDefinition[] | null
+  toolChoice: ToolChoice | null
 
   constructor(init: GavioRequestInit) {
     this.messages = init.messages
@@ -49,6 +63,8 @@ export class GavioRequest {
     this.metadata = init.metadata ?? {}
     this.images = init.images ?? []
     this.lineage = init.lineage != null ? PromptLineage.from(init.lineage) : null
+    this.tools = init.tools ?? null
+    this.toolChoice = init.toolChoice ?? null
   }
 
   get temperature(): number {
@@ -61,9 +77,22 @@ export class GavioRequest {
     return typeof m === 'number' ? m : 1024
   }
 
-  /** Concatenate message contents — used for hashing and token estimation. */
+  /**
+   * Concatenate message contents — used for hashing and token estimation.
+   *
+   * Tool calls an assistant message made are included as `name(canonical-args)` so the
+   * hash and the estimate see them; messages without tool calls contribute exactly
+   * their content, as before.
+   */
   promptText(): string {
-    return this.messages.map((m) => m.content ?? '').join('\n')
+    const parts: string[] = []
+    for (const message of this.messages) {
+      parts.push(messageText(message))
+      for (const call of messageToolCalls(message)) {
+        parts.push(`${call.name}(${canonicalJson(call.arguments)})`)
+      }
+    }
+    return parts.join('\n')
   }
 
   /** Return a shallow copy with replaced messages (interceptors mutate via this). */
@@ -80,6 +109,11 @@ export class GavioRequest {
       metadata: { ...this.metadata },
       images: this.images,
       lineage: this.lineage,
+      tools: this.tools !== null ? [...this.tools] : null,
+      toolChoice:
+        typeof this.toolChoice === 'object' && this.toolChoice !== null
+          ? { ...this.toolChoice }
+          : this.toolChoice,
     })
   }
 }

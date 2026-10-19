@@ -7,5 +7,15 @@ export { piiGuard } from './pii/index.js'
 export { auditInterceptor } from './audit/index.js'
 export { retryInterceptor, timeoutPolicy, fallbackChain } from './reliability/index.js'
 export { memoryCacheBackend } from './cache/index.js'
-export { toolRuntime, analyzeToolRuntime, replayToolRuntime } from './tool-runtime/index.js'
-export type { ToolRuntimeOptions, ToolRuntimeDecision } from './tool-runtime/index.js'
+export {
+  toolRuntime,
+  analyzeToolRuntime,
+  replayToolRuntime,
+  analyzeProviderToolCalls,
+  toolCallsToRuntimeCalls,
+} from './tool-runtime/index.js'
+export type {
+  ToolRuntimeOptions,
+  ToolRuntimeDecision,
+  ProviderToolCallOptions,
+} from './tool-runtime/index.js'

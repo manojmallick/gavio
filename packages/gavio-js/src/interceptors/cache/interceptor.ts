@@ -45,12 +45,17 @@ export function semanticCache(options: SemanticCacheOptions = {}): ExecutorPolic
     const opts = request.options ?? {}
     const sorted: Record<string, unknown> = {}
     for (const k of Object.keys(opts).sort()) sorted[k] = opts[k]
-    const payload = JSON.stringify({
+    const body: Record<string, unknown> = {
       provider: String(request.provider),
       model: request.model,
       messages: request.messages,
       options: sorted,
-    })
+    }
+    if (request.tools && request.tools.length > 0) {
+      body['tools'] = request.tools
+      body['toolChoice'] = request.toolChoice
+    }
+    const payload = JSON.stringify(body)
     return 'gavio:exact:' + createHash('sha256').update(payload).digest('hex')
   }
 
@@ -90,13 +95,18 @@ export function semanticCache(options: SemanticCacheOptions = {}): ExecutorPolic
       if (cached) return hit(request, ctx, cached, CacheType.EXACT)
 
       let embedding: number[] | null = null
-      if (semantic && vector && embedder) {
+      // Similar prompt text says nothing about which tools were declared, so requests
+      // with tools only ever hit the exact cache.
+      const hasTools = (request.tools?.length ?? 0) > 0
+      if (semantic && vector && embedder && !hasTools) {
         embedding = embedder.embed(request.promptText())
         const semHit = (await vector.query(embedding, threshold)) as CacheEntry | null
         if (semHit) return hit(request, ctx, semHit, CacheType.SEMANTIC)
       }
 
       const response = await callNext(request)
+      // A cached tool call would replay the model's side-effecting decision.
+      if (response.toolCalls.length > 0) return response
       const entry: CacheEntry = {
         content: response.content,
         modelVersion: response.modelVersion,

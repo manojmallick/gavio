@@ -77,6 +77,10 @@ class AuditInterceptor implements Interceptor {
       guardrailOutcome: ctx.guardrailOutcome,
       riskScore: ctx.riskScore,
       lineage: (ctx.state[LINEAGE_KEY] as PromptLineage | undefined) ?? null,
+      toolCalls: response.toolCalls.map((call) => ({
+        name: call.name,
+        argumentsHash: call.argumentsHash(),
+      })),
     })
     if (this.hashChain) {
       record.previousHash = this.lastHash
