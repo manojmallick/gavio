@@ -12,12 +12,23 @@ are snake_case.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
+import logging
+import threading
+import time
+from collections import OrderedDict
+from collections.abc import Callable, Iterable, Mapping
+from dataclasses import dataclass, field, replace
 from typing import Any
 
-from ...exceptions import ConfigurationError
+from ...context import InterceptorContext
+from ...exceptions import ConfigurationError, LoopGuardError
+from ...request import GavioRequest
+from ...response import GavioResponse
+from ...root_run import DEFAULT_MAX_ENTRIES, RootRunResolver
 from ...types import ToolCall
+from ..base import Interceptor
+
+logger = logging.getLogger("gavio.loop_guard")
 
 #: Limits in the order they are reported: ``breached`` is the first one reached.
 BREACH_ORDER = ("max_steps", "max_cost", "max_wall_time", "repeated_tool_call")
@@ -186,13 +197,25 @@ class LoopGuardState:
     tool_calls: dict[tuple[str, str], int] = field(default_factory=dict)
     started_at: float | None = None
 
-    def record(self, cost_usd: float, tool_calls: Iterable[ToolCall] = ()) -> None:
-        """Record one call that went through: allowed, fallback or dry_run, never a refused one."""
+    def start_call(self) -> None:
+        """Count a call the guard let through, as soon as it starts.
+
+        Counting at the start means a loop of calls that fail at the provider still reaches
+        ``max_steps``.
+        """
         self.steps += 1
+
+    def add_result(self, cost_usd: float, tool_calls: Iterable[ToolCall] = ()) -> None:
+        """Add what a finished call cost and the tool calls its response asked for."""
         self.cost_usd = round8(self.cost_usd + max(cost_usd, 0.0))
         for call in tool_calls:
             key = (call.name, call.arguments_hash())
             self.tool_calls[key] = self.tool_calls.get(key, 0) + 1
+
+    def record(self, cost_usd: float, tool_calls: Iterable[ToolCall] = ()) -> None:
+        """Record one call that went through: allowed, fallback or dry_run, never a refused one."""
+        self.start_call()
+        self.add_result(cost_usd, tool_calls)
 
     @classmethod
     def from_dict(cls, wire: Mapping[str, Any]) -> LoopGuardState:
@@ -260,3 +283,178 @@ def evaluate_loop_guard(
 
 def round8(value: float) -> float:
     return round(value, 8)
+
+
+class LoopGuardStore:
+    """Bounded, idle-expiring in-memory store of per-run state.
+
+    Keeps at most ``max_runs`` runs (least recently used evicted first) and forgets a run that
+    has been idle for ``ttl_seconds``, so a long-lived process cannot grow without bound. A run
+    that expires starts again from zero if it comes back. Safe to share between threads.
+    """
+
+    def __init__(
+        self,
+        max_runs: int = DEFAULT_MAX_ENTRIES,
+        ttl_seconds: float = 3600.0,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        if not isinstance(max_runs, int) or isinstance(max_runs, bool) or max_runs < 1:
+            raise ConfigurationError("max_runs must be an integer of at least 1")
+        if ttl_seconds <= 0:
+            raise ConfigurationError("ttl_seconds must be positive")
+        self._max_runs = max_runs
+        self._ttl = ttl_seconds
+        self._clock = clock
+        self._runs: OrderedDict[str, tuple[LoopGuardState, float]] = OrderedDict()
+        self._lock = threading.Lock()
+
+    def acquire(self, run_id: str) -> LoopGuardState:
+        """The state of ``run_id``, created (and started now) if it is new or has expired."""
+        now = self._clock()
+        with self._lock:
+            self._expire(now)
+            entry = self._runs.get(run_id)
+            state = entry[0] if entry is not None else LoopGuardState(started_at=now)
+            self._runs[run_id] = (state, now)
+            self._runs.move_to_end(run_id)
+            while len(self._runs) > self._max_runs:
+                self._runs.popitem(last=False)
+            return state
+
+    def get(self, run_id: str) -> LoopGuardState | None:
+        """The state of ``run_id`` if it is still remembered; refreshes it."""
+        now = self._clock()
+        with self._lock:
+            self._expire(now)
+            entry = self._runs.get(run_id)
+            if entry is None:
+                return None
+            self._runs[run_id] = (entry[0], now)
+            self._runs.move_to_end(run_id)
+            return entry[0]
+
+    def _expire(self, now: float) -> None:
+        # Entries are ordered by recency, so the idle ones are all at the front.
+        while self._runs:
+            oldest = next(iter(self._runs))
+            if now - self._runs[oldest][1] < self._ttl:
+                break
+            del self._runs[oldest]
+
+    def __len__(self) -> int:
+        with self._lock:
+            return len(self._runs)
+
+
+_RUN_KEY = "loop_guard:run_id"
+
+
+class LoopGuard(Interceptor):
+    """Stop a runaway agent loop (F-REL-09).
+
+    Before every provider call the guard resolves the request's root run
+    (:class:`~gavio.root_run.RootRunResolver`: ``metadata["runId"]``, else the root of the
+    ``parent_trace_id`` chain, else the trace id), compares the run's state with ``policy`` and
+    acts on the verdict: ``stop`` raises :class:`~gavio.exceptions.LoopGuardError`, ``fallback``
+    reroutes the call to ``policy.fallback_model``, ``dry_run`` only records the breach. After the
+    call it adds the response's cost and tool calls to the run. The verdict is attached to the
+    audit record (counts only), the Inspector, and, on a breach, a governance event.
+
+    An agent loop must pass one of ``metadata["runId"]`` or ``parent_trace_id`` on its calls —
+    calls with neither are separate runs, which no limit can link. In a gateway ``dry_run`` the
+    guard still evaluates and records, but never stops or reroutes a call.
+
+    Register it before the audit interceptor's ``after`` runs (audit outermost, as always) and
+    anywhere in the ``before`` order; it keeps its state in memory, per instance.
+    """
+
+    def __init__(
+        self,
+        policy: LoopGuardPolicy | Mapping[str, Any],
+        *,
+        resolver: RootRunResolver | None = None,
+        store: LoopGuardStore | None = None,
+        clock: Callable[[], float] = time.monotonic,
+    ) -> None:
+        self.policy = (
+            policy if isinstance(policy, LoopGuardPolicy) else LoopGuardPolicy.from_dict(policy)
+        )
+        self.resolver = resolver or RootRunResolver()
+        self.store = store or LoopGuardStore(clock=clock)
+        self._clock = clock
+        self._lock = threading.Lock()
+
+    @property
+    def name(self) -> str:
+        return "loop_guard"
+
+    async def before(self, request: GavioRequest, ctx: InterceptorContext) -> GavioRequest:
+        ctx.mark_fired(self.name)
+        run_id = self.resolver.resolve(request.trace_id, request.parent_trace_id, request.metadata)
+        with self._lock:  # evaluate and count atomically, also across threads
+            state = self.store.acquire(run_id)
+            started_at = state.started_at if state.started_at is not None else self._clock()
+            decision = evaluate_loop_guard(
+                self.policy,
+                state,
+                run_id=run_id,
+                elapsed_seconds=self._clock() - started_at,
+            )
+            if ctx.dry_run and decision.action in ("stop", "fallback"):
+                # A gateway dry run observes; it never refuses or reroutes a call.
+                decision = replace(decision, action="dry_run", allowed=True, target_model=None)
+            if decision.allowed:
+                state.start_call()
+        wire = decision.to_dict()
+        ctx.loop_guard = {
+            "policy_id": decision.policy_id,
+            "run_id": decision.run_id,
+            "action": decision.action,
+            "breached": decision.breached,
+            "steps": decision.steps,
+            "cost_usd": decision.cost_usd,
+            "elapsed_seconds": decision.elapsed_seconds,
+        }
+        ctx.inspect("loop_guard", wire)
+        if decision.breached is not None:
+            logger.warning(
+                "loop guard %s: %s reached for run %s (%s)",
+                self.policy.id,
+                decision.breached,
+                run_id,
+                decision.action,
+            )
+            ctx.record_governance_event(
+                {"kind": "loop_guard", "decision": wire, "policyId": self.policy.id}
+            )
+        if decision.action == "stop":
+            raise LoopGuardError(_stop_message(decision), wire)
+        ctx.state[_RUN_KEY] = run_id
+        if (
+            decision.action == "fallback"
+            and decision.target_model
+            and request.model != decision.target_model
+        ):
+            return replace(request, model=decision.target_model)
+        return request
+
+    async def after(self, response: GavioResponse, ctx: InterceptorContext) -> GavioResponse:
+        run_id = ctx.state.get(_RUN_KEY)
+        if isinstance(run_id, str):
+            state = self.store.get(run_id)
+            if state is not None:  # None: the run expired or was evicted mid-call
+                state.add_result(response.cost_usd, response.tool_calls)
+        return response
+
+
+def _stop_message(decision: LoopGuardDecision) -> str:
+    detail = ""
+    if decision.repeated_tool_call is not None:
+        call = decision.repeated_tool_call
+        detail = f" ({call.name!r} requested {call.count} times with the same arguments)"
+    return (
+        f"loop guard {decision.policy_id} stopped run {decision.run_id}: "
+        f"{decision.breached} reached{detail} after {decision.steps} steps, "
+        f"${decision.cost_usd:.4f}, {decision.elapsed_seconds:.1f}s"
+    )

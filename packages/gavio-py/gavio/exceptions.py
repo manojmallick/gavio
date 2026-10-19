@@ -60,6 +60,19 @@ class BudgetExceededError(GavioError):
     """A hard budget cap was exceeded. Never swallow this — surface to user."""
 
 
+class LoopGuardError(GavioError):
+    """A loop guard stopped a run that reached one of its limits (F-REL-09).
+
+    The message names the limit and the run's counts, never prompts or tool arguments.
+    ``decision`` is the :class:`~gavio.interceptors.reliability.loop_guard.LoopGuardDecision`
+    wire dict, for callers that want to react (log, alert, ask a human).
+    """
+
+    def __init__(self, message: str, decision: dict | None = None) -> None:
+        super().__init__(message)
+        self.decision: dict = dict(decision or {})
+
+
 class RateLimitExceededError(GavioError):
     """A local rate limit (requests/tokens per minute) was exceeded."""
 

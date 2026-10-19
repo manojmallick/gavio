@@ -85,6 +85,7 @@ class AuditInterceptor(Interceptor):
                 {"name": call.name, "arguments_hash": call.arguments_hash()}
                 for call in response.tool_calls
             ],
+            loop_guard=dict(ctx.loop_guard) if ctx.loop_guard is not None else None,
         )
         if self.hash_chain:
             async with self._chain_lock:

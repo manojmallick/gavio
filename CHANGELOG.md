@@ -12,21 +12,24 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 ## [Unreleased]
 
 ### Added
-- **Loop guard contract, vectors and Python building blocks (F-REL-09, first slice).** A loop
-  guard stops a runaway agent by counting a root run's provider calls, cost, wall time and
-  repeated tool calls against limits. This slice is the contract and the pure Python pieces; the
-  interceptor, the audit field's implementation and the JavaScript and Java ports follow.
-  `spec/LoopGuardPolicy.schema.json` and `spec/LoopGuardDecision.schema.json` define the policy
-  (`maxSteps`, `maxCostUsd`, `maxWallTimeSeconds`, `maxRepeatedToolCalls`, and what to do on a
-  breach: `stop`, `fallback` or `dry_run`) and the per-call verdict; `AuditRecord` gains an
-  optional `loopGuard` entry (counts only, never tool arguments), omitted when no guard is
-  installed so existing hash chains verify. `spec/README.md` pins the semantics: the root run id
-  (`metadata.runId`, else the root of the `parentTraceId` chain, else the trace id), a bounded
-  least-recently-used root map, and how a limit is reached. `test-vectors/loop-guard/decisions.json`
-  holds 19 decision, 8 run-sequence, 8 root-run and 8 invalid-policy cases, with expected values
-  written by hand from the spec. Python: `gavio.interceptors.reliability.loop_guard`
-  (`LoopGuardPolicy`, `LoopGuardState`, `evaluate_loop_guard`) and `gavio.root_run`
-  (`RootRunResolver`, shared with the planned F-AGT-01 task records), passing the vectors.
+- **Loop guard for agent loops (F-REL-09), Python first.** `LoopGuard` stops a runaway agent: it
+  counts a root run's provider calls, recorded cost, wall time and repeated tool calls against a
+  `LoopGuardPolicy` (`max_steps`, `max_cost_usd`, `max_wall_time_seconds`,
+  `max_repeated_tool_calls`) before every call, and on a breach refuses the call
+  (`LoopGuardError`), reroutes it to a fallback model, or only logs it (`action`: `stop`,
+  `fallback`, `dry_run`). A run is `metadata["runId"]`, else the root of the `parent_trace_id`
+  chain, else the trace id (`gavio.root_run.RootRunResolver`, a bounded LRU map, also meant for
+  the planned F-AGT-01 task records); state is in memory and bounded (`LoopGuardStore`: 10,000
+  runs, one hour idle). Each guarded call's `AuditRecord` gets an optional `loop_guard` entry —
+  counts only, never tool arguments, omitted when no guard is installed so existing hash chains
+  still verify — and breaches appear in the Inspector and as governance events. The contract is
+  `spec/LoopGuardPolicy.schema.json`, `spec/LoopGuardDecision.schema.json` and the
+  `AuditRecord.loopGuard` property, with the semantics in `spec/README.md` and
+  `test-vectors/loop-guard/decisions.json` (19 decision, 8 run-sequence, 8 root-run and 8
+  invalid-policy cases, expected values written by hand from the spec). The JavaScript and Java
+  ports follow.
+- `LoopGuardError` (a `GavioError`) carries the verdict in `.decision`; its message names the
+  limit and the run's counts, never prompts or tool arguments.
 - **Normalised tool calling in the JavaScript SDK (F-ADP-03).** The JavaScript counterpart of
   the Python reference shipped in `3.2.0`, passing the same `test-vectors/tool-calling/`
   files: `ToolCall`, `ToolResult` and `FinishReason`; `GavioRequest.tools` / `toolChoice`;

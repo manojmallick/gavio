@@ -93,11 +93,12 @@ audit record (`AuditRecord.loopGuard`, omitted when no guard is installed).
 - **State.** Per run: the number of provider calls made (`steps`), their recorded cost, the time of
   the first call, and for every tool call the responses asked for a count by
   `(name, argumentsHash)` in first-seen order — the hash is `ToolCall.arguments_hash` from
-  F-ADP-03, so repeats are detected without keeping the arguments. After an allowed,
-  fallback or dry_run call the run records `steps + 1`, the response's cost, and one count per
-  tool call in the response (a parallel response asking for the same call twice counts twice).
-  A refused (`stop`) call changes nothing. Run state is bounded and idle-expiring like the
-  root-run map (default 10,000 runs, one hour idle).
+  F-ADP-03, so repeats are detected without keeping the arguments. A call the guard lets
+  through (allow, fallback or dry_run) counts as a step as soon as it starts — so a loop of calls
+  that fail at the provider still reaches `maxSteps` — and when it finishes the run adds the
+  response's cost and one count per tool call in the response (a parallel response asking for
+  the same call twice counts twice). A refused (`stop`) call changes nothing. Run state is
+  bounded and idle-expiring like the root-run map (default 10,000 runs, one hour idle).
 - **Evaluation** (pure; vectors in `test-vectors/loop-guard/`). A limit is reached when
   `steps >= maxSteps`, `costUsd >= maxCostUsd`, `elapsedSeconds >= maxWallTimeSeconds`, or any
   counted tool call has `count >= maxRepeatedToolCalls` (cost and elapsed time are compared after
