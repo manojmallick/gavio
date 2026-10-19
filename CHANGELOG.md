@@ -11,6 +11,28 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+---
+
+## [3.2.1] — 2026-10-20
+
+### Summary
+**Tool calling in every SDK, and a loop guard for runaway agents.**
+v3.2.1 finishes what `3.2.0` left open on the v3.2 → v5.0 [roadmap](docs/roadmap.md):
+the normalised tool-calling model (`F-ADP-03`) now has its JavaScript and Java adapters, so
+all three SDKs pass the same `test-vectors/tool-calling/` files, and it adds the loop guard
+(`F-REL-09`) in all three SDKs with a runaway-agent demo (example `26-loop-guard`). It also
+carries the Maven Central publishing fix, so the Java artifacts are published by the tag run.
+Everything is additive. This is a patch number on purpose: the roadmap keeps `3.3` for the
+semantic-eval release. The v3.2 exit gate (three adopters, one external benchmark rerun, parity
+CI green) is still not met, and `F-DOC-10`, `F-DOC-11` and the remaining example ports are
+open. PRs #109 to #115.
+
+Tests: Python `ruff check` clean and 559 unit tests passed (the 6 Redis cache
+tests need a server and were deselected locally) · JavaScript typecheck clean
+and 565 tests passed · Java `mvn test` green (573 tests) · 43 examples passed
+against the in-repo SDKs · example matrix check green · docs site build green ·
+stable release gate green.
+
 ### Added
 - **Loop guard for agent loops (F-REL-09), Python first.** `LoopGuard` stops a runaway agent: it
   counts a root run's provider calls, recorded cost, wall time and repeated tool calls against a
@@ -1701,7 +1723,8 @@ Advanced features. Multimodal, cost optimisation, right to erasure, dashboard.
 
 ---
 
-[Unreleased]: https://github.com/manojmallick/gavio/compare/v3.2.0...HEAD
+[Unreleased]: https://github.com/manojmallick/gavio/compare/v3.2.1...HEAD
+[3.2.1]: https://github.com/manojmallick/gavio/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/manojmallick/gavio/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/manojmallick/gavio/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/manojmallick/gavio/compare/v2.7.0...v3.0.0

@@ -5,7 +5,7 @@ API key). Shows a semantic-cache hit skipping the provider while every other
 guarantee (PII redaction, rate limiting, guardrails, tamper-evident audit) still
 holds.
 
-    pip install "gavio>=3.2.0"
+    pip install "gavio>=3.2.1"
     python stack.py
 """
 
