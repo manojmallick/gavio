@@ -39,6 +39,7 @@ public final class InterceptorContext {
     private String cacheType;
     private Double riskScore;
     private String guardrailOutcome;
+    private Map<String, Object> loopGuard;
 
     /** Arbitrary inter-interceptor state (e.g. PII replacement map for restore). */
     private final Map<String, Object> state = new HashMap<>();
@@ -186,6 +187,19 @@ public final class InterceptorContext {
 
     public void guardrailOutcome(String guardrailOutcome) {
         this.guardrailOutcome = guardrailOutcome;
+    }
+
+    /**
+     * The loop guard's verdict on this call (F-REL-09), for the audit record: {@code policy_id},
+     * {@code run_id}, {@code action}, {@code breached}, {@code steps}, {@code cost_usd},
+     * {@code elapsed_seconds}. Counts only; {@code null} when no guard ran.
+     */
+    public Map<String, Object> loopGuard() {
+        return loopGuard;
+    }
+
+    public void loopGuard(Map<String, Object> loopGuard) {
+        this.loopGuard = loopGuard;
     }
 
     public Map<String, Object> state() {

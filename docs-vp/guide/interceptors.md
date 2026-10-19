@@ -403,9 +403,16 @@ while True:
 - **State.** Kept in memory per `LoopGuard` (`LoopGuardStore(max_runs=10_000, ttl_seconds=3600)`:
   least recently used runs are evicted and idle runs forgotten).
 
-Available in the Python and JavaScript SDKs (the JavaScript spelling is `loopGuard({ policy: { maxSteps: 25, ... } })`,
-see the [JavaScript guide](./javascript)); the Java SDK follows. The shared vectors in
-`test-vectors/loop-guard/` and the semantics in `spec/README.md` ('Loop guard') pin all of them.
+Available in the Python, JavaScript and Java SDKs (JavaScript: `loopGuard({ policy: { maxSteps: 25, ... } })`,
+see the [JavaScript guide](./javascript); Java: `LoopGuard.of(LoopGuardPolicy.builder("id").maxSteps(25).build())`,
+see the [Java guide](./java)). The shared vectors in `test-vectors/loop-guard/` and the semantics in
+`spec/README.md` ('Loop guard') pin all of them.
+
+A runnable demo stops a runaway agent at 25 steps and then at a cost cap, offline on the mock
+provider: example 26
+([Python](https://github.com/manojmallick/gavio/tree/main/examples/python/26-loop-guard),
+[JavaScript](https://github.com/manojmallick/gavio/tree/main/examples/javascript/26-loop-guard),
+[Java](https://github.com/manojmallick/gavio/tree/main/examples/java/26-loop-guard)).
 
 ### Governance (`F-GOV-02/03/04`)
 

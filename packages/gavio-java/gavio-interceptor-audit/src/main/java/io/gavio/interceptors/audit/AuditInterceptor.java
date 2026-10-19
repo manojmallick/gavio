@@ -105,6 +105,7 @@ public final class AuditInterceptor implements Interceptor {
                 .riskScore(ctx.riskScore())
                 .lineage(lineage instanceof PromptLineage pl ? pl : null)
                 .toolCalls(toolCallDigests(response))
+                .loopGuard(ctx.loopGuard())
                 .build();
 
         if (hashChain) {

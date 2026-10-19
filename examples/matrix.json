@@ -225,6 +225,14 @@
         "status": "planned",
         "reason": "F-DX-13 step 4: library API (PlatformWorkflow.runFile) shipped with step 3; example port remains."
       }
+    },
+    {
+      "id": "26",
+      "title": "Loop Guard",
+      "needsKey": "no",
+      "python": { "path": "examples/python/26-loop-guard" },
+      "javascript": { "path": "examples/javascript/26-loop-guard" },
+      "java": { "path": "examples/java/26-loop-guard" }
     }
   ]
 }
