@@ -200,6 +200,9 @@ export type { ProviderCompletionInit } from './tool-calling.js'
 export type { Interceptor, Executor, ExecutorPolicy } from './interceptors/base.js'
 export { InterceptorChain } from './interceptors/chain.js'
 
+export { RootRunResolver, explicitRunId } from './root-run.js'
+export type { LoopGuardAuditEntry } from './context.js'
+
 // errors
 export {
   GavioError,
@@ -211,6 +214,7 @@ export {
   TimeoutError,
   PiiBlockedError,
   BudgetExceededError,
+  LoopGuardError,
   GuardrailViolationError,
   ToolRuntimeError,
   MalformedToolCallError,

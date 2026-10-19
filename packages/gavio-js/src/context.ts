@@ -2,6 +2,17 @@
 
 import type { GavioRequest } from './request.js'
 
+/** The loop guard's verdict as the audit record keeps it: counts only (F-REL-09). */
+export interface LoopGuardAuditEntry {
+  policyId: string
+  runId: string
+  action: 'allow' | 'stop' | 'fallback' | 'dry_run'
+  breached: 'max_steps' | 'max_cost' | 'max_wall_time' | 'repeated_tool_call' | null
+  steps: number
+  costUsd: number
+  elapsedSeconds: number
+}
+
 const COST_DIMENSION_KEYS = [
   'tenant',
   'feature',
@@ -53,6 +64,11 @@ export class InterceptorContext {
   cacheType: string | null = null
   riskScore: number | null = null
   guardrailOutcome: string | null = null
+  /**
+   * The loop guard's verdict on this call (F-REL-09), for the audit record: policyId, runId,
+   * action, breached, steps, costUsd, elapsedSeconds. Counts only.
+   */
+  loopGuard: LoopGuardAuditEntry | null = null
 
   /** Arbitrary inter-interceptor state (e.g. PII replacement map for restore). */
   state: Record<string, unknown> = {}

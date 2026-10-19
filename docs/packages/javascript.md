@@ -108,6 +108,55 @@ const gw = new Gateway({ provider: 'anthropic', model: 'claude-sonnet-4-6' })
 (`'redact' | 'mask' | 'tag' | 'block'`), `restoreOnResponse`, `logEntityTypes`,
 `dryRun`. See [interceptors.md](../interceptors.md).
 
+### Loop guard (F-REL-09)
+
+`loopGuard` stops a runaway agent. It counts the provider calls of one **root run** and, before
+each call, compares the run with limits: refuse the call, reroute it to a cheaper model, or only
+log the breach. Same behaviour as the Python SDK, pinned by the shared vectors.
+
+```typescript
+import { loopGuard } from 'gavio/interceptors/reliability'
+import { LoopGuardError } from 'gavio'
+
+const gw = new Gateway({ provider: 'openai', model: 'gpt-4o' })
+  .use(auditInterceptor())
+  .use(loopGuard({
+    policy: {
+      id: 'support-agent',
+      maxSteps: 25,                // at most 25 provider calls in one run
+      maxCostUsd: 1.0,             // stop once $1.00 of spend is recorded
+      maxWallTimeSeconds: 120,     // from the run's first call
+      maxRepeatedToolCalls: 3,     // same tool with the same arguments, three times
+      action: 'stop',              // or 'fallback' (with fallbackModel) or 'dry_run'
+    },
+  }))
+
+const root = await gw.complete({ messages, agentId: 'planner' })
+try {
+  for (;;) await gw.complete({ messages, parentTraceId: root.traceId })
+} catch (error) {
+  if (error instanceof LoopGuardError) console.log(error.decision.breached) // 'max_steps' on the 26th call
+}
+```
+
+A run is `metadata.runId` when you set one, else the root of the `parentTraceId` chain, else the
+call's own trace id — an agent loop has to pass one of the first two, because calls with neither
+are separate runs that no limit can link. Each limit is optional and is checked *before* a call:
+`maxSteps: 25` allows 25 calls; cost is only known afterwards, so the call that crosses
+`maxCostUsd` still happens and the next one is refused. A repeated tool call is the same tool name
+and the same arguments (hashed, key order ignored) requested `maxRepeatedToolCalls` times in the
+run. A call that fails at the provider still counts as a step. `stop` throws `LoopGuardError`
+(`error.decision` has the verdict: which limit, steps, cost, elapsed time — never prompts or tool
+arguments); `fallback` lets the call through on `fallbackModel`; `dryRun` on the gateway, or
+`action: 'dry_run'`, only records.
+
+Each guarded call's audit record gets a `loopGuard` entry (policy, run id, action, the limit
+reached, steps, cost, elapsed seconds — counts only), omitted when no guard is installed so hash
+chains written before it still verify; breaches also show in the Inspector. State is in memory per
+guard and bounded (`new LoopGuardStore({ maxRuns: 10_000, ttlSeconds: 3600 })`: least recently
+used runs are evicted, idle runs forgotten). `evaluateLoopGuard`, `LoopGuardState` and
+`RootRunResolver` (from `gavio`) are the pure parts. Semantics: `spec/README.md` ('Loop guard').
+
 ### Tool Runtime
 
 `toolRuntime()` validates tool metadata from `metadata.tools` before tool

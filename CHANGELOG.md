@@ -26,10 +26,20 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   `spec/LoopGuardPolicy.schema.json`, `spec/LoopGuardDecision.schema.json` and the
   `AuditRecord.loopGuard` property, with the semantics in `spec/README.md` and
   `test-vectors/loop-guard/decisions.json` (19 decision, 8 run-sequence, 8 root-run and 8
-  invalid-policy cases, expected values written by hand from the spec). The JavaScript and Java
-  ports follow.
+  invalid-policy cases, expected values written by hand from the spec). The JavaScript port is
+  listed below; the Java port follows.
 - `LoopGuardError` (a `GavioError`) carries the verdict in `.decision`; its message names the
   limit and the run's counts, never prompts or tool arguments.
+- **Loop guard in the JavaScript SDK (F-REL-09).** The JavaScript counterpart of the Python loop
+  guard, passing the same `test-vectors/loop-guard/decisions.json`: `loopGuard({ policy })` (from
+  `gavio/interceptors/reliability`) with `maxSteps`, `maxCostUsd`, `maxWallTimeSeconds`,
+  `maxRepeatedToolCalls` and the `stop` / `fallback` / `dry_run` actions; `loopGuardPolicy`,
+  `evaluateLoopGuard`, `LoopGuardState` and `LoopGuardStore` for the pure and storage parts;
+  `RootRunResolver` and `LoopGuardError` from `gavio`. `InterceptorContext.loopGuard` and an
+  optional `AuditRecord.loopGuard` entry (counts only, omitted when no guard is installed so
+  existing hash chains still verify) carry the verdict to the audit record, and breaches show in
+  the Inspector and as governance events. A fallback reroute keeps the request's `tools` and
+  `toolChoice`. The Java port follows.
 - **Normalised tool calling in the JavaScript SDK (F-ADP-03).** The JavaScript counterpart of
   the Python reference shipped in `3.2.0`, passing the same `test-vectors/tool-calling/`
   files: `ToolCall`, `ToolResult` and `FinishReason`; `GavioRequest.tools` / `toolChoice`;
