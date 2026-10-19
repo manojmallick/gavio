@@ -369,6 +369,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Retry (exp backoff + jitter), Fallback chain, Timeout | `F-REL-01/02/07` | 0.1.0 |
 | Circuit breaker, Load balancer (weighted round-robin) | `F-REL-03/04` | 0.2.0 |
 | Streaming reliability — buffer response before post-interceptors run | `F-REL-06` | 0.3.0 |
+| Loop guard — stop a runaway agent per root run: max steps, cost, wall time and repeated tool calls; stop, fall back or dry-run; verdict on the audit record. **Python on `main`; JavaScript and Java follow** | `F-REL-09` | unreleased |
 
 ### 💰 Cost & governance
 

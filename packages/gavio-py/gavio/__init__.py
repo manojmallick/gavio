@@ -16,6 +16,7 @@ from .exceptions import (
     ConfigurationError,
     GavioError,
     GuardrailViolationError,
+    LoopGuardError,
     MalformedToolCallError,
     PiiBlockedError,
     ProviderError,
@@ -169,5 +170,6 @@ __all__ = [
     "MalformedToolCallError",
     "PiiBlockedError",
     "BudgetExceededError",
+    "LoopGuardError",
     "GuardrailViolationError",
 ]

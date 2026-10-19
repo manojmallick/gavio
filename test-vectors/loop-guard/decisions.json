@@ -1,0 +1,1380 @@
+{
+  "feature": "F-REL-09",
+  "description": "Loop guard: pure limit evaluation (decisionCases), run-state accumulation over a sequence of calls (runCases), the root-run resolver and its bounded map (rootRunCases), and invalid policies (policyErrorCases). Semantics: spec/README.md, 'Loop guard'.",
+  "decisionCases": [
+    {
+      "id": "no-limits-never-breach",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop"
+      },
+      "state": {
+        "steps": 1000,
+        "costUsd": 1000.0,
+        "elapsedSeconds": 1000000.0,
+        "toolCalls": [
+          {
+            "name": "search",
+            "argumentsHash": "hash-search-cats",
+            "count": 99
+          }
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "action": "allow",
+        "breached": null,
+        "breaches": [],
+        "reason": "within_limits",
+        "steps": 1000,
+        "costUsd": 1000.0,
+        "elapsedSeconds": 1000000.0,
+        "repeatedToolCall": null
+      },
+      "expectedAbsent": [
+        "targetModel"
+      ]
+    },
+    {
+      "id": "within-all-limits",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxSteps": 5,
+        "maxCostUsd": 1.0,
+        "maxWallTimeSeconds": 60,
+        "maxRepeatedToolCalls": 3
+      },
+      "state": {
+        "steps": 2,
+        "costUsd": 0.5,
+        "elapsedSeconds": 30.0,
+        "toolCalls": [
+          {
+            "name": "search",
+            "argumentsHash": "hash-search-cats",
+            "count": 2
+          }
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "action": "allow",
+        "breached": null,
+        "breaches": [],
+        "reason": "within_limits",
+        "steps": 2,
+        "costUsd": 0.5,
+        "elapsedSeconds": 30.0,
+        "repeatedToolCall": null
+      }
+    },
+    {
+      "id": "max-steps-one-below-allows",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxSteps": 25
+      },
+      "state": {
+        "steps": 24,
+        "costUsd": 0.0,
+        "elapsedSeconds": 0.0,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": true,
+        "action": "allow",
+        "breached": null,
+        "breaches": [],
+        "steps": 24
+      }
+    },
+    {
+      "id": "max-steps-reached-refuses",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxSteps": 25
+      },
+      "state": {
+        "steps": 25,
+        "costUsd": 0.0,
+        "elapsedSeconds": 0.0,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": false,
+        "action": "stop",
+        "breached": "max_steps",
+        "breaches": [
+          "max_steps"
+        ],
+        "reason": "max_steps_reached",
+        "steps": 25,
+        "repeatedToolCall": null
+      },
+      "expectedAbsent": [
+        "targetModel"
+      ]
+    },
+    {
+      "id": "max-cost-just-below-allows",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxCostUsd": 1.0
+      },
+      "state": {
+        "steps": 3,
+        "costUsd": 0.99999999,
+        "elapsedSeconds": 0.0,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": true,
+        "action": "allow",
+        "breached": null,
+        "costUsd": 0.99999999
+      }
+    },
+    {
+      "id": "max-cost-reached-exactly-refuses",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxCostUsd": 1.0
+      },
+      "state": {
+        "steps": 3,
+        "costUsd": 1.0,
+        "elapsedSeconds": 0.0,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": false,
+        "action": "stop",
+        "breached": "max_cost",
+        "breaches": [
+          "max_cost"
+        ],
+        "reason": "max_cost_reached",
+        "costUsd": 1.0
+      }
+    },
+    {
+      "id": "max-cost-zero-refuses-the-first-call",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxCostUsd": 0
+      },
+      "state": {
+        "steps": 0,
+        "costUsd": 0.0,
+        "elapsedSeconds": 0.0,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": false,
+        "action": "stop",
+        "breached": "max_cost",
+        "breaches": [
+          "max_cost"
+        ],
+        "steps": 0,
+        "costUsd": 0.0
+      }
+    },
+    {
+      "id": "max-wall-time-just-below-allows",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxWallTimeSeconds": 60
+      },
+      "state": {
+        "steps": 3,
+        "costUsd": 0.0,
+        "elapsedSeconds": 59.99,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": true,
+        "action": "allow",
+        "breached": null,
+        "elapsedSeconds": 59.99
+      }
+    },
+    {
+      "id": "max-wall-time-reached-refuses",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxWallTimeSeconds": 60
+      },
+      "state": {
+        "steps": 3,
+        "costUsd": 0.0,
+        "elapsedSeconds": 60.0,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": false,
+        "action": "stop",
+        "breached": "max_wall_time",
+        "breaches": [
+          "max_wall_time"
+        ],
+        "reason": "max_wall_time_reached",
+        "elapsedSeconds": 60.0
+      }
+    },
+    {
+      "id": "repeated-tool-call-below-the-limit-allows",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxRepeatedToolCalls": 3
+      },
+      "state": {
+        "steps": 2,
+        "costUsd": 0.0,
+        "elapsedSeconds": 0.0,
+        "toolCalls": [
+          {
+            "name": "search",
+            "argumentsHash": "hash-search-cats",
+            "count": 2
+          }
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "action": "allow",
+        "breached": null,
+        "repeatedToolCall": null
+      }
+    },
+    {
+      "id": "repeated-tool-call-reached-refuses",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxRepeatedToolCalls": 3
+      },
+      "state": {
+        "steps": 3,
+        "costUsd": 0.0,
+        "elapsedSeconds": 0.0,
+        "toolCalls": [
+          {
+            "name": "search",
+            "argumentsHash": "hash-search-cats",
+            "count": 3
+          }
+        ]
+      },
+      "expected": {
+        "allowed": false,
+        "action": "stop",
+        "breached": "repeated_tool_call",
+        "breaches": [
+          "repeated_tool_call"
+        ],
+        "reason": "repeated_tool_call_reached",
+        "repeatedToolCall": {
+          "name": "search",
+          "argumentsHash": "hash-search-cats",
+          "count": 3
+        }
+      }
+    },
+    {
+      "id": "same-tool-with-different-arguments-is-not-a-repeat",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxRepeatedToolCalls": 3
+      },
+      "state": {
+        "steps": 4,
+        "costUsd": 0.0,
+        "elapsedSeconds": 0.0,
+        "toolCalls": [
+          {
+            "name": "search",
+            "argumentsHash": "hash-search-cats",
+            "count": 2
+          },
+          {
+            "name": "search",
+            "argumentsHash": "hash-search-dogs",
+            "count": 2
+          }
+        ]
+      },
+      "expected": {
+        "allowed": true,
+        "action": "allow",
+        "breached": null,
+        "repeatedToolCall": null
+      }
+    },
+    {
+      "id": "repeated-tool-call-reports-the-first-seen-offender",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxRepeatedToolCalls": 3
+      },
+      "state": {
+        "steps": 8,
+        "costUsd": 0.0,
+        "elapsedSeconds": 0.0,
+        "toolCalls": [
+          {
+            "name": "read",
+            "argumentsHash": "hash-read-cats",
+            "count": 4
+          },
+          {
+            "name": "search",
+            "argumentsHash": "hash-search-cats",
+            "count": 3
+          }
+        ]
+      },
+      "expected": {
+        "allowed": false,
+        "action": "stop",
+        "breached": "repeated_tool_call",
+        "repeatedToolCall": {
+          "name": "read",
+          "argumentsHash": "hash-read-cats",
+          "count": 4
+        }
+      }
+    },
+    {
+      "id": "every-breach-is-listed-in-a-fixed-order",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxSteps": 5,
+        "maxCostUsd": 1.0,
+        "maxWallTimeSeconds": 60,
+        "maxRepeatedToolCalls": 3
+      },
+      "state": {
+        "steps": 5,
+        "costUsd": 2.0,
+        "elapsedSeconds": 100.0,
+        "toolCalls": [
+          {
+            "name": "search",
+            "argumentsHash": "hash-search-cats",
+            "count": 3
+          }
+        ]
+      },
+      "expected": {
+        "allowed": false,
+        "action": "stop",
+        "breached": "max_steps",
+        "breaches": [
+          "max_steps",
+          "max_cost",
+          "max_wall_time",
+          "repeated_tool_call"
+        ],
+        "reason": "max_steps_reached",
+        "steps": 5,
+        "costUsd": 2.0,
+        "elapsedSeconds": 100.0,
+        "repeatedToolCall": {
+          "name": "search",
+          "argumentsHash": "hash-search-cats",
+          "count": 3
+        }
+      }
+    },
+    {
+      "id": "first-breached-is-the-earliest-in-the-order",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxSteps": 5,
+        "maxCostUsd": 1.0,
+        "maxWallTimeSeconds": 60,
+        "maxRepeatedToolCalls": 3
+      },
+      "state": {
+        "steps": 1,
+        "costUsd": 2.0,
+        "elapsedSeconds": 100.0,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": false,
+        "action": "stop",
+        "breached": "max_cost",
+        "breaches": [
+          "max_cost",
+          "max_wall_time"
+        ],
+        "reason": "max_cost_reached"
+      }
+    },
+    {
+      "id": "fallback-lets-the-call-through-on-the-fallback-model",
+      "policy": {
+        "id": "agent-loop",
+        "action": "fallback",
+        "maxSteps": 3,
+        "fallbackModel": "gpt-4o-mini"
+      },
+      "state": {
+        "steps": 3,
+        "costUsd": 0.0,
+        "elapsedSeconds": 0.0,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": true,
+        "action": "fallback",
+        "breached": "max_steps",
+        "breaches": [
+          "max_steps"
+        ],
+        "reason": "max_steps_reached",
+        "targetModel": "gpt-4o-mini"
+      }
+    },
+    {
+      "id": "dry-run-records-the-breach-and-lets-the-call-through",
+      "policy": {
+        "id": "agent-loop",
+        "action": "dry_run",
+        "maxSteps": 3
+      },
+      "state": {
+        "steps": 7,
+        "costUsd": 0.0,
+        "elapsedSeconds": 0.0,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": true,
+        "action": "dry_run",
+        "breached": "max_steps",
+        "breaches": [
+          "max_steps"
+        ],
+        "reason": "max_steps_reached",
+        "steps": 7
+      },
+      "expectedAbsent": [
+        "targetModel"
+      ]
+    },
+    {
+      "id": "no-breach-ignores-the-fallback-model",
+      "policy": {
+        "id": "agent-loop",
+        "action": "fallback",
+        "maxSteps": 3,
+        "fallbackModel": "gpt-4o-mini"
+      },
+      "state": {
+        "steps": 1,
+        "costUsd": 0.0,
+        "elapsedSeconds": 0.0,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": true,
+        "action": "allow",
+        "breached": null,
+        "breaches": [],
+        "reason": "within_limits"
+      },
+      "expectedAbsent": [
+        "targetModel"
+      ]
+    },
+    {
+      "id": "cost-and-time-are-rounded-to-eight-places",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop"
+      },
+      "state": {
+        "steps": 2,
+        "costUsd": 0.30000000000000004,
+        "elapsedSeconds": 0.3333333333333333,
+        "toolCalls": []
+      },
+      "expected": {
+        "allowed": true,
+        "action": "allow",
+        "costUsd": 0.3,
+        "elapsedSeconds": 0.33333333
+      }
+    }
+  ],
+  "runCases": [
+    {
+      "id": "max-steps-stops-a-runaway-run",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxSteps": 3
+      },
+      "calls": [
+        {
+          "atSeconds": 0,
+          "costUsd": 0.01
+        },
+        {
+          "atSeconds": 1,
+          "costUsd": 0.01
+        },
+        {
+          "atSeconds": 2,
+          "costUsd": 0.01
+        },
+        {
+          "atSeconds": 3,
+          "costUsd": 0.01
+        },
+        {
+          "atSeconds": 4,
+          "costUsd": 0.01
+        }
+      ],
+      "expectedActions": [
+        "allow",
+        "allow",
+        "allow",
+        "stop",
+        "stop"
+      ],
+      "expectedBreached": [
+        null,
+        null,
+        null,
+        "max_steps",
+        "max_steps"
+      ],
+      "expectedSteps": [
+        0,
+        1,
+        2,
+        3,
+        3
+      ],
+      "expectedCostUsd": [
+        0.0,
+        0.01,
+        0.02,
+        0.03,
+        0.03
+      ],
+      "expectedElapsedSeconds": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+      ]
+    },
+    {
+      "id": "max-cost-stops-a-runaway-run",
+      "description": "The cost cap is checked against the spend already recorded, so the call that crosses it still happens.",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxCostUsd": 0.25
+      },
+      "calls": [
+        {
+          "atSeconds": 0,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 1,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 2,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 3,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 4,
+          "costUsd": 0.1
+        }
+      ],
+      "expectedActions": [
+        "allow",
+        "allow",
+        "allow",
+        "stop",
+        "stop"
+      ],
+      "expectedBreached": [
+        null,
+        null,
+        null,
+        "max_cost",
+        "max_cost"
+      ],
+      "expectedSteps": [
+        0,
+        1,
+        2,
+        3,
+        3
+      ],
+      "expectedCostUsd": [
+        0.0,
+        0.1,
+        0.2,
+        0.3,
+        0.3
+      ],
+      "expectedElapsedSeconds": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0
+      ]
+    },
+    {
+      "id": "max-wall-time-counts-from-the-first-call",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxWallTimeSeconds": 10
+      },
+      "calls": [
+        {
+          "atSeconds": 100,
+          "costUsd": 0.0
+        },
+        {
+          "atSeconds": 105,
+          "costUsd": 0.0
+        },
+        {
+          "atSeconds": 109.5,
+          "costUsd": 0.0
+        },
+        {
+          "atSeconds": 110,
+          "costUsd": 0.0
+        },
+        {
+          "atSeconds": 111,
+          "costUsd": 0.0
+        }
+      ],
+      "expectedActions": [
+        "allow",
+        "allow",
+        "allow",
+        "stop",
+        "stop"
+      ],
+      "expectedBreached": [
+        null,
+        null,
+        null,
+        "max_wall_time",
+        "max_wall_time"
+      ],
+      "expectedSteps": [
+        0,
+        1,
+        2,
+        3,
+        3
+      ],
+      "expectedCostUsd": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expectedElapsedSeconds": [
+        0.0,
+        5.0,
+        9.5,
+        10.0,
+        11.0
+      ]
+    },
+    {
+      "id": "repeated-tool-calls-are-matched-by-arguments-hash",
+      "description": "Same tool and same arguments count together whatever the key order; another tool or other arguments do not.",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxRepeatedToolCalls": 3
+      },
+      "calls": [
+        {
+          "atSeconds": 0,
+          "costUsd": 0.0,
+          "toolCalls": [
+            {
+              "name": "search",
+              "arguments": {
+                "q": "cats",
+                "limit": 5
+              }
+            }
+          ]
+        },
+        {
+          "atSeconds": 1,
+          "costUsd": 0.0,
+          "toolCalls": [
+            {
+              "name": "search",
+              "arguments": {
+                "q": "dogs",
+                "limit": 5
+              }
+            }
+          ]
+        },
+        {
+          "atSeconds": 2,
+          "costUsd": 0.0,
+          "toolCalls": [
+            {
+              "name": "read",
+              "arguments": {
+                "q": "cats",
+                "limit": 5
+              }
+            }
+          ]
+        },
+        {
+          "atSeconds": 3,
+          "costUsd": 0.0,
+          "toolCalls": [
+            {
+              "name": "search",
+              "arguments": {
+                "limit": 5,
+                "q": "cats"
+              }
+            }
+          ]
+        },
+        {
+          "atSeconds": 4,
+          "costUsd": 0.0,
+          "toolCalls": [
+            {
+              "name": "search",
+              "arguments": {
+                "q": "cats",
+                "limit": 5
+              }
+            }
+          ]
+        },
+        {
+          "atSeconds": 5,
+          "costUsd": 0.0,
+          "toolCalls": [
+            {
+              "name": "search",
+              "arguments": {
+                "q": "cats",
+                "limit": 5
+              }
+            }
+          ]
+        }
+      ],
+      "expectedActions": [
+        "allow",
+        "allow",
+        "allow",
+        "allow",
+        "allow",
+        "stop"
+      ],
+      "expectedBreached": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        "repeated_tool_call"
+      ],
+      "expectedSteps": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "expectedCostUsd": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expectedElapsedSeconds": [
+        0.0,
+        1.0,
+        2.0,
+        3.0,
+        4.0,
+        5.0
+      ]
+    },
+    {
+      "id": "a-parallel-response-counts-each-tool-call",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxRepeatedToolCalls": 3
+      },
+      "calls": [
+        {
+          "atSeconds": 0,
+          "costUsd": 0.0,
+          "toolCalls": [
+            {
+              "name": "search",
+              "arguments": {
+                "q": "cats"
+              }
+            },
+            {
+              "name": "search",
+              "arguments": {
+                "q": "cats"
+              }
+            }
+          ]
+        },
+        {
+          "atSeconds": 1,
+          "costUsd": 0.0,
+          "toolCalls": [
+            {
+              "name": "search",
+              "arguments": {
+                "q": "cats"
+              }
+            }
+          ]
+        },
+        {
+          "atSeconds": 2,
+          "costUsd": 0.0
+        }
+      ],
+      "expectedActions": [
+        "allow",
+        "allow",
+        "stop"
+      ],
+      "expectedBreached": [
+        null,
+        null,
+        "repeated_tool_call"
+      ],
+      "expectedSteps": [
+        0,
+        1,
+        2
+      ],
+      "expectedCostUsd": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "expectedElapsedSeconds": [
+        0.0,
+        1.0,
+        2.0
+      ]
+    },
+    {
+      "id": "a-refused-call-changes-nothing",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxSteps": 2
+      },
+      "calls": [
+        {
+          "atSeconds": 0,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 1,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 2,
+          "costUsd": 9.0,
+          "toolCalls": [
+            {
+              "name": "search",
+              "arguments": {
+                "q": "x"
+              }
+            }
+          ]
+        },
+        {
+          "atSeconds": 3,
+          "costUsd": 9.0
+        }
+      ],
+      "expectedActions": [
+        "allow",
+        "allow",
+        "stop",
+        "stop"
+      ],
+      "expectedBreached": [
+        null,
+        null,
+        "max_steps",
+        "max_steps"
+      ],
+      "expectedSteps": [
+        0,
+        1,
+        2,
+        2
+      ],
+      "expectedCostUsd": [
+        0.0,
+        0.1,
+        0.2,
+        0.2
+      ],
+      "expectedElapsedSeconds": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ]
+    },
+    {
+      "id": "dry-run-keeps-counting-and-lets-every-call-through",
+      "policy": {
+        "id": "agent-loop",
+        "action": "dry_run",
+        "maxSteps": 2
+      },
+      "calls": [
+        {
+          "atSeconds": 0,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 1,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 2,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 3,
+          "costUsd": 0.1
+        }
+      ],
+      "expectedActions": [
+        "allow",
+        "allow",
+        "dry_run",
+        "dry_run"
+      ],
+      "expectedBreached": [
+        null,
+        null,
+        "max_steps",
+        "max_steps"
+      ],
+      "expectedSteps": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "expectedCostUsd": [
+        0.0,
+        0.1,
+        0.2,
+        0.3
+      ],
+      "expectedElapsedSeconds": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ]
+    },
+    {
+      "id": "fallback-keeps-counting-and-names-the-fallback-model",
+      "policy": {
+        "id": "agent-loop",
+        "action": "fallback",
+        "maxSteps": 2,
+        "fallbackModel": "gpt-4o-mini"
+      },
+      "calls": [
+        {
+          "atSeconds": 0,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 1,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 2,
+          "costUsd": 0.1
+        },
+        {
+          "atSeconds": 3,
+          "costUsd": 0.1
+        }
+      ],
+      "expectedActions": [
+        "allow",
+        "allow",
+        "fallback",
+        "fallback"
+      ],
+      "expectedBreached": [
+        null,
+        null,
+        "max_steps",
+        "max_steps"
+      ],
+      "expectedSteps": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "expectedCostUsd": [
+        0.0,
+        0.1,
+        0.2,
+        0.3
+      ],
+      "expectedElapsedSeconds": [
+        0.0,
+        1.0,
+        2.0,
+        3.0
+      ],
+      "expectedTargetModels": [
+        null,
+        null,
+        "gpt-4o-mini",
+        "gpt-4o-mini"
+      ]
+    }
+  ],
+  "rootRunCases": [
+    {
+      "id": "a-call-without-a-parent-is-its-own-root",
+      "calls": [
+        {
+          "traceId": "t1"
+        }
+      ],
+      "expectedRunIds": [
+        "t1"
+      ]
+    },
+    {
+      "id": "children-share-the-root-of-the-chain",
+      "calls": [
+        {
+          "traceId": "t1"
+        },
+        {
+          "traceId": "t2",
+          "parentTraceId": "t1"
+        },
+        {
+          "traceId": "t3",
+          "parentTraceId": "t2"
+        },
+        {
+          "traceId": "t4",
+          "parentTraceId": "t1"
+        }
+      ],
+      "expectedRunIds": [
+        "t1",
+        "t1",
+        "t1",
+        "t1"
+      ]
+    },
+    {
+      "id": "separate-roots-stay-separate",
+      "calls": [
+        {
+          "traceId": "t1"
+        },
+        {
+          "traceId": "t2"
+        },
+        {
+          "traceId": "t3",
+          "parentTraceId": "t2"
+        }
+      ],
+      "expectedRunIds": [
+        "t1",
+        "t2",
+        "t2"
+      ]
+    },
+    {
+      "id": "an-explicit-run-id-wins-and-is-inherited",
+      "calls": [
+        {
+          "traceId": "t1",
+          "metadata": {
+            "runId": "run-A"
+          }
+        },
+        {
+          "traceId": "t2",
+          "parentTraceId": "t1"
+        },
+        {
+          "traceId": "t3",
+          "parentTraceId": "t2",
+          "metadata": {
+            "runId": "run-B"
+          }
+        },
+        {
+          "traceId": "t4",
+          "parentTraceId": "t3"
+        }
+      ],
+      "expectedRunIds": [
+        "run-A",
+        "run-A",
+        "run-B",
+        "run-B"
+      ]
+    },
+    {
+      "id": "snake-case-run-id-is-accepted-and-blank-or-non-string-ids-are-ignored",
+      "calls": [
+        {
+          "traceId": "t1",
+          "metadata": {
+            "run_id": "run-A"
+          }
+        },
+        {
+          "traceId": "t2",
+          "metadata": {
+            "runId": ""
+          }
+        },
+        {
+          "traceId": "t3",
+          "metadata": {
+            "runId": 42
+          }
+        }
+      ],
+      "expectedRunIds": [
+        "run-A",
+        "t2",
+        "t3"
+      ]
+    },
+    {
+      "id": "an-unknown-parent-is-treated-as-the-root",
+      "calls": [
+        {
+          "traceId": "t2",
+          "parentTraceId": "t1"
+        }
+      ],
+      "expectedRunIds": [
+        "t1"
+      ]
+    },
+    {
+      "id": "the-map-evicts-the-least-recently-used-entry",
+      "description": "Capacity 2. e's parent b was evicted when d arrived, so e is taken for a root of its own.",
+      "capacity": 2,
+      "calls": [
+        {
+          "traceId": "a"
+        },
+        {
+          "traceId": "b",
+          "parentTraceId": "a"
+        },
+        {
+          "traceId": "c",
+          "parentTraceId": "b"
+        },
+        {
+          "traceId": "d",
+          "parentTraceId": "c"
+        },
+        {
+          "traceId": "e",
+          "parentTraceId": "b"
+        }
+      ],
+      "expectedRunIds": [
+        "a",
+        "a",
+        "a",
+        "a",
+        "b"
+      ]
+    },
+    {
+      "id": "resolving-a-child-refreshes-its-parent",
+      "description": "Capacity 2. m is read for every child, so it stays in the map and x4 still resolves to r.",
+      "capacity": 2,
+      "calls": [
+        {
+          "traceId": "r"
+        },
+        {
+          "traceId": "m",
+          "parentTraceId": "r"
+        },
+        {
+          "traceId": "x1",
+          "parentTraceId": "m"
+        },
+        {
+          "traceId": "x2",
+          "parentTraceId": "m"
+        },
+        {
+          "traceId": "x3",
+          "parentTraceId": "m"
+        },
+        {
+          "traceId": "x4",
+          "parentTraceId": "m"
+        }
+      ],
+      "expectedRunIds": [
+        "r",
+        "r",
+        "r",
+        "r",
+        "r",
+        "r"
+      ]
+    }
+  ],
+  "policyErrorCases": [
+    {
+      "id": "max-steps-below-one",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxSteps": 0
+      },
+      "expectedError": "Configuration"
+    },
+    {
+      "id": "max-steps-is-not-an-integer",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxSteps": 2.5
+      },
+      "expectedError": "Configuration"
+    },
+    {
+      "id": "repeated-tool-calls-below-two",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxRepeatedToolCalls": 1
+      },
+      "expectedError": "Configuration"
+    },
+    {
+      "id": "negative-max-cost",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxCostUsd": -0.01
+      },
+      "expectedError": "Configuration"
+    },
+    {
+      "id": "wall-time-must-be-positive",
+      "policy": {
+        "id": "agent-loop",
+        "action": "stop",
+        "maxWallTimeSeconds": 0
+      },
+      "expectedError": "Configuration"
+    },
+    {
+      "id": "unknown-action",
+      "policy": {
+        "id": "agent-loop",
+        "action": "explode"
+      },
+      "expectedError": "Configuration"
+    },
+    {
+      "id": "fallback-needs-a-fallback-model",
+      "policy": {
+        "id": "agent-loop",
+        "action": "fallback",
+        "maxSteps": 3
+      },
+      "expectedError": "Configuration"
+    },
+    {
+      "id": "empty-id",
+      "policy": {
+        "id": "",
+        "action": "stop",
+        "maxSteps": 3
+      },
+      "expectedError": "Configuration"
+    }
+  ]
+}

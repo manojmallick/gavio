@@ -40,6 +40,9 @@ class InterceptorContext:
     cache_type: str | None = None
     risk_score: float | None = None
     guardrail_outcome: str | None = None
+    # The loop guard's verdict on this call (F-REL-09), for the audit record: policy_id, run_id,
+    # action, breached, steps, cost_usd, elapsed_seconds. Counts only.
+    loop_guard: dict[str, Any] | None = None
 
     # Arbitrary inter-interceptor state (e.g. PII replacement map for restore).
     state: dict[str, Any] = field(default_factory=dict)

@@ -59,6 +59,26 @@
         "additionalProperties": false
       }
     },
+    "loopGuard": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": ["policyId", "runId", "action", "steps"],
+          "properties": {
+            "policyId": { "type": "string", "minLength": 1 },
+            "runId": { "type": "string", "minLength": 1 },
+            "action": { "type": "string", "enum": ["allow", "stop", "fallback", "dry_run"] },
+            "breached": { "type": ["string", "null"], "enum": ["max_steps", "max_cost", "max_wall_time", "repeated_tool_call", null] },
+            "steps": { "type": "integer", "minimum": 0 },
+            "costUsd": { "type": "number", "minimum": 0 },
+            "elapsedSeconds": { "type": "number", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        { "type": "null" }
+      ],
+      "description": "The loop guard's verdict on this call (F-REL-09): policy, root run id, action, the first limit reached, and the run's step count, cost and elapsed time before the call — counts only, never tool arguments (a repeated tool call is identified in the decision, not here). Omitted from the record (and from the hash-chain input) when no loop guard is in the chain, so existing chains keep verifying. Python binds this key as loop_guard and the nested keys as policy_id, run_id, cost_usd and elapsed_seconds."
+    },
     "previousHash": { "type": "string", "description": "SHA-256 of the previous record (hash-chain, F-OBS-02, v0.2.0). Empty in v0.1.0." },
     "schemaVersion": { "type": "string", "const": "1.0" }
   },

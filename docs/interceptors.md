@@ -466,6 +466,55 @@ Both are `ExecutorPolicy`. The breaker opens after N consecutive provider errors
 and fast-fails with `CircuitOpenError`; the balancer distributes across a pool of
 provider adapters.
 
+### Loop guard (`F-REL-09`)
+
+A loop guard stops a runaway agent. It counts the provider calls of one **root run** and, before
+each call, compares the run with limits: refuse the call, reroute it to a cheaper model, or only
+log the breach.
+
+```python
+from gavio.interceptors.reliability import LoopGuard, LoopGuardPolicy
+
+guard = LoopGuard(LoopGuardPolicy(
+    id="support-agent",
+    max_steps=25,                # at most 25 provider calls in one run
+    max_cost_usd=1.00,           # stop once $1.00 of spend is recorded
+    max_wall_time_seconds=120,   # from the run's first call
+    max_repeated_tool_calls=3,   # same tool with the same arguments, three times
+    action="stop",               # or "fallback" (with fallback_model=...) or "dry_run"
+))
+gw = Gateway.builder().provider(Provider.OPENAI).use(AuditInterceptor()).use(guard).build()
+
+root = await gw.complete(messages, agent_id="planner")
+while True:
+    # LoopGuardError on the 26th call, before it reaches the provider
+    response = await gw.complete(messages, parent_trace_id=root.trace_id)
+```
+
+- **What is a run.** Calls are counted under a root run id: `metadata["runId"]` when you set one,
+  else the root of the `parent_trace_id` chain, else the call's own trace id. An agent loop has
+  to pass one of the first two — calls with neither are separate runs that no limit can link.
+  The chain comes from a bounded in-memory map (10,000 traces); pass `runId` when a run spans
+  processes.
+- **Limits.** Each is optional. A limit is what the run may consume and is checked *before* a
+  call: `max_steps=25` allows 25 calls; cost is only known after a call, so the call that crosses
+  `max_cost_usd` still happens and the next one is refused. A repeated tool call is the same
+  tool name and the same arguments (hashed, key order ignored) requested `max_repeated_tool_calls`
+  times anywhere in the run. A call that fails at the provider still counts as a step.
+- **Actions.** `stop` raises `LoopGuardError` (its `.decision` carries the verdict: which limit,
+  steps, cost, elapsed time; never prompts or tool arguments); `fallback` lets the call through on
+  `fallback_model`; `dry_run` records the breach and changes nothing. In a gateway `dry_run` the
+  guard never stops or reroutes.
+- **Audit.** Each guarded call's audit record gets a `loop_guard` entry (policy, run id, action,
+  the limit reached, steps, cost, elapsed seconds — counts only), omitted when no guard is
+  installed so hash chains written before it still verify. Breaches also show in the Inspector as a
+  `loop_guard` decision and a governance event.
+- **State.** Kept in memory per `LoopGuard` (`LoopGuardStore(max_runs=10_000, ttl_seconds=3600)`:
+  least recently used runs are evicted and idle runs forgotten).
+
+Python only for now; the JavaScript and Java SDKs follow, pinned by the shared vectors in
+`test-vectors/loop-guard/` and the semantics in `spec/README.md` ('Loop guard').
+
 ### Governance (`F-GOV-02/03/04`)
 
 ```python
