@@ -81,6 +81,7 @@ class AuditInterceptor implements Interceptor {
         name: call.name,
         argumentsHash: call.argumentsHash(),
       })),
+      loopGuard: ctx.loopGuard !== null ? { ...ctx.loopGuard } : null,
     })
     if (this.hashChain) {
       record.previousHash = this.lastHash

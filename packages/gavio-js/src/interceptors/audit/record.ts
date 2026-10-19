@@ -1,6 +1,7 @@
 /** AuditRecord — the immutable, per-request audit entry. */
 
 import { createHash } from 'node:crypto'
+import type { LoopGuardAuditEntry } from '../../context.js'
 import { PromptLineage, TokenUsage } from '../../types.js'
 
 export const SCHEMA_VERSION = '1.0'
@@ -51,6 +52,7 @@ export interface AuditRecordInit {
   riskScore?: number | null
   lineage?: PromptLineage | null
   toolCalls?: AuditToolCall[]
+  loopGuard?: LoopGuardAuditEntry | null
   previousHash?: string
   schemaVersion?: string
 }
@@ -90,6 +92,11 @@ export class AuditRecord {
    * arguments. Omitted from the JSON when empty, so existing hash chains still verify.
    */
   toolCalls: AuditToolCall[]
+  /**
+   * The loop guard's verdict on this call (F-REL-09): counts only. Omitted from the JSON when
+   * null, so existing hash chains still verify.
+   */
+  loopGuard: LoopGuardAuditEntry | null
   previousHash: string
   schemaVersion: string
 
@@ -117,6 +124,7 @@ export class AuditRecord {
     this.riskScore = init.riskScore ?? null
     this.lineage = init.lineage ?? null
     this.toolCalls = init.toolCalls ?? []
+    this.loopGuard = init.loopGuard ?? null
     this.previousHash = init.previousHash ?? ''
     this.schemaVersion = init.schemaVersion ?? SCHEMA_VERSION
   }
@@ -159,6 +167,7 @@ export class AuditRecord {
     if (this.toolCalls.length > 0) {
       json['toolCalls'] = this.toolCalls.map((call) => ({ ...call }))
     }
+    if (this.loopGuard !== null) json['loopGuard'] = { ...this.loopGuard }
     return json
   }
 

@@ -403,8 +403,9 @@ while True:
 - **State.** Kept in memory per `LoopGuard` (`LoopGuardStore(max_runs=10_000, ttl_seconds=3600)`:
   least recently used runs are evicted and idle runs forgotten).
 
-Python only for now; the JavaScript and Java SDKs follow, pinned by the shared vectors in
-`test-vectors/loop-guard/` and the semantics in `spec/README.md` ('Loop guard').
+Available in the Python and JavaScript SDKs (the JavaScript spelling is `loopGuard({ policy: { maxSteps: 25, ... } })`,
+see the [JavaScript guide](./javascript)); the Java SDK follows. The shared vectors in
+`test-vectors/loop-guard/` and the semantics in `spec/README.md` ('Loop guard') pin all of them.
 
 ### Governance (`F-GOV-02/03/04`)
 

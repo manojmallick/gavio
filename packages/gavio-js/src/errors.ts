@@ -50,6 +50,22 @@ export class PiiBlockedError extends GavioError {
 /** A hard budget cap was exceeded. Never swallow this — surface to user. */
 export class BudgetExceededError extends GavioError {}
 
+/**
+ * A loop guard stopped a run that reached one of its limits (F-REL-09).
+ *
+ * The message names the limit and the run's counts, never prompts or tool arguments.
+ * `decision` is the loop guard's verdict (a `LoopGuardDecision`), for callers that want to
+ * react (log, alert, ask a human).
+ */
+export class LoopGuardError extends GavioError {
+  readonly decision: Record<string, unknown>
+
+  constructor(message: string, decision: Record<string, unknown> = {}) {
+    super(message)
+    this.decision = decision
+  }
+}
+
 /** The circuit breaker is open; the call was rejected without hitting the provider. */
 export class CircuitOpenError extends ProviderUnavailableError {}
 
