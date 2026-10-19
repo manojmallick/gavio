@@ -135,6 +135,21 @@
       </dependency>
       <dependency>
         <groupId>io.github.manojmallick</groupId>
+        <artifactId>gavio-provider-gemini</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.manojmallick</groupId>
+        <artifactId>gavio-provider-azure</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.manojmallick</groupId>
+        <artifactId>gavio-provider-ollama</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.manojmallick</groupId>
         <artifactId>gavio-testing</artifactId>
         <version>${project.version}</version>
       </dependency>

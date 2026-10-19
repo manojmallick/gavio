@@ -47,6 +47,17 @@ public class GavioException extends RuntimeException {
         }
     }
 
+    /**
+     * The provider returned a tool call whose arguments are not a JSON object, or one that lacks
+     * a name or id (F-ADP-03). The message names the tool only — never the arguments, which may
+     * hold PII.
+     */
+    public static class MalformedToolCallException extends ProviderException {
+        public MalformedToolCallException(String message) {
+            super(message);
+        }
+    }
+
     /** The provider returned a rate-limit (HTTP 429) signal. */
     public static class RateLimitException extends ProviderException {
         public RateLimitException(String message) {

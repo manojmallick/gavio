@@ -266,6 +266,65 @@ Gateway gw = Gateway.builder()
 Adapters use `java.net.http.HttpClient` (async `sendAsync`) with a hand-rolled
 JSON reader/writer — no external JSON dependency.
 
+### Tool calling (F-ADP-03)
+
+OpenAI, Azure OpenAI, OpenRouter, Anthropic, Gemini, and Ollama share one tool-calling
+shape. Declare `tools` (the same `ToolDefinition` maps Tool Runtime uses), read
+`response.toolCalls()`, and answer with tool-role messages — the adapter translates to and
+from each provider's native format, parallel calls included.
+
+```java
+List<Map<String, Object>> tools = List.of(Map.of(
+    "name", "get_weather",
+    "description", "Current weather",
+    "inputSchema", Map.of(
+        "type", "object",
+        "properties", Map.of("city", Map.of("type", "string")),
+        "required", List.of("city"))));
+List<Message> messages = new ArrayList<>(List.of(Message.of("user", "Weather in Paris and Rome?")));
+
+GavioResponse response = gw.completeWithTools(messages, tools, ToolChoice.auto()).join();
+while (!response.toolCalls().isEmpty()) {          // parallel calls arrive together
+    messages.add(response.toAssistantMessage());
+    for (ToolCall call : response.toolCalls()) {   // ToolCall(id, name, arguments)
+        messages.add(call.result(runTool(call.name(), call.arguments())).toMessage());
+    }
+    response = gw.completeWithTools(messages, tools, null).join();
+}
+```
+
+`GavioRequest.builder().tools(...).toolChoice(...)` does the same when you need the other
+request options. `ToolChoice` is `auto()`, `none()`, `required()`, or `tool("get_weather")`
+(the builder also takes the wire shapes `"auto"`, `"none"`, `"required"`, `Map.of("name", ...)`);
+`response.finishReason()` is a normalised `FinishReason`. Gemini and Ollama send no call ids,
+so Gavio assigns `call_<index>_<name>`. `Message` carries the spec's camelCase members
+(`toolCalls()`, `toolCallId()`, `name()`, `isError()`); `Message.from(map)` reads those keys and
+Python's `tool_calls` / `tool_call_id` / `is_error` spellings.
+
+Privacy applies to tool traffic too: `PiiGuard` and the secret scanner cover tool-call
+arguments and tool-role messages before the provider payload is built, and audit records keep
+only the tool name and an arguments hash (`AuditRecord.toolCalls()`, written as
+`tool_calls[].arguments_hash` and left out when the response had no tool calls). To validate
+what the model asked for, pass the calls to Tool Runtime:
+`ToolRuntimeInterceptor.analyzeProviderToolCalls(response.toolCalls(), toolsContext,
+ProviderCallOptions.builder().definitions(tools))`. Cached responses never replay a tool call,
+and requests that declare `tools` skip the semantic cache level.
+
+The pure translators are public static methods on each adapter — `toProviderPayload(request)`
+and `fromProviderResponse(map)` on `OpenAiAdapter`, `AzureOpenAiAdapter`, `OpenRouterAdapter`,
+`AnthropicAdapter`, `GeminiAdapter`, and `OllamaAdapter` — with no network involved. The
+Chat Completions mapping the first three share lives in `gavio-core`, so none of those modules
+depends on another. A provider tool call whose arguments are not a JSON object raises
+`MalformedToolCallException`; its message names the tool, never the arguments. Arguments are
+hashed over canonical JSON, so keep integers and strings in arguments you intend to audit: an
+integral float such as `1.0` hashes as `1`, which Python spells `1.0`.
+
+Not yet supported: streaming tool-call deltas (`gw.stream()` throws a `ConfigurationException`
+if you pass `tools`, rather than dropping them), and provider-opaque per-call state such as
+Gemini thought signatures. The Ollama mapping follows its documented `/api/chat` shape and has
+not been exercised against a live server; Ollama has no tool choice, so only `auto` is
+accepted there.
+
 ---
 
 ## Inspector

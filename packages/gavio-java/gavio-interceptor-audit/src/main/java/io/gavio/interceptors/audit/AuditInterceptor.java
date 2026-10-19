@@ -7,8 +7,10 @@ import io.gavio.interceptors.InterceptorContext;
 import io.gavio.interceptors.audit.sinks.StdoutSink;
 import io.gavio.types.CacheType;
 import io.gavio.types.PromptLineage;
+import io.gavio.types.ToolCall;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -102,6 +104,7 @@ public final class AuditInterceptor implements Interceptor {
                 .guardrailOutcome(ctx.guardrailOutcome())
                 .riskScore(ctx.riskScore())
                 .lineage(lineage instanceof PromptLineage pl ? pl : null)
+                .toolCalls(toolCallDigests(response))
                 .build();
 
         if (hashChain) {
@@ -117,6 +120,15 @@ public final class AuditInterceptor implements Interceptor {
             LOG.log(Level.WARNING, "audit sink write failed for trace " + record.traceId(), e);
         }
         return CompletableFuture.completedFuture(withAudit);
+    }
+
+    /** Name and arguments hash of each tool call the response requested — never the arguments. */
+    private static List<AuditRecord.ToolCallDigest> toolCallDigests(GavioResponse response) {
+        List<AuditRecord.ToolCallDigest> digests = new ArrayList<>();
+        for (ToolCall call : response.toolCalls()) {
+            digests.add(new AuditRecord.ToolCallDigest(call.name(), call.argumentsHash()));
+        }
+        return digests;
     }
 
     public static Builder builder() {

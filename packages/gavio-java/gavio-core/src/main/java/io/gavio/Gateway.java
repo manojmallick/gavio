@@ -1,5 +1,6 @@
 package io.gavio;
 
+import io.gavio.GavioException.ConfigurationException;
 import io.gavio.inspector.Inspector;
 import io.gavio.inspector.TraceEmitter;
 import io.gavio.interceptors.Executor;
@@ -11,6 +12,7 @@ import io.gavio.providers.ProviderAdapter;
 import io.gavio.providers.StreamBuffer;
 import io.gavio.types.Message;
 import io.gavio.types.Provider;
+import io.gavio.types.ToolChoice;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -146,6 +148,25 @@ public final class Gateway {
     }
 
     /**
+     * Complete a conversation that may call tools (F-ADP-03). {@code tools} declares what the model
+     * may call and {@code toolChoice} steers it; read {@link GavioResponse#toolCalls()} and answer
+     * with tool-role messages. Either argument may be null.
+     *
+     * <p>Named {@code completeWithTools} rather than overloading {@code complete}, so existing
+     * {@code complete(messages, null, null)} calls stay unambiguous.
+     */
+    public CompletableFuture<GavioResponse> completeWithTools(
+            List<Message> messages, List<Map<String, Object>> tools, ToolChoice toolChoice) {
+        return complete(GavioRequest.builder()
+                .messages(messages)
+                .model(model)
+                .provider(Provider.coerce(adapter.providerName()))
+                .tools(tools)
+                .toolChoice(toolChoice)
+                .build());
+    }
+
+    /**
      * Stream a completion, buffering the provider stream (F-REL-06).
      *
      * <p>The provider stream is buffered in full so the post-interceptor pipeline
@@ -156,6 +177,11 @@ public final class Gateway {
      * the streaming path.
      */
     public Flow.Publisher<String> stream(GavioRequest request) {
+        if (request.hasTools()) {
+            // Streamed chunks carry text only; refuse rather than silently drop the tools.
+            throw new ConfigurationException(
+                    "stream() does not support tools (streaming tool-call deltas are not supported); use complete()");
+        }
         InterceptorContext ctx = InterceptorContext.fromRequest(request, dryRun);
         long started = System.nanoTime();
         Executor bufferingExecutor = req -> StreamBuffer.collect(adapter.stream(req))

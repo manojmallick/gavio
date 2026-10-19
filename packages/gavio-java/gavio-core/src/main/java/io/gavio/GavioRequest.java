@@ -1,8 +1,12 @@
 package io.gavio;
 
+import io.gavio.json.CanonicalJson;
+import io.gavio.json.JsonValues;
 import io.gavio.types.Message;
 import io.gavio.types.PromptLineage;
 import io.gavio.types.Provider;
+import io.gavio.types.ToolCall;
+import io.gavio.types.ToolChoice;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -15,6 +19,10 @@ import java.util.Map;
  * <p>Immutable record. A {@code traceId} (UUID v7, time-sortable) is assigned
  * automatically if not supplied. {@code parentTraceId} links calls into a
  * multi-agent DAG.
+ *
+ * <p>{@code tools} declares the tools the model may call ({@code ToolDefinition} objects, as
+ * {@code spec/ToolDefinition.schema.json}; only name, description and input schema reach the
+ * provider) and {@code toolChoice} steers it (F-ADP-03). Both are empty/null for a plain request.
  */
 public record GavioRequest(
         List<Message> messages,
@@ -27,16 +35,46 @@ public record GavioRequest(
         Map<String, Object> options,
         Map<String, Object> metadata,
         List<byte[]> images,
-        PromptLineage lineage) {
+        PromptLineage lineage,
+        List<Map<String, Object>> tools,
+        ToolChoice toolChoice) {
 
     public GavioRequest {
         messages = List.copyOf(messages);
         options = Map.copyOf(options == null ? Map.of() : options);
         metadata = Map.copyOf(metadata == null ? Map.of() : metadata);
         images = images == null ? List.of() : List.copyOf(images);
+        tools = toolList(tools);
         if (traceId == null) {
             traceId = Ids.newTraceId();
         }
+    }
+
+    /** A request without tool declarations — the shape before F-ADP-03. */
+    public GavioRequest(
+            List<Message> messages,
+            String model,
+            Provider provider,
+            String traceId,
+            String agentId,
+            String parentTraceId,
+            String sessionId,
+            Map<String, Object> options,
+            Map<String, Object> metadata,
+            List<byte[]> images,
+            PromptLineage lineage) {
+        this(messages, model, provider, traceId, agentId, parentTraceId, sessionId,
+                options, metadata, images, lineage, null, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> toolList(List<Map<String, Object>> tools) {
+        return tools == null ? List.of() : (List<Map<String, Object>>) JsonValues.immutableCopy(tools);
+    }
+
+    /** True when the request declares tools for the model to call. */
+    public boolean hasTools() {
+        return !tools.isEmpty();
     }
 
     public double temperature() {
@@ -52,37 +90,51 @@ public record GavioRequest(
         return t == null ? 1024 : ((Number) t).intValue();
     }
 
-    /** Concatenate message contents — used for hashing and token estimation. */
+    /**
+     * Concatenate message contents — used for hashing and token estimation.
+     *
+     * <p>Tool calls an assistant message made are included as {@code name(canonical-args)} so the
+     * hash and the estimate see them; a message without tool calls contributes exactly its content,
+     * so prompt hashes of existing requests do not change.
+     */
     public String promptText() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < messages.size(); i++) {
-            if (i > 0) {
-                sb.append('\n');
+        List<String> parts = new ArrayList<>();
+        for (Message message : messages) {
+            parts.add(message.content());
+            for (ToolCall call : message.toolCalls()) {
+                parts.add(call.name() + "(" + CanonicalJson.write(call.arguments()) + ")");
             }
-            sb.append(messages.get(i).content());
         }
-        return sb.toString();
+        return String.join("\n", parts);
     }
 
     /** Return a shallow copy with replaced messages (interceptors mutate via this). */
     public GavioRequest withMessages(List<Message> newMessages) {
         return new GavioRequest(
                 newMessages, model, provider, traceId, agentId,
-                parentTraceId, sessionId, options, metadata, images, lineage);
+                parentTraceId, sessionId, options, metadata, images, lineage, tools, toolChoice);
     }
 
     /** Return a copy with a different provider (used by fallback rerouting). */
     public GavioRequest withProvider(Provider newProvider) {
         return new GavioRequest(
                 messages, model, newProvider, traceId, agentId,
-                parentTraceId, sessionId, options, metadata, images, lineage);
+                parentTraceId, sessionId, options, metadata, images, lineage, tools, toolChoice);
     }
 
     /** Return a copy with a different model (used by cost-optimiser rerouting). */
     public GavioRequest withModel(String newModel) {
         return new GavioRequest(
                 messages, newModel, provider, traceId, agentId,
-                parentTraceId, sessionId, options, metadata, images, lineage);
+                parentTraceId, sessionId, options, metadata, images, lineage, tools, toolChoice);
+    }
+
+    /** Return a copy with different tool declarations and choice. */
+    public GavioRequest withTools(List<Map<String, Object>> newTools, ToolChoice newToolChoice) {
+        return new GavioRequest(
+                messages, model, provider, traceId, agentId,
+                parentTraceId, sessionId, options, metadata, images, lineage,
+                newTools, newToolChoice);
     }
 
     public static Builder builder() {
@@ -102,6 +154,8 @@ public record GavioRequest(
         private final Map<String, Object> metadata = new LinkedHashMap<>();
         private final List<byte[]> images = new ArrayList<>();
         private PromptLineage lineage;
+        private final List<Map<String, Object>> tools = new ArrayList<>();
+        private ToolChoice toolChoice;
 
         public Builder messages(List<Message> messages) {
             this.messages.clear();
@@ -175,12 +229,43 @@ public record GavioRequest(
             return this;
         }
 
+        /** Declare the tools the model may call (F-ADP-03). */
+        public Builder tools(List<Map<String, Object>> tools) {
+            this.tools.clear();
+            if (tools != null) {
+                this.tools.addAll(tools);
+            }
+            return this;
+        }
+
+        /** Declare one more tool the model may call. */
+        public Builder tool(Map<String, Object> tool) {
+            this.tools.add(tool);
+            return this;
+        }
+
+        public Builder toolChoice(ToolChoice toolChoice) {
+            this.toolChoice = toolChoice;
+            return this;
+        }
+
+        /**
+         * Steer tool use with a wire-shaped choice: {@code "auto"}, {@code "none"},
+         * {@code "required"} or a map with a {@code name}.
+         *
+         * @throws io.gavio.GavioException.ConfigurationException for any other value
+         */
+        public Builder toolChoice(Object toolChoice) {
+            this.toolChoice = ToolChoice.parse(toolChoice);
+            return this;
+        }
+
         public GavioRequest build() {
             return new GavioRequest(
                     new ArrayList<>(messages), model, provider, traceId,
                     agentId, parentTraceId, sessionId,
                     new HashMap<>(options), new HashMap<>(metadata),
-                    new ArrayList<>(images), lineage);
+                    new ArrayList<>(images), lineage, new ArrayList<>(tools), toolChoice);
         }
     }
 }
