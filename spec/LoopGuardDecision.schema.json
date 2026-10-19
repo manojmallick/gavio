@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/LoopGuardDecision.v1.json",
+  "title": "LoopGuardDecision",
+  "description": "The loop guard's verdict on one provider call (F-REL-09). Metadata only: no prompt, response or tool arguments, only counts, a cost, and the (tool name, arguments hash) of a repeated call.",
+  "type": "object",
+  "required": [
+    "policyId",
+    "runId",
+    "allowed",
+    "action",
+    "breached",
+    "breaches",
+    "reason",
+    "steps",
+    "costUsd",
+    "elapsedSeconds",
+    "repeatedToolCall"
+  ],
+  "properties": {
+    "policyId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The root run id the decision is about (see README 'Loop guard')."
+    },
+    "allowed": {
+      "type": "boolean",
+      "description": "False only for action stop. fallback and dry_run let the call through."
+    },
+    "action": {
+      "type": "string",
+      "enum": ["allow", "stop", "fallback", "dry_run"],
+      "description": "allow when no limit is reached, otherwise the policy's action."
+    },
+    "breached": {
+      "type": ["string", "null"],
+      "enum": ["max_steps", "max_cost", "max_wall_time", "repeated_tool_call", null],
+      "description": "The first limit reached, in the order max_steps, max_cost, max_wall_time, repeated_tool_call; null when none is."
+    },
+    "breaches": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["max_steps", "max_cost", "max_wall_time", "repeated_tool_call"]
+      },
+      "description": "Every limit reached, in the order above. Empty when none is."
+    },
+    "reason": {
+      "type": "string",
+      "enum": [
+        "within_limits",
+        "max_steps_reached",
+        "max_cost_reached",
+        "max_wall_time_reached",
+        "repeated_tool_call_reached"
+      ],
+      "description": "within_limits, or `<breached>_reached`."
+    },
+    "steps": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Provider calls the run had made before this one."
+    },
+    "costUsd": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Recorded spend of the run before this call, rounded to 8 decimal places."
+    },
+    "elapsedSeconds": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Seconds since the run's first call, rounded to 8 decimal places."
+    },
+    "repeatedToolCall": {
+      "anyOf": [
+        {
+          "type": "object",
+          "required": ["name", "argumentsHash", "count"],
+          "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "argumentsHash": { "type": "string", "minLength": 1 },
+            "count": { "type": "integer", "minimum": 2 }
+          },
+          "additionalProperties": false
+        },
+        { "type": "null" }
+      ],
+      "description": "The first tool call (in first-seen order) that reached maxRepeatedToolCalls; null when the repeated-call limit is not reached."
+    },
+    "targetModel": {
+      "type": ["string", "null"],
+      "description": "The model to use instead, present only when action is fallback."
+    }
+  },
+  "additionalProperties": false
+}

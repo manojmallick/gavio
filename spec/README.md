@@ -33,6 +33,8 @@ serialise to shapes valid against these schemas.
 | [`BudgetPolicy.schema.json`](./BudgetPolicy.schema.json) | Cost Governance v2 scoped budget policy |
 | [`BudgetDecision.schema.json`](./BudgetDecision.schema.json) | Cost Governance v2 allow/warn/block/fallback decision |
 | [`CostReport.schema.json`](./CostReport.schema.json) | Cost Governance v2 spend, overhead, savings, and budget report |
+| [`LoopGuardPolicy.schema.json`](./LoopGuardPolicy.schema.json) | Loop guard limits for one root run (F-REL-09): max steps, cost, wall time and repeated tool calls, and what happens on a breach |
+| [`LoopGuardDecision.schema.json`](./LoopGuardDecision.schema.json) | Loop guard verdict on one provider call (F-REL-09): allow, stop, fallback or dry_run, which limit was reached, and the run's counts |
 | [`PiiMatch.schema.json`](./PiiMatch.schema.json) | A single detected PII entity |
 | [`InterceptorResult.schema.json`](./InterceptorResult.schema.json) | One interceptor's observable outcome |
 
@@ -71,6 +73,45 @@ written before F-ADP-03 stay valid.
 - **Privacy.** PII and secret scanning covers tool-call argument string values and
   tool-role message content, before the provider payload is built. In `REDACT` mode,
   placeholders are restored in `GavioResponse.toolCalls[*].arguments` like in `content`.
+
+## Loop guard (F-REL-09)
+
+A loop guard stops a runaway agent: it keeps a small state per **root run** and, before every
+provider call, compares that state with a [`LoopGuardPolicy`](./LoopGuardPolicy.schema.json).
+The verdict is a [`LoopGuardDecision`](./LoopGuardDecision.schema.json); it is also recorded on the
+audit record (`AuditRecord.loopGuard`, omitted when no guard is installed).
+
+- **Root run id.** The key every call is counted under, resolved per request in this order:
+  `metadata.runId` (Python also accepts `metadata.run_id`) when it is a non-empty string; else the
+  root of the `parentTraceId` chain; else the request's own `traceId`. The chain root comes from a
+  bounded least-recently-used map of `traceId -> root run id` (default capacity 10,000): resolving
+  a request reads its parent's entry (refreshing it) and stores its own, evicting the least
+  recently used entry beyond the capacity. A `parentTraceId` the map does not know — evicted, or
+  from another process — is treated as the root itself, so pass `metadata.runId` when a run spans
+  processes or outlives the map. Calls that carry neither a run id nor a parent are separate
+  runs: an agent loop must pass one of them.
+- **State.** Per run: the number of provider calls made (`steps`), their recorded cost, the time of
+  the first call, and for every tool call the responses asked for a count by
+  `(name, argumentsHash)` in first-seen order — the hash is `ToolCall.arguments_hash` from
+  F-ADP-03, so repeats are detected without keeping the arguments. After an allowed,
+  fallback or dry_run call the run records `steps + 1`, the response's cost, and one count per
+  tool call in the response (a parallel response asking for the same call twice counts twice).
+  A refused (`stop`) call changes nothing. Run state is bounded and idle-expiring like the
+  root-run map (default 10,000 runs, one hour idle).
+- **Evaluation** (pure; vectors in `test-vectors/loop-guard/`). A limit is reached when
+  `steps >= maxSteps`, `costUsd >= maxCostUsd`, `elapsedSeconds >= maxWallTimeSeconds`, or any
+  counted tool call has `count >= maxRepeatedToolCalls` (cost and elapsed time are compared after
+  rounding to 8 decimal places); a null limit is never reached. `breaches`
+  lists every limit reached in the order `max_steps`, `max_cost`, `max_wall_time`,
+  `repeated_tool_call`, and `breached` is the first. With no breach the action is `allow`;
+  otherwise it is the policy's `action` (`stop` refuses the call and raises, `fallback` lets it
+  through on `fallbackModel`, `dry_run` records the breach and changes nothing). The decision's
+  `costUsd` and `elapsedSeconds` are the rounded values. An invalid policy is a configuration error:
+  `maxSteps` below 1, `maxRepeatedToolCalls` below 2, a negative `maxCostUsd`, a
+  `maxWallTimeSeconds` that is not positive, an unknown `action`, or `fallback` without a
+  `fallbackModel`.
+- **Privacy.** Decisions and the audit entry hold counts, a cost and a time only — never prompts,
+  responses or tool arguments.
 
 ## Cross-SDK conformance
 

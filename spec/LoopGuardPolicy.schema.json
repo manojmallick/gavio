@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gavio.io/schema/LoopGuardPolicy.v1.json",
+  "title": "LoopGuardPolicy",
+  "description": "Limits for one root run of an agent loop (F-REL-09). A run is every provider call that shares a root run id (see README 'Loop guard'). Before each provider call the guard compares the run's state with these limits; every limit is optional, and a null limit is never breached. A limit is the amount the run may consume: a breach is evaluated before a call and happens once the limit is reached, so `maxSteps: 25` allows 25 calls and refuses the 26th, and `maxCostUsd: 1.0` refuses the first call that starts at or above $1.00 of recorded spend.",
+  "type": "object",
+  "required": ["id", "action"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "maxSteps": {
+      "type": ["integer", "null"],
+      "minimum": 1,
+      "description": "Maximum provider calls in one run. A call that was refused by the guard is not a step."
+    },
+    "maxCostUsd": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "description": "Maximum recorded spend of one run in USD. Cost is only known after a call, so the guard compares the spend of the calls already made, not an estimate of the next one."
+    },
+    "maxWallTimeSeconds": {
+      "type": ["number", "null"],
+      "exclusiveMinimum": 0,
+      "description": "Maximum seconds from the run's first provider call to the start of the next one."
+    },
+    "maxRepeatedToolCalls": {
+      "type": ["integer", "null"],
+      "minimum": 2,
+      "description": "Stop a run that keeps asking for the same tool call: breached once any one (tool name, arguments hash) has been requested this many times in the run. The arguments hash is ToolCall.arguments_hash (F-ADP-03), so key order and whitespace do not matter and the arguments themselves are never stored."
+    },
+    "action": {
+      "type": "string",
+      "enum": ["stop", "fallback", "dry_run"],
+      "description": "What happens on a breach. stop refuses the call; fallback lets it through on `fallbackModel`; dry_run only records the breach and lets the call through unchanged."
+    },
+    "fallbackModel": {
+      "type": ["string", "null"],
+      "description": "Required when action is fallback, ignored otherwise."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {}
+    }
+  },
+  "additionalProperties": false
+}
