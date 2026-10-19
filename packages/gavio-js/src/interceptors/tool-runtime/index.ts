@@ -3,6 +3,7 @@
 import type { InterceptorContext } from '../../context.js'
 import { ToolRuntimeError } from '../../errors.js'
 import type { GavioRequest } from '../../request.js'
+import type { ToolCall } from '../../types.js'
 import type { Interceptor } from '../base.js'
 
 export interface ToolRuntimeOptions {
@@ -212,8 +213,77 @@ export function replayToolRuntime(
   return analyzeToolRuntime(record, options)
 }
 
+const CALL_KEYS = ['calls', 'tool_calls', 'toolCalls', 'results', 'records']
+
+export interface ProviderToolCallOptions extends ToolRuntimeOptions {
+  /** Tool definitions (typically `request.tools`); used when the tool context has none. */
+  definitions?: Record<string, unknown>[]
+  /** Tool results by call id; attached to the matching call as `result`. */
+  results?: Record<string, Record<string, unknown>>
+  /** Provenance for the calls, e.g. the provider name. */
+  source?: string
+}
+
+/**
+ * Map normalised provider {@link ToolCall} objects to Tool Runtime call objects.
+ *
+ * The result is what `tools.calls` takes: `id`, `name` and `arguments` (read as `input`),
+ * plus `result` when `results` has an object for the call id and `source` (provenance)
+ * when given — e.g. the provider name. The arguments are copied.
+ */
+export function toolCallsToRuntimeCalls(
+  providerCalls: Iterable<ToolCall>,
+  options: Pick<ProviderToolCallOptions, 'results' | 'source'> = {},
+): Record<string, unknown>[] {
+  const calls: Record<string, unknown>[] = []
+  for (const toolCall of providerCalls) {
+    const call: Record<string, unknown> = {
+      id: toolCall.id,
+      name: toolCall.name,
+      arguments: structuredClone(toolCall.arguments),
+    }
+    if (options.source !== undefined) call['source'] = options.source
+    const results = options.results
+    if (results !== undefined && Object.hasOwn(results, toolCall.id)) {
+      call['result'] = { ...results[toolCall.id] }
+    }
+    calls.push(call)
+  }
+  return calls
+}
+
+/**
+ * Validate real provider tool calls with Tool Runtime v2.
+ *
+ * `tools` is the usual tool context (granted permissions, approvals, definitions). The
+ * bridged calls are added to any calls it already holds; `options.definitions` (typically
+ * `request.tools`) fills in the registry when `tools` has none. `tools` is not modified.
+ */
+export function analyzeProviderToolCalls(
+  providerCalls: Iterable<ToolCall>,
+  tools?: Record<string, unknown>,
+  options: ProviderToolCallOptions = {},
+): ToolRuntimeDecision {
+  const base = { ...(tools ?? {}) }
+  const context: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(base)) {
+    if (!CALL_KEYS.includes(key)) context[key] = value
+  }
+  context['calls'] = [
+    ...toolCalls(base),
+    ...toolCallsToRuntimeCalls(providerCalls, {
+      ...(options.results !== undefined ? { results: options.results } : {}),
+      ...(options.source !== undefined ? { source: options.source } : {}),
+    }),
+  ]
+  if (options.definitions !== undefined && toolDefinitions(context).size === 0) {
+    context['definitions'] = options.definitions
+  }
+  return analyzeToolRuntime(context, options)
+}
+
 function toolCalls(tools: Record<string, unknown>): Record<string, unknown>[] {
-  const raw = first(tools, 'calls', 'tool_calls', 'toolCalls', 'results', 'records')
+  const raw = first(tools, ...CALL_KEYS)
   if (!Array.isArray(raw)) return []
   return raw.filter(isRecord).map((item) => ({ ...item }))
 }

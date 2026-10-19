@@ -4,9 +4,17 @@ import { ConfigurationError } from '../errors.js'
 import type { PricingProvider } from '../pricing.js'
 import type { GavioRequest } from '../request.js'
 import type { GavioResponse } from '../response.js'
-import { TokenUsage } from '../types.js'
+import type { Wire } from '../tool-calling.js'
 import { BaseProviderAdapter } from './base.js'
 import { postJson } from './http.js'
+import { fromProviderResponse, toProviderPayload as openaiPayload } from './openai.js'
+
+export { fromProviderResponse }
+
+/** Chat Completions body without `model` — Azure routes by deployment. */
+export function toProviderPayload(request: GavioRequest): Wire {
+  return openaiPayload(request, { includeModel: false })
+}
 
 const DEFAULT_API_VERSION = '2024-06-01'
 
@@ -52,18 +60,13 @@ class AzureOpenAIAdapter extends BaseProviderAdapter {
       throw new ConfigurationError('AZURE_OPENAI_API_KEY and AZURE_OPENAI_ENDPOINT must be set')
     }
     const started = performance.now()
-    const payload = {
-      messages: request.messages,
-      temperature: request.temperature,
-      max_tokens: request.maxTokens,
-    }
-    const data = await postJson(this.url(request), payload, { 'api-key': this.apiKey }, this.timeoutSeconds)
-    const choices = (data['choices'] as Array<Record<string, unknown>>) ?? []
-    const message = (choices[0]?.['message'] as Record<string, unknown>) ?? {}
-    const content = (message['content'] as string) ?? ''
-    const usageData = (data['usage'] as Record<string, number>) ?? {}
-    const usage = new TokenUsage(usageData['prompt_tokens'] ?? 0, usageData['completion_tokens'] ?? 0)
-    return this.buildResponse(request, content, usage, (data['model'] as string) ?? request.model, started)
+    const data = await postJson(
+      this.url(request),
+      toProviderPayload(request),
+      { 'api-key': this.apiKey },
+      this.timeoutSeconds,
+    )
+    return this.buildCompletionResponse(request, fromProviderResponse(data), started)
   }
 
   async healthCheck(): Promise<boolean> {

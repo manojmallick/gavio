@@ -10,7 +10,13 @@ import type { InterceptorContext } from '../../context.js'
 import { PiiBlockedError } from '../../errors.js'
 import type { GavioRequest } from '../../request.js'
 import type { GavioResponse } from '../../response.js'
-import { PiiMode, Sensitivity } from '../../types.js'
+import {
+  mapLeaves,
+  mapLeavesAsync,
+  messageToolCalls,
+  toolCallsKey,
+} from '../../tool-calling.js'
+import { PiiMode, Sensitivity, ToolCall } from '../../types.js'
 import type { Message } from '../../types.js'
 import type { Interceptor } from '../base.js'
 import { ScanContext } from './context.js'
@@ -42,6 +48,12 @@ export interface PiiGuardOptions {
   language?: string
 }
 
+/**
+ * Besides message `content` (tool-role messages included), the string and integer values
+ * inside the `arguments` of assistant tool calls are scanned (F-ADP-03), so PII cannot
+ * reach the provider through a replayed tool call. In REDACT mode the placeholders are
+ * restored in the response's tool-call arguments, like in its content.
+ */
 class PiiGuard implements Interceptor {
   readonly name = 'pii_guard'
   readonly dryRunSafe = true
@@ -77,9 +89,8 @@ class PiiGuard implements Interceptor {
 
     const isDryRun = this.ownDryRun || ctx.dryRun
 
-    for (const message of request.messages) {
-      const content = message.content ?? ''
-      const matches = await this.scanText(content, scanCtx, floor)
+    const redact = async (text: string): Promise<string> => {
+      const matches = await this.scanText(text, scanCtx, floor)
       for (const m of matches) allTypes.push(m.entityType)
 
       if (matches.length > 0 && this.mode === PiiMode.BLOCK) {
@@ -87,12 +98,40 @@ class PiiGuard implements Interceptor {
         throw new PiiBlockedError(types)
       }
 
-      let redacted = content
       if (matches.length > 0 && !isDryRun) {
-        redacted = this.apply(content, matches, replacements)
+        return this.apply(text, matches, replacements)
       }
+      return text
+    }
 
-      newMessages.push({ ...message, content: redacted })
+    const redactLeaf = async (leaf: unknown): Promise<unknown> => {
+      if (typeof leaf === 'string') return redact(leaf)
+      if (typeof leaf === 'number' && Number.isInteger(leaf)) {
+        // A numeric identifier (card, BSN, phone) is PII too; a redacted number
+        // becomes its placeholder string.
+        const text = String(leaf)
+        const redacted = await redact(text)
+        return redacted === text ? leaf : redacted
+      }
+      return leaf
+    }
+
+    for (const message of request.messages) {
+      const next: Message = { ...message }
+      // OpenAI-style assistant turns may carry `content: null` beside tool calls.
+      if (message.content !== null) next.content = await redact(message.content ?? '')
+      const callsKey = toolCallsKey(message)
+      if (callsKey !== null) {
+        const calls: unknown[] = []
+        for (const call of messageToolCalls(message)) {
+          calls.push({
+            ...call.toJSON(),
+            arguments: await mapLeavesAsync(call.arguments, redactLeaf),
+          })
+        }
+        next[callsKey] = calls
+      }
+      newMessages.push(next)
     }
 
     if (allTypes.length > 0) {
@@ -119,12 +158,30 @@ class PiiGuard implements Interceptor {
     if (!this.restoreOnResponse || this.mode !== PiiMode.REDACT) return response
     const replacements = ctx.state[STATE_KEY] as Record<string, string> | undefined
     if (!replacements || Object.keys(replacements).length === 0) return response
-    let content = response.content
-    for (const [token, original] of Object.entries(replacements)) {
-      content = content.split(token).join(original)
+    let changed = false
+    const restore = (text: string): string => {
+      // Replace placeholder tokens back with original values.
+      let out = text
+      for (const [token, original] of Object.entries(replacements)) {
+        out = out.split(token).join(original)
+      }
+      if (out !== text) changed = true
+      return out
     }
-    if (content === response.content) return response
-    return response.copyWithContent(content)
+
+    const content = restore(response.content)
+    const toolCalls = response.toolCalls.map(
+      (call) =>
+        new ToolCall({
+          id: call.id,
+          name: call.name,
+          arguments: mapLeaves(call.arguments, (leaf) =>
+            typeof leaf === 'string' ? restore(leaf) : leaf,
+          ) as Record<string, unknown>,
+        }),
+    )
+    if (!changed) return response
+    return response.copyWith({ content, toolCalls })
   }
 
   private async scanText(

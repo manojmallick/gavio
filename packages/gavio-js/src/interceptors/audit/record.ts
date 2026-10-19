@@ -20,6 +20,13 @@ function stableStringify(value: unknown): string {
   return `{${parts.join(',')}}`
 }
 
+/** A tool call the model requested: name and arguments hash only (F-ADP-03). */
+export interface AuditToolCall {
+  name: string
+  /** SHA-256 hex of the canonical JSON of the call's arguments — never the arguments. */
+  argumentsHash: string
+}
+
 export interface AuditRecordInit {
   traceId: string
   provider: string
@@ -43,6 +50,7 @@ export interface AuditRecordInit {
   guardrailOutcome?: string | null
   riskScore?: number | null
   lineage?: PromptLineage | null
+  toolCalls?: AuditToolCall[]
   previousHash?: string
   schemaVersion?: string
 }
@@ -77,6 +85,11 @@ export class AuditRecord {
   guardrailOutcome: string | null
   riskScore: number | null
   lineage: PromptLineage | null
+  /**
+   * Tool calls the model requested (F-ADP-03): name + arguments hash only, never the
+   * arguments. Omitted from the JSON when empty, so existing hash chains still verify.
+   */
+  toolCalls: AuditToolCall[]
   previousHash: string
   schemaVersion: string
 
@@ -103,6 +116,7 @@ export class AuditRecord {
     this.guardrailOutcome = init.guardrailOutcome ?? null
     this.riskScore = init.riskScore ?? null
     this.lineage = init.lineage ?? null
+    this.toolCalls = init.toolCalls ?? []
     this.previousHash = init.previousHash ?? ''
     this.schemaVersion = init.schemaVersion ?? SCHEMA_VERSION
   }
@@ -116,7 +130,7 @@ export class AuditRecord {
   }
 
   toJSON(): Record<string, unknown> {
-    return {
+    const json: Record<string, unknown> = {
       traceId: this.traceId,
       parentTraceId: this.parentTraceId,
       agentId: this.agentId,
@@ -142,6 +156,10 @@ export class AuditRecord {
       previousHash: this.previousHash,
       schemaVersion: this.schemaVersion,
     }
+    if (this.toolCalls.length > 0) {
+      json['toolCalls'] = this.toolCalls.map((call) => ({ ...call }))
+    }
+    return json
   }
 
   /** Stable JSON with recursively sorted keys — used for the v0.2.0 hash chain. */

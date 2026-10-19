@@ -22,7 +22,13 @@ import { mockProvider } from './providers/mock.js'
 import { GavioRequest } from './request.js'
 import type { GavioResponse } from './response.js'
 import { Provider, coerceProvider } from './types.js'
-import type { Message, PromptLineage, PromptLineageInit } from './types.js'
+import type {
+  Message,
+  PromptLineage,
+  PromptLineageInit,
+  ToolChoice,
+  ToolDefinition,
+} from './types.js'
 
 export interface GatewayOptions {
   provider?: Provider | string
@@ -60,6 +66,10 @@ export interface CompleteOptions {
   options?: Record<string, unknown>
   /** Prompt provenance (F-OBS-04): template, variables, and RAG chunk sources. */
   lineage?: PromptLineage | PromptLineageInit | null
+  /** Tools the model may call (F-ADP-03) — `ToolDefinition` objects. */
+  tools?: ToolDefinition[] | null
+  /** `auto`, `none`, `required` or `{ name }`. Ignored when `tools` is empty (F-ADP-03). */
+  toolChoice?: ToolChoice | null
 }
 
 export interface EmbedOptions {
@@ -217,6 +227,8 @@ export class Gateway {
       metadata: opts.metadata ?? {},
       images: opts.images ?? [],
       lineage: opts.lineage ?? null,
+      tools: opts.tools ?? null,
+      toolChoice: opts.toolChoice ?? null,
     })
     const ctx = InterceptorContext.fromRequest(request, this.dryRunMode)
 
@@ -293,6 +305,12 @@ export class Gateway {
     const adapter = this.resolveAdapter()
     if (adapter.stream === undefined || adapter.buildStreamResponse === undefined) {
       throw new ConfigurationError(`${adapter.providerName} does not support streaming`)
+    }
+    if ((opts.tools?.length ?? 0) > 0) {
+      // Streamed chunks carry text only, so tools would be silently dropped.
+      throw new ConfigurationError(
+        'stream() does not support tools yet (streaming tool-call deltas are not implemented); use complete()',
+      )
     }
     const model = opts.model ?? this.modelHint ?? this.resolveModel(adapter)
 

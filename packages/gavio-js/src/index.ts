@@ -177,11 +177,25 @@ export {
   Sensitivity,
   GuardrailOutcome,
   TokenUsage,
+  ToolCall,
+  ToolResult,
+  FinishReason,
   PromptLineage,
   RagChunk,
   coerceProvider,
 } from './types.js'
-export type { Message, PromptLineageInit, RagChunkInit } from './types.js'
+export type {
+  Message,
+  PromptLineageInit,
+  RagChunkInit,
+  ToolCallInit,
+  ToolChoice,
+  ToolDefinition,
+  ToolResultInit,
+} from './types.js'
+
+export { ProviderCompletion } from './tool-calling.js'
+export type { ProviderCompletionInit } from './tool-calling.js'
 
 export type { Interceptor, Executor, ExecutorPolicy } from './interceptors/base.js'
 export { InterceptorChain } from './interceptors/chain.js'
@@ -199,4 +213,5 @@ export {
   BudgetExceededError,
   GuardrailViolationError,
   ToolRuntimeError,
+  MalformedToolCallError,
 } from './errors.js'

@@ -4,9 +4,11 @@ import { ConfigurationError } from '../errors.js'
 import type { PricingProvider } from '../pricing.js'
 import type { GavioRequest } from '../request.js'
 import type { GavioResponse } from '../response.js'
-import { TokenUsage } from '../types.js'
 import { BaseProviderAdapter } from './base.js'
 import { postJson } from './http.js'
+import { fromProviderResponse, toProviderPayload } from './openai.js'
+
+export { fromProviderResponse, toProviderPayload }
 
 const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1'
 
@@ -67,33 +69,13 @@ export class OpenRouterAdapter extends BaseProviderAdapter {
 
   async complete(request: GavioRequest): Promise<GavioResponse> {
     const started = performance.now()
-    const payload = {
-      model: request.model,
-      messages: request.messages,
-      temperature: request.temperature,
-      max_tokens: request.maxTokens,
-    }
     const data = await postJson(
       this.url(),
-      payload,
+      toProviderPayload(request),
       this.headers(),
       this.timeoutSeconds,
     )
-    const choices = (data['choices'] as Array<Record<string, unknown>>) ?? []
-    const message = (choices[0]?.['message'] as Record<string, unknown>) ?? {}
-    const content = (message['content'] as string) ?? ''
-    const usageData = (data['usage'] as Record<string, number>) ?? {}
-    const usage = new TokenUsage(
-      usageData['prompt_tokens'] ?? 0,
-      usageData['completion_tokens'] ?? 0,
-    )
-    return this.buildResponse(
-      request,
-      content,
-      usage,
-      (data['model'] as string) ?? request.model,
-      started,
-    )
+    return this.buildCompletionResponse(request, fromProviderResponse(data), started)
   }
 
   async healthCheck(): Promise<boolean> {

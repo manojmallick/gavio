@@ -30,6 +30,28 @@ export { ollamaAdapter } from './ollama.js'
 export type { OllamaAdapterOptions } from './ollama.js'
 export { Provider } from '../types.js'
 
+// Pure request/response translators (F-ADP-03): no network, one pair per provider wire format.
+export {
+  fromProviderResponse as openaiFromProviderResponse,
+  toProviderPayload as openaiToProviderPayload,
+} from './openai.js'
+export {
+  fromProviderResponse as azureOpenaiFromProviderResponse,
+  toProviderPayload as azureOpenaiToProviderPayload,
+} from './azure-openai.js'
+export {
+  fromProviderResponse as anthropicFromProviderResponse,
+  toProviderPayload as anthropicToProviderPayload,
+} from './anthropic.js'
+export {
+  fromProviderResponse as geminiFromProviderResponse,
+  toProviderPayload as geminiToProviderPayload,
+} from './gemini.js'
+export {
+  fromProviderResponse as ollamaFromProviderResponse,
+  toProviderPayload as ollamaToProviderPayload,
+} from './ollama.js'
+
 /** Instantiate the default adapter for a provider id. */
 export function buildAdapter(
   provider: Provider | string,
