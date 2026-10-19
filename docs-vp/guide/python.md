@@ -219,7 +219,7 @@ only the tool name and an arguments hash. To validate what the model asked for, 
 calls to Tool Runtime: `analyze_provider_tool_calls(response.tool_calls, tools_context,
 definitions=tools)`.
 
-Available in the Python SDK since `3.2.0`, and in the JavaScript and Java SDKs on `main`.
+Available in the Python SDK since `3.2.0`, and in the JavaScript and Java SDKs since `3.2.1`.
 Not yet supported: streaming tool-call deltas, and provider-opaque per-call state such as Gemini
 thought signatures. The Ollama mapping follows its documented `/api/chat` shape and has not
 been exercised against a live server; Ollama has no `tool_choice`, so only `"auto"` is
@@ -380,7 +380,7 @@ from gavio import build_production_trust_bundle, verify_production_trust_bundle
 bundle = build_production_trust_bundle(
     bundle_id="trust-prod-support-2026-07-12",
     generated_at="2026-07-12T12:00:00Z",
-    release={"version": "3.2.0", "tag": "v3.2.0"},
+    release={"version": "3.2.1", "tag": "v3.2.1"},
     runtime={
         "environment": "production",
         "policySource": "project:prod-support",

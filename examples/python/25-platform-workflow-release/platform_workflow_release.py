@@ -19,7 +19,7 @@ def main() -> None:
     trust = build_production_trust_bundle(
         bundle_id="trust-platform-workflow",
         generated_at="2026-07-12T12:00:00Z",
-        release={"version": "3.2.0", "tag": "v3.2.0", "commit": "local-example"},
+        release={"version": "3.2.1", "tag": "v3.2.1", "commit": "local-example"},
         runtime={"environment": "production", "policySource": "project:prod-support"},
         audit_chain_verified=True,
         runtime_events=[],
@@ -30,7 +30,7 @@ def main() -> None:
     profile = build_platform_runtime_profile(
         profile_id="platform-prod-support",
         generated_at="2026-07-12T12:00:00Z",
-        sdk={"name": "gavio", "version": "3.2.0"},
+        sdk={"name": "gavio", "version": "3.2.1"},
         runtime={
             "environment": "production",
             "eventExportMode": "metadata_only",

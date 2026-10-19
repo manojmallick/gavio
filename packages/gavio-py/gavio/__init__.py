@@ -1,6 +1,6 @@
 """Gavio — AI request runtime and inspector for production systems.
 
-Stable public API surface (v3.2.0):
+Stable public API surface (v3.2.1):
 
     from gavio import Gateway, GavioRequest, GavioResponse, Provider
 
@@ -93,7 +93,7 @@ from .workflow import (
     run_platform_workflow_release_file,
 )
 
-__version__ = "3.2.0"
+__version__ = "3.2.1"
 
 __all__ = [
     "__version__",

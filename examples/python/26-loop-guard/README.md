@@ -38,7 +38,6 @@ What to notice:
   `repeated_tool_call`; the other actions are `fallback` (reroute to a cheaper model) and
   `dry_run` (record the breach, change nothing).
 
-The loop guard is newer than the `3.2.0` packages this example's manifest pins, so until the
-next release run it against this repository's SDKs: `node scripts/run-examples.mjs --sdk python --example 26`.
+The loop guard ships in Gavio `3.2.1` and later, which is what this example's manifest pins.
 
 See also: [Loop guard](../../../docs/interceptors.md#loop-guard-f-rel-09)
