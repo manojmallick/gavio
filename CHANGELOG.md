@@ -26,15 +26,50 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   the declared tools. `analyzeProviderToolCalls` / `toolCallsToRuntimeCalls` bridge provider
   calls into Tool Runtime v2. Messages use the spec's camelCase keys (`toolCalls`,
   `toolCallId`, `isError`) and accept Python's snake_case spellings on read. The Java adapters
-  follow; streaming tool-call deltas are not yet supported, and `Gateway.stream()` throws a
-  `ConfigurationError` when given `tools` instead of silently dropping them.
+  are listed below; streaming tool-call deltas are not yet supported, and `Gateway.stream()`
+  throws a `ConfigurationError` when given `tools` instead of silently dropping them.
 - `MalformedToolCallError` (a `ProviderError`) is raised when a provider returns tool-call
   arguments that are not a JSON object; its message names the tool, never the arguments.
+- **Normalised tool calling in the Java SDK (F-ADP-03).** The Java counterpart of the Python
+  reference shipped in `3.2.0` and the JavaScript port above, passing the same
+  `test-vectors/tool-calling/` files (OpenRouter passes `openai.json` unchanged). `gavio-core`
+  gains `ToolCall`, `ToolResult`, `ToolChoice` and `FinishReason`; `Message` carries
+  `toolCalls` / `toolCallId` / `name` / `isError`; `GavioRequest` has `tools()` / `toolChoice()`
+  and `GavioResponse` has `toolCalls()` / `finishReason()` / `toAssistantMessage()`;
+  `Gateway.completeWithTools(messages, tools, toolChoice)` is the convenience entry point. The
+  OpenAI, Azure OpenAI, OpenRouter, Anthropic, Gemini and Ollama adapters translate tool
+  declarations, calls and results (parallel calls included) through pure public static
+  `toProviderPayload` / `fromProviderResponse` methods that `complete()` uses; the Chat
+  Completions mapping the first three share is `io.gavio.providers.ChatCompletionsWire` in
+  `gavio-core`, so those modules still depend only on core. `PiiGuard` scans tool-call arguments
+  and tool-role messages and restores placeholders in response tool calls; `AuditRecord` keeps
+  the tool name and an arguments hash (`toolCalls()`, written as `tool_calls[].arguments_hash`,
+  omitted when empty so existing hash chains still verify); `SemanticCache` never replays a
+  tool-call response, keys on the declared tools and tool calls in the history, and skips the
+  semantic level when tools are declared. `ToolRuntimeInterceptor.analyzeProviderToolCalls` /
+  `toolCallsToRuntimeCalls` bridge provider calls into Tool Runtime v2. Messages use the spec's
+  camelCase members; `Message.from(map)` also reads Python's snake_case spellings. Streaming
+  tool-call deltas are not yet supported: `Gateway.stream()` throws a `ConfigurationException`
+  when given `tools` instead of silently dropping them. Arguments hash over canonical JSON, so
+  keep integers and strings in arguments you intend to audit (an integral float such as `1.0`
+  hashes as `1`, which Python spells `1.0`).
+- `GavioException.MalformedToolCallException` (a `ProviderException`) is raised when a provider
+  returns tool-call arguments that are not a JSON object; its message names the tool, never the
+  arguments.
 
 ### Changed
 - `canonicalJson` moved from `workflow.ts` into its own `canonical-json.ts` module so core code
   can hash tool arguments without importing the workflow machinery. It is still exported from
   `gavio` and `gavio/workflow`, and its output is unchanged.
+- Java: canonical JSON moved from `PlatformWorkflow` into the leaf class
+  `io.gavio.json.CanonicalJson` so request and audit code can hash tool arguments without
+  importing the workflow machinery. `PlatformWorkflow.canonicalJson` delegates to it and its
+  output is unchanged. The `Message`, `GavioRequest`, `GavioResponse` and `AuditRecord` records
+  gained components for tool calling; their previous constructors remain, so code that builds
+  them keeps compiling (a record deconstruction pattern over the old components needs the new
+  ones). The parent POM now manages the versions of the Gemini, Azure OpenAI and Ollama modules
+  like the others, and `gavio-testing` has test-scope dependencies on every provider module and
+  the cache.
 
 ### Fixed
 - **Maven Central publish under Maven 3.10.** GitHub's `ubuntu-latest` image now ships

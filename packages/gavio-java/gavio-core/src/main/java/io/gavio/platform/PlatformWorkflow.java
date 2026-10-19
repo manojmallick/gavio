@@ -1,5 +1,6 @@
 package io.gavio.platform;
 
+import io.gavio.json.CanonicalJson;
 import io.gavio.json.Json;
 import io.gavio.platform.PlatformWorkflowPolicyResolver.PolicyEvidence;
 import io.gavio.prompts.EvalReport;
@@ -10,8 +11,6 @@ import io.gavio.prompts.PromptRegistry;
 import io.gavio.prompts.PromptTemplate;
 import io.gavio.trust.ProductionTrust;
 import io.gavio.trust.ProductionTrustVerification;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -220,87 +219,10 @@ public final class PlatformWorkflow {
      * Cross-SDK canonical JSON: compact separators, object keys sorted by Unicode code point,
      * non-ASCII emitted as-is, control characters as lowercase four-digit unicode escapes, integral
      * numbers written as integers ({@code 1.0} becomes {@code 1}), and every other number as the
-     * shortest round-trip decimal without an exponent.
+     * shortest round-trip decimal without an exponent. Implemented by {@link CanonicalJson}.
      */
     public static String canonicalJson(Object value) {
-        StringBuilder out = new StringBuilder();
-        writeCanonical(out, value);
-        return out.toString();
-    }
-
-    private static void writeCanonical(StringBuilder out, Object value) {
-        if (value == null) {
-            out.append("null");
-        } else if (value instanceof Boolean || value instanceof CharSequence) {
-            out.append(value instanceof Boolean ? value.toString() : Json.write(value.toString()));
-        } else if (value instanceof Number number) {
-            out.append(canonicalNumber(number));
-        } else if (value instanceof Map<?, ?> map) {
-            List<Map.Entry<?, ?>> entries = new ArrayList<>(map.entrySet());
-            entries.sort((left, right) ->
-                    compareCodePoints(String.valueOf(left.getKey()), String.valueOf(right.getKey())));
-            out.append('{');
-            boolean first = true;
-            for (Map.Entry<?, ?> entry : entries) {
-                if (!first) {
-                    out.append(',');
-                }
-                first = false;
-                out.append(Json.write(String.valueOf(entry.getKey()))).append(':');
-                writeCanonical(out, entry.getValue());
-            }
-            out.append('}');
-        } else if (value instanceof Iterable<?> items) {
-            out.append('[');
-            boolean first = true;
-            for (Object item : items) {
-                if (!first) {
-                    out.append(',');
-                }
-                first = false;
-                writeCanonical(out, item);
-            }
-            out.append(']');
-        } else {
-            throw new IllegalArgumentException("cannot canonicalize " + value.getClass().getName());
-        }
-    }
-
-    private static String canonicalNumber(Number number) {
-        if (number instanceof Long || number instanceof Integer || number instanceof Short
-                || number instanceof Byte || number instanceof BigInteger) {
-            return number.toString();
-        }
-        BigDecimal decimal;
-        if (number instanceof BigDecimal big) {
-            decimal = big;
-        } else {
-            double d = number.doubleValue();
-            if (Double.isNaN(d) || Double.isInfinite(d)) {
-                throw new IllegalArgumentException("canonical JSON cannot represent NaN or Infinity");
-            }
-            if (d == Math.rint(d)) {
-                return new BigDecimal(d).toBigInteger().toString();
-            }
-            decimal = new BigDecimal(number instanceof Float ? Float.toString((float) d) : Double.toString(d));
-        }
-        BigDecimal stripped = decimal.stripTrailingZeros();
-        return stripped.scale() <= 0 ? stripped.toBigInteger().toString() : stripped.toPlainString();
-    }
-
-    private static int compareCodePoints(String left, String right) {
-        int i = 0;
-        int j = 0;
-        while (i < left.length() && j < right.length()) {
-            int a = left.codePointAt(i);
-            int b = right.codePointAt(j);
-            if (a != b) {
-                return Integer.compare(a, b);
-            }
-            i += Character.charCount(a);
-            j += Character.charCount(b);
-        }
-        return Integer.compare(left.length() - i, right.length() - j);
+        return CanonicalJson.write(value);
     }
 
     @SuppressWarnings("unchecked")

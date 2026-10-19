@@ -219,9 +219,8 @@ only the tool name and an arguments hash. To validate what the model asked for, 
 calls to Tool Runtime: `analyze_provider_tool_calls(response.tool_calls, tools_context,
 definitions=tools)`.
 
-Available in the Python SDK since `3.2.0` and in the JavaScript SDK on `main`; the Java
-adapters follow. Not yet
-supported: streaming tool-call deltas, and provider-opaque per-call state such as Gemini
+Available in the Python SDK since `3.2.0`, and in the JavaScript and Java SDKs on `main`.
+Not yet supported: streaming tool-call deltas, and provider-opaque per-call state such as Gemini
 thought signatures. The Ollama mapping follows its documented `/api/chat` shape and has not
 been exercised against a live server; Ollama has no `tool_choice`, so only `"auto"` is
 accepted there.

@@ -8,9 +8,11 @@ import io.gavio.interceptors.InterceptorContext;
 import io.gavio.interceptors.pii.policy.PolicyPack;
 import io.gavio.interceptors.pii.policy.PolicyPacks;
 import io.gavio.interceptors.pii.scanners.DefaultScanners;
+import io.gavio.json.JsonValues;
 import io.gavio.types.Message;
 import io.gavio.types.PiiMode;
 import io.gavio.types.Sensitivity;
+import io.gavio.types.ToolCall;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
 
 /**
@@ -26,6 +29,11 @@ import java.util.logging.Logger;
  * <p>PII is scanned on every request before it reaches the provider. Detected
  * entities are redacted/masked/tagged or blocked. In REDACT mode the original
  * values are restored in the response. Direct port of the Python {@code PiiGuard}.
+ *
+ * <p>Besides message {@code content} (tool-role messages included), the string and integer values
+ * inside the {@code arguments} of assistant tool calls are scanned (F-ADP-03), so PII cannot reach
+ * the provider through a replayed tool call. In REDACT mode the placeholders are restored in the
+ * response's tool-call arguments, like in its content.
  */
 public final class PiiGuard implements Interceptor {
 
@@ -88,27 +96,56 @@ public final class PiiGuard implements Interceptor {
 
         boolean effectiveDryRun = this.dryRun || ctx.dryRun();
 
-        for (Message message : request.messages()) {
-            String content = message.content();
-            List<PiiMatch> matches = scanText(content, scanCtx, floor);
+        UnaryOperator<String> redact = text -> {
+            List<PiiMatch> matches = scanText(text, scanCtx, floor);
             for (PiiMatch m : matches) {
                 allTypes.add(m.entityType());
             }
-
             if (!matches.isEmpty() && mode == PiiMode.BLOCK) {
                 List<String> types = new ArrayList<>();
                 for (PiiMatch m : matches) {
                     types.add(m.entityType());
                 }
                 LOG.warning("pii_guard BLOCK: " + new TreeSet<>(types));
-                return CompletableFuture.failedFuture(new PiiBlockedException(types));
+                throw new PiiBlockedException(types);
             }
-
-            String redacted = content;
             if (!matches.isEmpty() && !effectiveDryRun) {
-                redacted = apply(content, matches, replacements);
+                return apply(text, matches, replacements);
             }
-            newMessages.add(message.withContent(redacted));
+            return text;
+        };
+
+        UnaryOperator<Object> redactLeaf = leaf -> {
+            if (leaf instanceof String text) {
+                return redact.apply(text);
+            }
+            if (leaf instanceof Long || leaf instanceof Integer || leaf instanceof Short || leaf instanceof Byte) {
+                // A numeric identifier (card, BSN, phone) is PII too; a redacted number becomes
+                // its placeholder string.
+                String text = leaf.toString();
+                String redacted = redact.apply(text);
+                return redacted.equals(text) ? leaf : redacted;
+            }
+            return leaf;
+        };
+
+        try {
+            for (Message message : request.messages()) {
+                Message redacted = message.withContent(redact.apply(message.content()));
+                if (message.hasToolCalls()) {
+                    // The string and integer values inside tool-call arguments are scanned too
+                    // (F-ADP-03), so PII cannot reach the provider through a replayed tool call.
+                    List<ToolCall> calls = new ArrayList<>();
+                    for (ToolCall call : message.toolCalls()) {
+                        calls.add(new ToolCall(call.id(), call.name(),
+                                JsonValues.mapLeaves(call.arguments(), redactLeaf)));
+                    }
+                    redacted = redacted.withToolCalls(calls);
+                }
+                newMessages.add(redacted);
+            }
+        } catch (PiiBlockedException blocked) {
+            return CompletableFuture.failedFuture(blocked);
         }
 
         if (!allTypes.isEmpty()) {
@@ -138,14 +175,24 @@ public final class PiiGuard implements Interceptor {
         if (replacements == null || replacements.isEmpty()) {
             return CompletableFuture.completedFuture(response);
         }
-        String content = response.content();
-        for (Map.Entry<String, String> e : replacements.entrySet()) {
-            content = content.replace(e.getKey(), e.getValue());
+        UnaryOperator<String> restore = text -> {
+            // Replace placeholder tokens back with original values.
+            for (Map.Entry<String, String> e : replacements.entrySet()) {
+                text = text.replace(e.getKey(), e.getValue());
+            }
+            return text;
+        };
+        String content = restore.apply(response.content());
+        List<ToolCall> toolCalls = new ArrayList<>();
+        for (ToolCall call : response.toolCalls()) {
+            toolCalls.add(new ToolCall(call.id(), call.name(), JsonValues.mapLeaves(
+                    call.arguments(), leaf -> leaf instanceof String text ? restore.apply(text) : leaf)));
         }
-        if (content.equals(response.content())) {
+        if (content.equals(response.content()) && toolCalls.equals(response.toolCalls())) {
             return CompletableFuture.completedFuture(response);
         }
-        return CompletableFuture.completedFuture(response.withContent(content));
+        return CompletableFuture.completedFuture(
+                response.withContent(content).withToolCalls(toolCalls));
     }
 
     private List<PiiMatch> scanText(String text, ScanContext scanCtx, double floor) {
