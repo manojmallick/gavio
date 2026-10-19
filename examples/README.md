@@ -24,6 +24,7 @@ implemented per SDK, so you can compare the APIs side by side.
 | 23 | **Prompt Registry v2** — signed manifests, semver selectors, approvals, metadata-safe diffs | [py](./python/23-prompt-registry-v2/) | — | — | no |
 | 24 | **Enterprise Admin v2** — scoped admin keys, rollout approvals, audit export, retention controls | — | [js](./javascript/24-enterprise-admin-v2/) | — | no |
 | 25 | **Platform Workflow Release** — unified prompt/eval/policy/trust/runtime-profile release artifact | [py](./python/25-platform-workflow-release/) | — | — | no |
+| 26 | **Loop Guard** — stop a runaway agent at 25 steps or a cost cap, per root run | [py](./python/26-loop-guard/) | [js](./javascript/26-loop-guard/) | [java](./java/26-loop-guard/) | no |
 
 Only example 02 needs a key — it uses a real provider if `ANTHROPIC_API_KEY` or
 `OPENAI_API_KEY` is set, and otherwise falls back to the mock provider so it
@@ -39,6 +40,7 @@ smallest runnable project for one feature family.
 |---|---|---|
 | Privacy, secrets, prompt injection, policy packs | `01`, `03`, `06`, `12` | `22` |
 | Reliability, timeout, retry, guardrails, cache | `02`, `04` | `22` |
+| Runaway-agent protection: loop guard with step and cost caps per root run | `26` | — |
 | Cost governance, runtime labels, budget reporting | `04`, `08`, `13` | `22` |
 | Runtime events, JSONL export, OTel spans, metrics | `05`, `08`, `15` | `22` |
 | Prompt registry, eval reports, CI-style gates, release bundles | `09`, `21`, `23` | `22` |

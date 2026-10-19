@@ -408,6 +408,12 @@ see the [JavaScript guide](./javascript); Java: `LoopGuard.of(LoopGuardPolicy.bu
 see the [Java guide](./java)). The shared vectors in `test-vectors/loop-guard/` and the semantics in
 `spec/README.md` ('Loop guard') pin all of them.
 
+A runnable demo stops a runaway agent at 25 steps and then at a cost cap, offline on the mock
+provider: example 26
+([Python](https://github.com/manojmallick/gavio/tree/main/examples/python/26-loop-guard),
+[JavaScript](https://github.com/manojmallick/gavio/tree/main/examples/javascript/26-loop-guard),
+[Java](https://github.com/manojmallick/gavio/tree/main/examples/java/26-loop-guard)).
+
 ### Governance (`F-GOV-02/03/04`)
 
 ```python

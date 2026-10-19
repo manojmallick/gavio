@@ -276,6 +276,7 @@ compared side by side.
 | 23 | Prompt Registry v2 — signed manifests, semver selectors, approvals, metadata-safe diffs | [py](./examples/python/23-prompt-registry-v2/) | — | — | no |
 | 24 | Enterprise Admin v2 — scoped admin keys, rollout approvals, audit export, retention controls | — | [js](./examples/javascript/24-enterprise-admin-v2/) | — | no |
 | 25 | Platform Workflow Release — unified prompt/eval/policy/trust/runtime-profile release artifact | [py](./examples/python/25-platform-workflow-release/) | — | — | no |
+| 26 | Loop Guard — stop a runaway agent at 25 steps or a cost cap | [py](./examples/python/26-loop-guard/) | [js](./examples/javascript/26-loop-guard/) | [java](./examples/java/26-loop-guard/) | no |
 
 Example 02 uses a real provider if `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` is
 set; otherwise it falls back to the mock provider. All other examples run with

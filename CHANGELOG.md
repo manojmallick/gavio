@@ -50,7 +50,12 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   (written as `loop_guard`, counts only, omitted when no guard is installed so existing hash
   chains still verify) carry the verdict to the audit record, and breaches show in the Inspector
   and as governance events. A fallback reroute keeps the request's tools. With this, the loop
-  guard exists in all three SDKs; the runaway-agent example is still to come.
+  guard exists in all three SDKs.
+- **Loop guard example (F-REL-09, F-DX-13).** Example `26-loop-guard` in Python, JavaScript and
+  Java: a planner agent that never finishes is stopped by the 25-step cap and then by a $1.00
+  cost cap. Its calls share a root run through `parent_trace_id` / `parentTraceId`, and the
+  example prints the stop reason from the exception's `decision`. Offline, on the mock provider
+  with a demo price; registered in `examples/matrix.json` and the example tables.
 - **Normalised tool calling in the JavaScript SDK (F-ADP-03).** The JavaScript counterpart of
   the Python reference shipped in `3.2.0`, passing the same `test-vectors/tool-calling/`
   files: `ToolCall`, `ToolResult` and `FinishReason`; `GavioRequest.tools` / `toolChoice`;
