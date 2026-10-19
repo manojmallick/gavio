@@ -23,6 +23,11 @@ import java.util.Map;
  * <p>{@code toolCalls} lists the tool calls the model requested (F-ADP-03) as a name and an
  * arguments hash only — never the arguments, which may hold PII. It is left out of {@link #toMap()}
  * (and so out of the hash-chain input) when empty, so chains written before F-ADP-03 still verify.
+ *
+ * <p>{@code loopGuard} is the loop guard's verdict on this call (F-REL-09): {@code policy_id},
+ * {@code run_id}, {@code action}, {@code breached}, {@code steps}, {@code cost_usd} and
+ * {@code elapsed_seconds} — counts only, never tool arguments. It is left out of {@link #toMap()}
+ * when {@code null} (no guard ran), so existing hash chains still verify.
  */
 public record AuditRecord(
         String traceId,
@@ -49,7 +54,8 @@ public record AuditRecord(
         PromptLineage lineage,
         String previousHash,
         String schemaVersion,
-        List<ToolCallDigest> toolCalls) {
+        List<ToolCallDigest> toolCalls,
+        Map<String, Object> loopGuard) {
 
     public static final String SCHEMA_VERSION = "1.0";
 
@@ -90,6 +96,7 @@ public record AuditRecord(
             schemaVersion = SCHEMA_VERSION;
         }
         toolCalls = toolCalls == null ? List.of() : List.copyOf(toolCalls);
+        loopGuard = loopGuard == null ? null : java.util.Collections.unmodifiableMap(new LinkedHashMap<>(loopGuard));
     }
 
     /** A record without tool calls — the shape before F-ADP-03. */
@@ -121,7 +128,7 @@ public record AuditRecord(
         this(traceId, provider, model, timestampUtc, parentTraceId, agentId, sessionId, subjectId,
                 modelVersion, promptHash, responseHash, tokenUsage, costUsd, latencyMs, piiEntityTypes,
                 piiEntityCounts, interceptorsFired, cacheHit, cacheType, guardrailOutcome, riskScore,
-                lineage, previousHash, schemaVersion, null);
+                lineage, previousHash, schemaVersion, null, null);
     }
 
     public static String nowUtc() {
@@ -178,6 +185,9 @@ public record AuditRecord(
             }
             data.put("tool_calls", digests);
         }
+        if (loopGuard != null) {
+            data.put("loop_guard", new LinkedHashMap<>(loopGuard));
+        }
         data.put("previous_hash", previousHash);
         data.put("schema_version", schemaVersion);
         return data;
@@ -222,6 +232,7 @@ public record AuditRecord(
         private PromptLineage lineage;
         private String previousHash = "";
         private List<ToolCallDigest> toolCalls = List.of();
+        private Map<String, Object> loopGuard;
 
         public Builder traceId(String v) {
             this.traceId = v;
@@ -343,12 +354,18 @@ public record AuditRecord(
             return this;
         }
 
+        /** The loop guard's verdict on this call (F-REL-09); {@code null} when no guard ran. */
+        public Builder loopGuard(Map<String, Object> v) {
+            this.loopGuard = v;
+            return this;
+        }
+
         public AuditRecord build() {
             return new AuditRecord(traceId, provider, model, timestampUtc, parentTraceId,
                     agentId, sessionId, subjectId, modelVersion, promptHash, responseHash,
                     tokenUsage, costUsd, latencyMs, piiEntityTypes, piiEntityCounts,
                     interceptorsFired, cacheHit, cacheType, guardrailOutcome, riskScore, lineage,
-                    previousHash, SCHEMA_VERSION, toolCalls);
+                    previousHash, SCHEMA_VERSION, toolCalls, loopGuard);
         }
     }
 }

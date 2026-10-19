@@ -39,7 +39,18 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
   optional `AuditRecord.loopGuard` entry (counts only, omitted when no guard is installed so
   existing hash chains still verify) carry the verdict to the audit record, and breaches show in
   the Inspector and as governance events. A fallback reroute keeps the request's `tools` and
-  `toolChoice`. The Java port follows.
+  `toolChoice`. The Java port is listed below.
+- **Loop guard in the Java SDK (F-REL-09).** The Java counterpart of the Python and JavaScript
+  loop guards, passing the same `test-vectors/loop-guard/decisions.json`: `LoopGuard.of(policy)`
+  (`gavio-interceptor-reliability`) with `LoopGuardPolicy` (`maxSteps`, `maxCostUsd`,
+  `maxWallTimeSeconds`, `maxRepeatedToolCalls`, and the `STOP` / `FALLBACK` / `DRY_RUN`
+  actions), `LoopGuard.evaluate`, `LoopGuardState` and `LoopGuardStore` (LRU, 10,000 runs, one
+  hour idle); `io.gavio.RootRunResolver` and `GavioException.LoopGuardException` in
+  `gavio-core`. `InterceptorContext.loopGuard()` and an optional `AuditRecord.loopGuard()` entry
+  (written as `loop_guard`, counts only, omitted when no guard is installed so existing hash
+  chains still verify) carry the verdict to the audit record, and breaches show in the Inspector
+  and as governance events. A fallback reroute keeps the request's tools. With this, the loop
+  guard exists in all three SDKs; the runaway-agent example is still to come.
 - **Normalised tool calling in the JavaScript SDK (F-ADP-03).** The JavaScript counterpart of
   the Python reference shipped in `3.2.0`, passing the same `test-vectors/tool-calling/`
   files: `ToolCall`, `ToolResult` and `FinishReason`; `GavioRequest.tools` / `toolChoice`;

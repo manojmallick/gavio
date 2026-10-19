@@ -1,7 +1,10 @@
 package io.gavio;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 
 /**
@@ -101,6 +104,27 @@ public class GavioException extends RuntimeException {
     public static class BudgetExceededException extends GavioException {
         public BudgetExceededException(String message) {
             super(message);
+        }
+    }
+
+    /**
+     * A loop guard stopped a run that reached one of its limits (F-REL-09). The message names
+     * the limit and the run's counts, never prompts or tool arguments. {@link #decision()} is the
+     * verdict ({@code LoopGuardDecision.toMap()}), for callers that want to react.
+     */
+    public static class LoopGuardException extends GavioException {
+        private final transient Map<String, Object> decision;
+
+        public LoopGuardException(String message, Map<String, Object> decision) {
+            super(message);
+            // A verdict has legitimate nulls (e.g. repeatedToolCall), which Map.copyOf would reject.
+            this.decision = decision == null
+                    ? Map.of()
+                    : Collections.unmodifiableMap(new LinkedHashMap<>(decision));
+        }
+
+        public Map<String, Object> decision() {
+            return decision;
         }
     }
 
