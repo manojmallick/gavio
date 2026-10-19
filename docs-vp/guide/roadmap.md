@@ -68,8 +68,9 @@ Credible to a stranger: real integrations, honest numbers, full SDK parity, and 
 **Progress (2026-10-19).** Release `3.2.0` ships the first slices only:
 `F-ADP-03` as spec, shared vectors and the Python reference (the JavaScript and Java
 adapters have since landed on `main`, unreleased) and the `F-TRUST-02` benchmark harness
-(the outside rerun is still pending). `F-DOC-10`, `F-DX-13`, `F-REL-09` and `F-DOC-11` are
-not done, so the v3.2 exit gate above is not met yet.
+(the outside rerun is still pending). `F-REL-09` has its contract, shared vectors and the
+Python loop guard; the JavaScript and Java ports are still to come. `F-DOC-10`, `F-DX-13`
+and `F-DOC-11` are not done, so the v3.2 exit gate above is not met yet.
 
 ## v3.3: Semantic eval
 
