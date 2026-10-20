@@ -8,7 +8,8 @@ a `MockProvider` padded with a fixed 5 ms delay, 20 warm-up and 200 measured
 iterations, p50/p95 in microseconds, overhead as a percentage of the simulated
 call — and runs it for the same three SDKs. To rerun it yourself, follow
 [`REPRODUCE.md`](REPRODUCE.md). Results are published, machine-readable, in
-[`../latest.json`](../latest.json); this README deliberately holds no numbers.
+[`../latest.json`](../latest.json) and, generated from it, as tables in
+[`../RESULTS.md`](../RESULTS.md); this README deliberately holds no numbers.
 
 ## Configurations
 

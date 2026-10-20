@@ -37,6 +37,20 @@ cd packages/gavio-js && npm ci && npm run typecheck && npm test
 cd packages/gavio-java && mvn test
 ```
 
+### Keeping the docs true (F-DOC-10)
+
+A doc must not state a fact the repository can compute. CI (`docs-truth`) runs:
+
+```bash
+node scripts/check-docs-truth.mjs                 # versions in snippets, README status and version map, spec/README.md schema list
+node scripts/gen-benchmark-results.mjs --check    # benchmarks/RESULTS.md is what benchmarks/latest.json says
+node scripts/check-example-matrix.mjs --check     # example tables (F-DX-13)
+```
+
+When a benchmark is rerun, regenerate with `node scripts/gen-benchmark-results.mjs` and commit
+`latest.json` and `RESULTS.md` together. Never type a benchmark number into a doc. A line that
+quotes an old version on purpose carries `docs-truth:ignore`.
+
 ## Pull request requirements
 
 Every PR must:

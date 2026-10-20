@@ -11,6 +11,25 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+### Added
+- **Docs truth sync (F-DOC-10).** Docs no longer state facts the repository can compute.
+  `scripts/check-docs-truth.mjs` fails when the README status line or version map disagrees
+  with the package version and the CHANGELOG, when an install snippet or a
+  `stable_release_gate.py --version` call in the README, the docs trees, the package READMEs
+  or `examples/README.md` pins another version, when `spec/README.md` does not list exactly
+  the schemas in `spec/`, or when a doc mentions a schema file that does not exist (a line
+  can opt out with `docs-truth:ignore`; local-only files git ignores are not read).
+  `scripts/gen-benchmark-results.mjs` generates `benchmarks/RESULTS.md` (the overhead tables
+  per SDK) from `benchmarks/latest.json`, and `--check` fails when the two disagree. Both run
+  in a new `docs-truth` CI job with their own tests. A stale `benchmarks/latest.json`
+  (measured on an older release) is only a note, because refreshing it needs a rerun.
+  Remaining: the Inspector overhead percentages in the Inspector guide are still typed by
+  hand.
+
+### Fixed
+- `spec/README.md` listed 31 of the 33 schemas; `EnterpriseAdminControl.schema.json` and
+  `InspectorEvent.schema.json` are in the table now.
+
 ---
 
 ## [3.2.1] — 2026-10-20

@@ -417,7 +417,7 @@ gated by the same [shared test vectors](./test-vectors/).
 | Read-only production dashboard — RED stats, hash-chain verifier, `gavio inspect --store` | `F-DX-08` | 0.7.0 |
 | Export any trace as a PII-sanitized `GavioTestKit` test / test vector | `F-DX-12` | 0.7.0 |
 | Overhead benchmarks with CI-enforced budget (<1% metadata / <5% full p50) | `F-DX-09` | 0.8.0 |
-| Interceptor-chain overhead benchmark — fixed-seed Python/JS/Java harnesses and a validated `benchmarks/latest.json` ([reproduce](./benchmarks/chain-overhead/REPRODUCE.md)) | `F-TRUST-02` | 3.2.0 |
+| Interceptor-chain overhead benchmark — fixed-seed Python/JS/Java harnesses and a validated `benchmarks/latest.json` ([results](./benchmarks/RESULTS.md), [reproduce](./benchmarks/chain-overhead/REPRODUCE.md)) | `F-TRUST-02` | 3.2.0 |
 | Cost reports — `/api/cost-report`, top spend dimensions, retry overhead, cache savings | `F-COST-02` | 0.11.0 |
 
 ### 🛠️ Developer experience & providers

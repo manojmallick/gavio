@@ -25,6 +25,7 @@ serialise to shapes valid against these schemas.
 | [`PolicyPackSignature.schema.json`](./PolicyPackSignature.schema.json) | Deterministic Policy Pack manifest signature metadata |
 | [`ControlPlaneRuntimeConfig.schema.json`](./ControlPlaneRuntimeConfig.schema.json) | Runtime config fetched by SDKs from the optional self-hosted control plane |
 | [`ControlPlaneEvent.schema.json`](./ControlPlaneEvent.schema.json) | Metadata-only audit/event records searchable by trace, tenant, feature, provider, model, risk, and time |
+| [`EnterpriseAdminControl.schema.json`](./EnterpriseAdminControl.schema.json) | Enterprise Admin v2 control document: identity providers, scoped admin keys, rollout approvals, audit export, and retention policies |
 | [`ProductionTrustBundle.schema.json`](./ProductionTrustBundle.schema.json) | Metadata-only production release evidence bundle with audit-chain, runtime-event, control, benchmark, and document pointers |
 | [`IntegrationRecipe.schema.json`](./IntegrationRecipe.schema.json) | Ecosystem integration compatibility recipe with role boundaries, supported Gavio surfaces, docs path, and example path |
 | [`IntegrationAdapterPayload.schema.json`](./IntegrationAdapterPayload.schema.json) | Dependency-light ecosystem adapter payload envelope for gateway, eval, observability, and framework tools |
@@ -35,6 +36,7 @@ serialise to shapes valid against these schemas.
 | [`CostReport.schema.json`](./CostReport.schema.json) | Cost Governance v2 spend, overhead, savings, and budget report |
 | [`LoopGuardPolicy.schema.json`](./LoopGuardPolicy.schema.json) | Loop guard limits for one root run (F-REL-09): max steps, cost, wall time and repeated tool calls, and what happens on a breach |
 | [`LoopGuardDecision.schema.json`](./LoopGuardDecision.schema.json) | Loop guard verdict on one provider call (F-REL-09): allow, stop, fallback or dry_run, which limit was reached, and the run's counts |
+| [`InspectorEvent.schema.json`](./InspectorEvent.schema.json) | One span event emitted by the gateway's InspectorBus; events sharing a `traceId` assemble into a trace. Content-bearing fields exist only in `full` or `redacted` capture modes |
 | [`PiiMatch.schema.json`](./PiiMatch.schema.json) | A single detected PII entity |
 | [`InterceptorResult.schema.json`](./InterceptorResult.schema.json) | One interceptor's observable outcome |
 

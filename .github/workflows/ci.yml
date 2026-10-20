@@ -22,6 +22,23 @@ jobs:
       - name: Validate release readiness
         run: python3 scripts/stable_release_gate.py
 
+  # F-DOC-10: a doc that states a fact the repository can compute (the version in
+  # an install snippet, the schema list, a benchmark number) must agree with it.
+  docs-truth:
+    name: Docs truth (versions, schemas, benchmark numbers)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Tests for the checks
+        run: node --test scripts/check-docs-truth.test.mjs scripts/gen-benchmark-results.test.mjs
+      - name: Docs agree with the package version and spec/
+        run: node scripts/check-docs-truth.mjs
+      - name: benchmarks/RESULTS.md matches benchmarks/latest.json
+        run: node scripts/gen-benchmark-results.mjs --check
+
   python:
     name: Python SDK
     runs-on: ubuntu-latest
