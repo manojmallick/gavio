@@ -106,6 +106,16 @@ gh secret list
    SDK versions, changelog links, release/security/stability docs, benchmark
    evidence, workflow wiring, package hygiene, and zero mandatory Python core
    dependencies.
+
+   Then check that the docs say the new version (CI runs the same checks):
+   ```bash
+   node scripts/check-docs-truth.mjs
+   ```
+   It fails on a stale README status line, a version map without the new row,
+   or an install snippet that still pins the old version. A bulk search and
+   replace of the old version is not safe: leave history (the CHANGELOG,
+   `test-vectors/workflow/release.json`, "since X" notes) and third-party pins
+   (`exec-maven-plugin` in the example POMs) alone.
 4. Commit, then tag and push:
    ```bash
    git commit -am "chore: release v0.1.1"

@@ -65,8 +65,10 @@ Credible to a stranger: real integrations, honest numbers, full SDK parity, and 
 them: `F-ADP-03` in all three SDKs (spec, shared vectors and the Python reference in `3.2.0`;
 the JavaScript and Java adapters in `3.2.1`), `F-REL-09` with its loop guard in all three SDKs
 and its runaway-agent demo (example `26-loop-guard`) in `3.2.1`, and the `F-TRUST-02`
-benchmark harness (the outside rerun is still pending). `F-DOC-10`, `F-DX-13` (more example
-ports) and `F-DOC-11` are not done, so the v3.2 exit gate above is not met yet.
+benchmark harness (the outside rerun is still pending). `F-DX-13` (more example ports) and
+`F-DOC-11` are not done, and `F-DOC-10` is only started: CI now checks the versions in docs, the
+spec schema list and the generated benchmark tables, but the Inspector overhead percentages are
+still typed by hand. So the v3.2 exit gate above is not met yet.
 
 ## v3.3: Semantic eval
 
