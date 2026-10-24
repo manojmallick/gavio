@@ -8,7 +8,8 @@ JSON shapes stay identical.
 from __future__ import annotations
 
 import math
-from datetime import datetime
+import re
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 _GROUP_BY_FIELDS = {
@@ -184,12 +185,41 @@ def _filter_and_validate(
         raise ValueError(f"group_by must be one of {sorted(_GROUP_BY_FIELDS)}")
     if since is None:
         return summaries
-    since_dt = datetime.fromisoformat(since)
+    since_dt = _parse_since(since)
     return [
         s
         for s in summaries
-        if s.get("wallTimeUtc") and datetime.fromisoformat(s["wallTimeUtc"]) >= since_dt
+        if s.get("wallTimeUtc") and _parse_timestamp(s["wallTimeUtc"]) >= since_dt
     ]
+
+
+_DURATION_RE = re.compile(r"^(\d+(?:\.\d+)?)([smhdw])$")
+_DURATION_SECONDS = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800}
+
+
+def _parse_timestamp(value: str) -> datetime:
+    """Parse an ISO 8601 timestamp; a trailing ``Z`` is UTC and a missing zone means UTC."""
+    text = value.strip()
+    if text.endswith(("Z", "z")):
+        text = text[:-1] + "+00:00"
+    parsed = datetime.fromisoformat(text)
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=timezone.utc)
+
+
+def _parse_since(since: str) -> datetime:
+    """``since`` is an ISO 8601 timestamp or a duration back from now (``30m``, ``1h``, ``7d``)."""
+    text = since.strip()
+    match = _DURATION_RE.match(text)
+    if match:
+        seconds = float(match.group(1)) * _DURATION_SECONDS[match.group(2)]
+        return datetime.now(timezone.utc) - timedelta(seconds=seconds)
+    try:
+        return _parse_timestamp(text)
+    except ValueError:
+        raise ValueError(
+            f"since must be an ISO 8601 timestamp (2026-10-01T00:00:00Z) "
+            f"or a duration such as 30m, 1h, 7d; got {since!r}"
+        ) from None
 
 
 def _group_key(summary: dict[str, Any], group_by: str) -> str:
