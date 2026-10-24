@@ -72,7 +72,7 @@ Gavio Inspector (metadata mode) — 3 traces from audit.jsonl
 | `--bind ADDRESS` | `127.0.0.1` | Address to listen on |
 | `--token TOKEN` | none | Bearer token. **Required** for any address other than `127.0.0.1`, `localhost` or `::1` |
 
-With a token set, requests need an `Authorization: Bearer <token>` header; without it the API answers `401`. A missing store file exits with `1`: `gavio inspect: [Errno 2] No such file or directory: 'missing.jsonl'`.
+With a token set, requests need an `Authorization: Bearer <token>` header; without it the API answers `401`. A bind address that is not loopback and has no token exits with `1` and the message `gavio inspect: inspector bind '0.0.0.0' is not loopback; set an auth_token before exposing the inspector beyond localhost`. A missing store file also exits with `1`: `gavio inspect: [Errno 2] No such file or directory: 'missing.jsonl'`.
 
 ## `gavio cost report`
 
@@ -87,7 +87,7 @@ Reads audit records and prints one JSON report on stdout. Use `--pretty` for ind
 |---|---|
 | `--audit PATH` | Required. JSONL audit or runtime summary file |
 | `--group-by KEY` | Group the report. One of `agent_id`, `endpoint`, `environment`, `feature`, `middleware_chain`, `model`, `provider`, `session_id`, `tenant`, `tool`, `user`, `workflow` |
-| `--since WHEN` | Only include records from this time on. An ISO 8601 timestamp **with a time zone**, for example `2026-10-01T00:00:00+00:00` or `2026-10-01T00:00:00Z`. Values such as `1h` are rejected, and a timestamp without a zone currently fails with a Python `TypeError` traceback |
+| `--since WHEN` | Only include records from this time on. An ISO 8601 timestamp (`2026-10-01T00:00:00Z`, `2026-10-01T00:00:00+02:00`; no zone means UTC) or a duration back from now: `30m`, `1h`, `7d`, `2w` (`s`, `m`, `h`, `d`, `w`). Anything else is rejected with a one-line error |
 | `--budget-policy PATH` | A budget policy JSON file: one policy object, a list, or `{"policies": [...]}`. Can be repeated |
 | `--usage-elapsed-ratio R` | Fraction of the budget window already elapsed, for the forecast: forecast = spend so far ÷ R. Default `1.0` (no extrapolation) |
 
@@ -119,7 +119,7 @@ With `--budget-policy` the report also has `budgets`, one entry per policy with 
 { "id": "agent-demo", "scope_type": "agent", "scope_value": "demo", "window": "monthly", "limit_usd": 50 }
 ```
 
-> **Check your dimensions.** Grouping by `tenant`, `feature`, `user`, `endpoint`, `environment`, `workflow` or `tool` only works if the records carry those values. Records written by the `jsonl://` audit sink in the Python SDK did not include them in testing, so `--group-by tenant` showed everything under `unknown`. Group by `agent_id`, `model`, `provider` or `session_id` for audit-sink files, or feed the command records that contain a `cost_dimensions` object.
+> **Check your dimensions.** Grouping by `tenant`, `feature`, `user`, `endpoint`, `environment`, `workflow` or `tool` only works if the records carry those values. Records written by the `jsonl://` audit sink do not include them, so `--group-by tenant` reports everything under `unknown` and prints a warning on stderr. Group by `agent_id`, `model`, `provider` or `session_id` for audit-sink files, or feed the command records that contain a `cost_dimensions` object.
 
 An unknown `--group-by` value lists the valid keys and exits with `1`.
 
