@@ -11,6 +11,14 @@ Feature IDs (e.g. `F-SEC-01`) group related changes across the three SDKs.
 
 ## [Unreleased]
 
+### Fixed
+- Python CLI: `gavio cost report --since` accepts ISO 8601 timestamps with or without a time zone (a missing zone means UTC, `Z` is accepted) and relative durations such as `30m`, `1h`, `7d`, `2w`. A zone-less timestamp used to crash with a `TypeError` traceback, and an invalid value now gives a one-line error that lists the accepted forms. The same parsing applies to the Inspector's `since` query parameter.
+- Python CLI: `gavio inspect --bind 0.0.0.0` without `--token` prints `gavio inspect: inspector bind '0.0.0.0' is not loopback; ...` and exits `1` instead of a traceback.
+- Python CLI: `gavio cost report --group-by <dimension>` prints a warning on stderr when no record carries that dimension (for example `tenant` with files from the `jsonl://` audit sink), instead of silently reporting everything under `unknown`. The report itself is unchanged.
+
+### Documentation
+- Added `docs/cli.md`, `docs/configuration.md` and `docs/troubleshooting.md`; clarified the run order in example `25-platform-workflow-release`.
+
 ---
 
 ## [3.2.1] — 2026-10-20

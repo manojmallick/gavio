@@ -142,11 +142,12 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _inspect(args: argparse.Namespace) -> int:
+    from .exceptions import ConfigurationError
     from .inspector.store import open_store
 
     try:
         inspector = open_store(args.store, port=args.port, bind=args.bind, auth_token=args.token)
-    except (OSError, ValueError) as error:
+    except (OSError, ValueError, ConfigurationError) as error:
         print(f"gavio inspect: {error}", file=sys.stderr)
         return 1
     inspector.start_server()
@@ -183,6 +184,16 @@ def _cost_report(args: argparse.Namespace) -> int:
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"gavio cost report: {error}", file=sys.stderr)
         return 1
+    groups = report.get("groups")
+    if args.group_by and groups and set(groups) == {"unknown"}:
+        print(
+            f"gavio cost report: warning: none of the {report['total']['requests']} records "
+            f"carry a '{args.group_by}' value, so everything is grouped under 'unknown'. "
+            "Records written by the jsonl:// audit sink do not include cost dimensions "
+            "(tenant, feature, user, ...); group by agent_id, model, provider or session_id, "
+            "or use records that have a cost_dimensions object.",
+            file=sys.stderr,
+        )
     indent = 2 if args.pretty else None
     print(json.dumps(report, indent=indent, sort_keys=True))
     return 0
