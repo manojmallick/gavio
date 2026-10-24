@@ -47,7 +47,7 @@ You cannot expose the Inspector beyond localhost without a token. In code set `I
 gavio inspect --store audit.jsonl --bind 0.0.0.0 --token "$INSPECTOR_TOKEN"
 ```
 
-Without `--token`, the current CLI prints a Python traceback ending in this `ConfigurationError` instead of a one-line message. Requests to a token-protected Inspector need `Authorization: Bearer <token>` and get `401` otherwise.
+Without `--token`, `gavio inspect` prints this message and exits with `1`. (Releases before this fix printed a Python traceback ending in the same `ConfigurationError`.) Requests to a token-protected Inspector need `Authorization: Bearer <token>` and get `401` otherwise.
 
 ### `gavio inspect: [Errno 2] No such file or directory`
 
@@ -57,11 +57,11 @@ The `--store` file does not exist. Write one by adding `AuditInterceptor(sink="j
 
 ### `gavio cost report` puts everything under `unknown`
 
-Grouping by `tenant`, `feature`, `user`, `endpoint`, `environment`, `workflow` or `tool` needs those values in the records. Files written by the `jsonl://` audit sink in the Python SDK did not carry them when tested. Group by `agent_id`, `model`, `provider` or `session_id` instead, or supply records with a `cost_dimensions` object. Details in [the CLI reference](cli.md#gavio-cost-report).
+Grouping by `tenant`, `feature`, `user`, `endpoint`, `environment`, `workflow` or `tool` needs those values in the records. Files written by the `jsonl://` audit sink do not carry them, and the command prints a warning on stderr saying so. Group by `agent_id`, `model`, `provider` or `session_id` instead, or supply records with a `cost_dimensions` object. Details in [the CLI reference](cli.md#gavio-cost-report).
 
-### `gavio cost report: Invalid isoformat string: '1h'`
+### `gavio cost report: since must be an ISO 8601 timestamp ...`
 
-`--since` takes a full ISO 8601 timestamp with a time zone, for example `--since 2026-10-01T00:00:00Z`. Relative values such as `1h` are not supported. A timestamp **without** a zone (`2026-10-01T00:00:00`) currently crashes with `TypeError: can't compare offset-naive and offset-aware datetimes`; add `Z` or `+00:00`.
+`--since` takes an ISO 8601 timestamp (`--since 2026-10-01T00:00:00Z`; no zone means UTC) or a duration such as `30m`, `1h`, `7d`, `2w`. The message `since must be an ISO 8601 timestamp ... or a duration` lists the accepted forms. (Releases before this fix rejected `1h` and crashed with `TypeError: can't compare offset-naive and offset-aware datetimes` on a timestamp without a zone.)
 
 ### `gavio cost report: group_by must be one of [...]`
 
