@@ -473,6 +473,9 @@ the [interceptors guide](./docs/interceptors.md) for every built-in interceptor.
 | Doc | What |
 |---|---|
 | [docs/getting-started.md](./docs/getting-started.md) | 5-minute quickstart, all three languages |
+| [docs/cli.md](./docs/cli.md) | The `gavio` command-line tools with tested examples |
+| [docs/configuration.md](./docs/configuration.md) | Provider keys, Inspector settings, cache directory, audit and event output |
+| [docs/troubleshooting.md](./docs/troubleshooting.md) | Fixes for common setup, Inspector and CLI problems |
 | [docs/architecture.md](./docs/architecture.md) | Request lifecycle, the interceptor chain, data model |
 | [docs/interceptors.md](./docs/interceptors.md) | Every built-in interceptor + writing your own |
 | [docs/inspector.md](./docs/inspector.md) | The Inspector: dev visualizer, agent DAGs, replay, production dashboard |

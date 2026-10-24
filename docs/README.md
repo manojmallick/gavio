@@ -15,6 +15,9 @@ Start here, then dive into the language you use.
 - [Production Trust Package](./trust-package.md) — metadata-only release evidence bundles and verification
 - [Integrations](./integrations.md) — how Gavio fits beside gateways, observability, and eval tools
 - [Platform Runtime Profile](./platform-runtime.md) — metadata-only readiness score and production posture gaps
+- [Command-line tools](./cli.md) — `gavio inspect`, `cost report`, `events convert`, `policy`, `eval run`, `workflow release` with tested examples
+- [Configuration](./configuration.md) — provider keys, Inspector settings, cache directory, audit and event output
+- [Troubleshooting](./troubleshooting.md) — fixes for common setup, Inspector and CLI problems
 - [Stability](./stability.md) — API stability, LTS policy, and stable release gate
 - [Roadmap](./roadmap.md) — v3.2 → v5.0 release train, feature IDs, and exit gates
 - [Learning Resources](./learning-resources.md) — external resources for staying current on developer news and tooling
